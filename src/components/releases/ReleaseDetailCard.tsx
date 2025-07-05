@@ -42,9 +42,9 @@ export function getStateIcon(state: string) {
 
 // Helper to calculate days until target date
 function getDaysUntil(dateString: string) {
+  const [year, month, day] = dateString.split('-').map(Number);
   const today = new Date();
-  const target = new Date(dateString);
-  // Zero out the time for both dates
+  const target = new Date(year, month - 1, day);
   today.setHours(0,0,0,0);
   target.setHours(0,0,0,0);
   const diffTime = target.getTime() - today.getTime();
@@ -158,9 +158,11 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange } : {
           {(() => {
             const days = getDaysUntil(release.target_date);
             const isPast = days < 0;
+            const [year, month, day] = release.target_date.split('-');
+            const dateStr = `${Number(month)}/${Number(day)}/${year}`;
             return (
               <span className="flex items-center gap-2">
-                Target Date: {new Date(release.target_date).toLocaleDateString()} ({days} days)
+                Target Date: {dateStr} ({days} days)
                 {isPast && (
                   <span className="flex items-center ml-4">
                     <Checkbox

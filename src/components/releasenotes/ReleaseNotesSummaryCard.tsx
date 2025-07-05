@@ -34,16 +34,19 @@ export function ReleaseNotesSummaryCard({ release }: ReleaseNotesSummaryCardProp
   // Helper to determine if date is in the past
   const getDateLabel = (dateStr?: string) => {
     if (!dateStr) return "Date";
-    const date = new Date(dateStr);
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    if (date < now) return "Release Date";
+    const [year, month, day] = dateStr.split('-');
+    const today = new Date();
+    const target = new Date(Number(year), Number(month) - 1, Number(day));
+    today.setHours(0, 0, 0, 0);
+    target.setHours(0, 0, 0, 0);
+    if (target < today) return "Release Date";
     return "Target Date";
   };
 
   const getDateDisplay = (dateStr?: string) => {
     if (!dateStr) return "N/A";
-    return new Date(dateStr).toLocaleDateString();
+    const [year, month, day] = dateStr.split('-');
+    return `${Number(month)}/${Number(day)}/${year}`;
   };
 
   // Color conventions based on state

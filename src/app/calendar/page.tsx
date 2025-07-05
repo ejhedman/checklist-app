@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase";
 import { useToast } from "@/components/ui/toast";
+import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 
 interface Release {
@@ -19,6 +20,7 @@ interface CalendarDay {
   isCurrentMonth: boolean;
   isPast: boolean;
   releases: Release[];
+  hasUserInvolvement: boolean;
 }
 
 interface DragState {
@@ -45,7 +47,7 @@ function getStateColor(state: string) {
   }
 }
 
-function generateCalendarDays(year: number, month: number, releases: Release[]): CalendarDay[] {
+function generateCalendarDays(year: number, month: number, releases: Release[], userInvolvedReleaseIds: Set<string>): CalendarDay[] {
   const firstDay = new Date(year, month, 1);
   const startDate = new Date(firstDay);
   startDate.setDate(startDate.getDate() - firstDay.getDay()); // Start from Sunday of the week
@@ -63,19 +65,23 @@ function generateCalendarDays(year: number, month: number, releases: Release[]):
     
     // Find releases for this date
     const dayReleases = releases.filter(release => {
-      // Create date in local timezone by adding 'T00:00:00' to ensure local midnight
-      const releaseDate = new Date(release.target_date + 'T00:00:00');
-      return releaseDate.getFullYear() === currentDate.getFullYear() &&
-             releaseDate.getMonth() === currentDate.getMonth() &&
-             releaseDate.getDate() === currentDate.getDate();
+      const year = currentDate.getFullYear();
+      const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+      const day = String(currentDate.getDate()).padStart(2, '0');
+      const currentDateString = `${year}-${month}-${day}`;
+      return release.target_date === currentDateString;
     });
+    
+    // Check if any releases on this day have user involvement
+    const hasUserInvolvement = dayReleases.some(release => userInvolvedReleaseIds.has(release.id));
     
     days.push({
       date: currentDate,
       dayOfMonth: currentDate.getDate(),
       isCurrentMonth,
       isPast,
-      releases: dayReleases
+      releases: dayReleases,
+      hasUserInvolvement
     });
   }
 
@@ -87,6 +93,7 @@ function CalendarGrid({
   month, 
   title, 
   releases, 
+  userInvolvedReleaseIds,
   onReleaseMove,
   dragState,
   onDragStart,
@@ -97,13 +104,14 @@ function CalendarGrid({
   month: number; 
   title: string; 
   releases: Release[];
+  userInvolvedReleaseIds: Set<string>;
   onReleaseMove: (releaseId: string, newDate: string) => Promise<void>;
   dragState: DragState;
   onDragStart: (releaseId: string, releaseName: string, originalDate: string) => void;
   onDragEnd: () => void;
   addToast: (message: string, type?: 'success' | 'error' | 'warning' | 'info', duration?: number) => void;
 }) {
-  const days = generateCalendarDays(year, month, releases);
+  const days = generateCalendarDays(year, month, releases, userInvolvedReleaseIds);
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   const handleDragStart = (e: React.DragEvent, release: Release) => {
@@ -198,37 +206,40 @@ function CalendarGrid({
                   ${!day.isCurrentMonth ? 'text-muted-foreground/50' : ''}
                   ${day.isPast && day.releases.length === 0 ? 'bg-muted text-muted-foreground' : ''}
                   ${day.isCurrentMonth && !day.isPast && day.releases.length === 0 ? 'hover:bg-accent cursor-pointer' : ''}
+                  ${day.hasUserInvolvement ? 'bg-blue-50 border-blue-200' : ''}
                 `}
                 data-date={day.date.toDateString()}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={(e) => handleDrop(e, day)}
-
               >
-                <div className="font-medium mb-1">{day.dayOfMonth}</div>
-                {day.releases.map((release) => (
-                  <div
-                    key={release.id}
-                    className={`
-                      w-full px-1 py-0.5 mb-0.5 rounded text-xs truncate cursor-grab active:cursor-grabbing
-                      ${getStateColor(release.state)}
-                      ${dragState.isDragging && dragState.releaseId === release.id ? 'opacity-50' : ''}
-                    `}
-                    title={`${release.name} - ${release.state} (Drag to move, click to view)`}
-                    draggable={true}
-                    onDragStart={(e) => handleDragStart(e, release)}
-                    onClick={(e) => {
-                      if (!dragState.isDragging) {
-                        window.location.href = `/releases/${encodeURIComponent(release.name)}`;
-                      }
-                    }}
-                  >
-                    {release.name}
-                  </div>
-                ))}
+                <div className="text-[10px] text-muted-foreground mb-0.5">{
+                  String(day.date.getMonth() + 1).padStart(2, '0') + '/' + String(day.date.getDate()).padStart(2, '0')
+                }</div>
+                {day.releases.map((release) => {
+                  return (
+                    <div
+                      key={release.id}
+                      className={`
+                        w-full px-1 py-0.5 mb-0.5 rounded text-xs truncate cursor-grab active:cursor-grabbing
+                        ${getStateColor(release.state)}
+                        ${dragState.isDragging && dragState.releaseId === release.id ? 'opacity-50' : ''}
+                      `}
+                      title={release.name}
+                      draggable={true}
+                      onDragStart={(e) => handleDragStart(e, release)}
+                      onClick={(e) => {
+                        if (!dragState.isDragging) {
+                          window.location.href = `/releases/${encodeURIComponent(release.name)}`;
+                        }
+                      }}
+                    >
+                      {release.name}
+                    </div>
+                  );
+                })}
               </div>
             );
-            
             return <div key={index}>{dayContent}</div>;
           })}
         </div>
@@ -239,14 +250,65 @@ function CalendarGrid({
 
 export default function CalendarPage() {
   const [releases, setReleases] = useState<Release[]>([]);
+  const [userInvolvedReleaseIds, setUserInvolvedReleaseIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const { addToast } = useToast();
+  const { user } = useAuth();
   const [dragState, setDragState] = useState<DragState>({
     isDragging: false,
     releaseId: null,
     releaseName: null,
     originalDate: null
   });
+
+  const fetchUserInvolvement = async () => {
+    if (!user) return;
+    const supabase = createClient();
+
+    // 1. Get all team IDs for the user
+    const { data: teamUserRows, error: teamUserError } = await supabase
+      .from("team_users")
+      .select("team_id")
+      .eq("user_id", user.id);
+
+    if (teamUserError) {
+      console.error("Error fetching user teams:", teamUserError);
+      return;
+    }
+
+    const userTeamIds = (teamUserRows ?? []).map(row => row.team_id);
+
+    // 2. Get all release IDs for those teams
+    let teamReleaseIds: string[] = [];
+    if (userTeamIds.length > 0) {
+      const { data: releaseTeamsRows, error: releaseTeamsError } = await supabase
+        .from("release_teams")
+        .select("release_id")
+        .in("team_id", userTeamIds);
+
+      if (releaseTeamsError) {
+        console.error("Error fetching release teams:", releaseTeamsError);
+        return;
+      }
+      teamReleaseIds = (releaseTeamsRows ?? []).map(row => row.release_id);
+    }
+
+    // 3. Get all release IDs where user is DRI for a feature
+    const { data: driFeaturesRows, error: driFeaturesError } = await supabase
+      .from("features")
+      .select("release_id")
+      .eq("dri_user_id", user.id);
+
+    if (driFeaturesError) {
+      console.error("Error fetching DRI features:", driFeaturesError);
+      return;
+    }
+    const driReleaseIds = (driFeaturesRows ?? []).map(row => row.release_id);
+
+    // 4. Combine all involved release IDs
+    const involvedIds = new Set<string>([...teamReleaseIds, ...driReleaseIds]);
+    setUserInvolvedReleaseIds(involvedIds);
+  };
 
   const fetchReleases = async () => {
     try {
@@ -320,7 +382,8 @@ export default function CalendarPage() {
 
   useEffect(() => {
     fetchReleases();
-  }, []);
+    fetchUserInvolvement();
+  }, [user]);
 
   // Global drag end handler to reset drag state
   useEffect(() => {
@@ -378,6 +441,7 @@ export default function CalendarPage() {
           month={currentMonth} 
           title={monthNames[currentMonth]}
           releases={releases}
+          userInvolvedReleaseIds={userInvolvedReleaseIds}
           onReleaseMove={handleReleaseMove}
           dragState={dragState}
           onDragStart={handleDragStart}
@@ -389,6 +453,7 @@ export default function CalendarPage() {
           month={nextMonth} 
           title={monthNames[nextMonth]}
           releases={releases}
+          userInvolvedReleaseIds={userInvolvedReleaseIds}
           onReleaseMove={handleReleaseMove}
           dragState={dragState}
           onDragStart={handleDragStart}

@@ -1,8 +1,10 @@
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink, FileText } from "lucide-react";
 import Link from "next/link";
 import React from "react";
+import { createClient } from "@/lib/supabase";
 
 export interface ReleaseSummaryCardProps {
   release: {
@@ -55,6 +57,22 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
   release,
   getStateIcon,
 }) => {
+  const [teamNames, setTeamNames] = useState<string[]>([]);
+
+  useEffect(() => {
+    const fetchTeams = async () => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("release_teams")
+        .select("teams(name)")
+        .eq("release_id", release.id);
+      if (!error && data) {
+        setTeamNames(data.map((row: any) => row.teams?.name).filter(Boolean));
+      }
+    };
+    fetchTeams();
+  }, [release.id]);
+
   return (
     <Card className="hover:shadow-md transition-shadow rounded-lg">
       <CardHeader className={`border-b border-border flex flex-row items-center justify-between px-4 py-3 rounded-t-lg ${getPaleBgForState(release.state, release.is_archived)}`}>
@@ -84,7 +102,8 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
                 const days = getDaysUntil(release.target_date);
                 const isPast = days < 0;
                 const label = isPast ? "Release Date" : "Target Date";
-                const dateStr = new Date(release.target_date).toLocaleDateString();
+                const [year, month, day] = release.target_date.split('-');
+                const dateStr = `${Number(month)}/${Number(day)}/${year}`;
                 return isPast
                   ? `${label}: ${dateStr}`
                   : `${label}: ${dateStr} (${days} days)`;
@@ -112,7 +131,17 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <div className="space-y-1">
             <p className="text-sm text-muted-foreground">Teams</p>
-            <p className="text-lg font-semibold">{release.team_count}</p>
+            <div className="flex flex-wrap gap-1 mt-1">
+              {teamNames.length > 0 ? (
+                teamNames.map((team) => (
+                  <Badge key={team} variant="secondary" className="text-xs">
+                    {team}
+                  </Badge>
+                ))
+              ) : (
+                <span className="text-muted-foreground text-sm">No teams</span>
+              )}
+            </div>
           </div>
           <div className="space-y-1">
             <p className="text-sm text-muted-foreground">Members</p>
