@@ -6,6 +6,7 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { Footer } from "@/components/layout/Footer";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { ToastProvider } from "@/components/ui/toast";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -24,16 +25,18 @@ export default function RootLayout({
       <body className={inter.className + " h-screen overflow-hidden"}>
         <AuthProvider>
           <ProtectedRoute>
-            <Header />
-            <div className="flex h-[calc(100vh-80px)] pb-20">
-              <Sidebar />
-              <main
-                className="ml-64 flex-1 overflow-y-auto bg-background p-6 pt-4"
-              >
-                {children}
-              </main>
-            </div>
-            <Footer />
+            <ToastProvider>
+              <Header />
+              <div className="flex h-[calc(100vh-80px)] pb-20">
+                <Sidebar />
+                <main
+                  className="ml-64 flex-1 overflow-y-auto bg-background p-6 pt-4"
+                >
+                  {children}
+                </main>
+              </div>
+              <Footer />
+            </ToastProvider>
           </ProtectedRoute>
         </AuthProvider>
       </body>

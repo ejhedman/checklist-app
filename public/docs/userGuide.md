@@ -227,6 +227,70 @@ Releases automatically transition through states based on criteria:
 
 ---
 
+## Calendar View
+
+The Calendar provides a visual overview of all releases and their target dates across two months.
+
+### Calendar Features
+
+1. **Two-Month View**
+   - Current month and next month displayed side by side
+   - Traditional calendar layout with days as columns and weeks as rows
+   - Past days are automatically greyed out
+
+2. **Release Visualization**
+   - Each release appears on its target date
+   - Releases are color-coded by their state:
+     - **Green**: Ready releases
+     - **Yellow**: Pending releases
+     - **Red**: Past due releases
+     - **Blue**: Complete releases
+     - **Gray**: Cancelled releases
+
+3. **Drag and Drop Functionality**
+   - **Moving Releases**: Click and drag any release to a new date
+   - **Visual Feedback**: 
+     - Valid drop zones (future dates) show green highlighting
+     - Invalid drop zones (past dates) show red highlighting
+     - Dragged release becomes semi-transparent
+   - **Date Validation**: Releases cannot be dropped on dates in the past
+   - **Automatic Updates**: Release dates are automatically updated in the database when dropped
+
+### Using the Calendar
+
+1. **Navigate to Calendar**
+   - Click "Calendar" in the sidebar
+   - View current and next month releases
+
+2. **Move a Release**
+   - Click and hold on any release name
+   - Drag to the desired future date
+   - Release the mouse to drop the release
+   - The release date will be automatically updated
+
+3. **View Release Details**
+   - Click on any day with a release to view release details
+   - Navigate to the release management page for full editing options
+
+### Calendar Best Practices
+
+1. **Regular Review**
+   - Check the calendar weekly to review upcoming releases
+   - Identify potential conflicts or scheduling issues
+   - Plan team capacity based on release dates
+
+2. **Date Management**
+   - Use drag-and-drop to quickly adjust release schedules
+   - Consider team availability when moving releases
+   - Communicate date changes to affected teams
+
+3. **Visual Planning**
+   - Use the calendar to identify busy periods
+   - Plan releases to avoid overlapping high-priority items
+   - Balance workload across teams and time periods
+
+---
+
 ## Feature Tracking
 
 ### Adding Features to Releases

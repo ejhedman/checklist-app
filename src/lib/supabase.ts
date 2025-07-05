@@ -1,14 +1,6 @@
 import { createBrowserClient, createServerClient } from '@supabase/ssr'
 import type { Database } from '@/types/database'
 
-// Only import these in a server context
-let cookies: any = undefined;
-if (typeof window === 'undefined') {
-  // Dynamically require to avoid issues in client bundle
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  cookies = require('next/headers').cookies;
-}
-
 export function createClient() {
   if (typeof window === 'undefined') {
     // Server-side
@@ -18,7 +10,10 @@ export function createClient() {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
-          getAll: () => cookies().getAll(),
+          getAll: async () => {
+            const cookieStore = await cookies();
+            return cookieStore.getAll();
+          },
           setAll: (_newCookies: { name: string; value: string; options?: any }[]) => {
             // No-op in server components; implement in API routes/middleware if needed
           },
