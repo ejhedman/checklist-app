@@ -60,7 +60,7 @@ export default function ReleasesPage() {
           )
         )
       `)
-      .order("target_date", { ascending: false });
+      .order("target_date", { ascending: true });
     if (!showArchived) {
       query = query.eq("is_archived", false);
     }
@@ -122,16 +122,19 @@ export default function ReleasesPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">Scheduled Releases</h1>
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={showArchived}
-            onChange={e => setShowArchived(e.target.checked)}
-            className="accent-primary"
-          />
-          Show archived
-        </label>
+        <div className="flex items-center gap-4">
+          <h1 className="text-3xl font-bold">Scheduled Releases</h1>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={showArchived}
+              onChange={e => setShowArchived(e.target.checked)}
+              className="accent-primary"
+            />
+            Show archived
+          </label>
+        </div>
+        <CreateReleaseDialog onReleaseSaved={fetchReleases} />
       </div>
       {loading ? (
         <div className="flex items-center justify-center py-8">
@@ -144,6 +147,7 @@ export default function ReleasesPage() {
               key={release.id}
               release={release}
               getStateIcon={getStateIcon}
+              onReleaseUpdated={fetchReleases}
             />
           ))}
         </div>

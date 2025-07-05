@@ -4,10 +4,7 @@ import { useState, useEffect } from "react";
 import { use } from "react";
 import ReleaseDetailCard from "@/components/releases/ReleaseDetailCard";
 import { createClient } from "@/lib/supabase";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
-import { AddFeatureDialog } from "@/components/releases/AddFeatureDialog";
+
 
 export default function ReleaseDetailPage({ params }: { params: Promise<{ name: string }> }) {
   const [release, setRelease] = useState<any>(null);
@@ -81,6 +78,27 @@ export default function ReleaseDetailPage({ params }: { params: Promise<{ name: 
       return;
     }
 
+    // Calculate total_members and ready_members
+    const allMembers: any[] = [];
+    if (data.release_teams) {
+      data.release_teams.forEach((rt: any) => {
+        if (rt.team && rt.team.team_users) {
+          const members = Array.isArray(rt.team.team_users)
+            ? rt.team.team_users
+            : [rt.team.team_users];
+          members.forEach((tu: any) => {
+            allMembers.push(tu.user ? tu.user : tu);
+          });
+        }
+      });
+    }
+    const total_members = allMembers.length;
+    const ready_members = allMembers.filter((member) => {
+      const userId = member.id;
+      const userReadyState = data.user_release_state?.find((urs: any) => urs.user_id === userId);
+      return userReadyState?.is_ready;
+    }).length;
+
     // Transform the data to match the card props
     const transformedRelease = {
       ...data,
@@ -110,6 +128,8 @@ export default function ReleaseDetailPage({ params }: { params: Promise<{ name: 
           };
         }) || [],
       })) || [],
+      total_members,
+      ready_members,
     };
 
     setRelease(transformedRelease);
@@ -165,17 +185,11 @@ export default function ReleaseDetailPage({ params }: { params: Promise<{ name: 
         <h1 className="text-3xl font-bold">Release: {release.name}</h1>
       </div>
       <div className="mt-6">
-        <div className="flex items-center justify-between mb-3">
-          <h4 className="text-sm font-medium">Features</h4>
-          <AddFeatureDialog 
-            releaseId={release.id} 
-            releaseName={release.name} 
-            onFeatureAdded={fetchRelease} 
-          />
-        </div>
+
         <ReleaseDetailCard 
           release={release} 
           onMemberReadyChange={handleMemberReadyChange}
+          onReleaseUpdated={fetchRelease}
         />
       </div>
     </div>

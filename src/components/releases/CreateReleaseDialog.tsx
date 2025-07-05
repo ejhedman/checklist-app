@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -18,19 +18,23 @@ import { Plus, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 
 interface CreateReleaseDialogProps {
-  onReleaseCreated: () => void;
+  onReleaseSaved: (release: any) => void;
+  initialRelease?: any;
+  isEdit?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function CreateReleaseDialog({ onReleaseCreated }: CreateReleaseDialogProps) {
-  const [open, setOpen] = useState(false);
+export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = false, open: controlledOpen, onOpenChange }: CreateReleaseDialogProps) {
+  const [open, setOpen] = useState(controlledOpen ?? false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    name: "",
-    targetDate: "",
-    platformUpdate: false,
-    configUpdate: false,
-    selectedTeams: [] as string[],
-    summary: "",
+    name: initialRelease?.name || "",
+    targetDate: initialRelease?.target_date || "",
+    platformUpdate: initialRelease?.platform_update || false,
+    configUpdate: initialRelease?.config_update || false,
+    selectedTeams: initialRelease?.teams?.map((t: any) => t.id) || [],
+    summary: initialRelease?.release_summary || "",
   });
   const [error, setError] = useState("");
   const [teams, setTeams] = useState<Array<{ id: string; name: string }>>([]);
@@ -42,82 +46,114 @@ export function CreateReleaseDialog({ onReleaseCreated }: CreateReleaseDialogPro
       .from("teams")
       .select("id, name")
       .order("name");
-    
     if (!error && data) {
       setTeams(data);
     }
   };
 
+  useEffect(() => {
+    if (controlledOpen !== undefined) setOpen(controlledOpen);
+  }, [controlledOpen]);
+
   const handleOpenChange = (newOpen: boolean) => {
     setOpen(newOpen);
+    onOpenChange?.(newOpen);
     if (newOpen) {
       fetchTeams();
-      // Reset form
-      setFormData({
-        name: "",
-        targetDate: "",
-        platformUpdate: false,
-        configUpdate: false,
-        selectedTeams: [],
-        summary: "",
-      });
+      if (!isEdit) {
+        setFormData({
+          name: "",
+          targetDate: "",
+          platformUpdate: false,
+          configUpdate: false,
+          selectedTeams: [],
+          summary: "",
+        });
+      }
       setError("");
     }
   };
 
+  useEffect(() => {
+    if (isEdit && initialRelease) {
+      setFormData({
+        name: initialRelease.name || "",
+        targetDate: initialRelease.target_date || "",
+        platformUpdate: initialRelease.platform_update || false,
+        configUpdate: initialRelease.config_update || false,
+        selectedTeams: initialRelease.teams?.map((t: any) => t.id) || [],
+        summary: initialRelease.release_summary || "",
+      });
+    }
+  }, [isEdit, initialRelease]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
     try {
-      // Fetch the release notes template
-      const templateRes = await fetch('/docs/release-notes-template.md');
-      const templateText = await templateRes.text();
-
       const supabase = createClient();
-
-      // Insert new release
-      const { data: release, error: releaseError } = await supabase
-        .from("releases")
-        .insert({
-          name: formData.name,
-          target_date: formData.targetDate,
-          state: "pending",
-          platform_update: formData.platformUpdate,
-          config_update: formData.configUpdate,
-          release_notes: templateText,
-          release_summary: formData.summary,
-        })
-        .select()
-        .single();
-
-      if (releaseError) {
-        console.error("Error creating release:", releaseError);
-        setError("Failed to create release: " + releaseError.message);
-        return;
-      }
-
-      // Add selected teams to the release
-      if (formData.selectedTeams.length > 0 && release) {
-        const teamAssignments = formData.selectedTeams.map(teamId => ({
-          release_id: release.id,
-          team_id: teamId,
-        }));
-
-        const { error: teamError } = await supabase
-          .from("release_teams")
-          .insert(teamAssignments);
-
-        if (teamError) {
-          console.error("Error assigning teams:", teamError);
-          // Don't fail the whole operation, just log the error
+      let release: any;
+      if (isEdit && initialRelease) {
+        // Update existing release
+        const { data: updated, error: updateError } = await supabase
+          .from("releases")
+          .update({
+            name: formData.name,
+            target_date: formData.targetDate,
+            platform_update: formData.platformUpdate,
+            config_update: formData.configUpdate,
+            release_summary: formData.summary,
+          })
+          .eq("id", initialRelease.id)
+          .select()
+          .single();
+        if (updateError) {
+          setError("Failed to update release: " + updateError.message);
+          return;
+        }
+        release = updated;
+        // Update team assignments
+        await supabase.from("release_teams").delete().eq("release_id", initialRelease.id);
+        if (formData.selectedTeams.length > 0) {
+          const teamAssignments = formData.selectedTeams.map((teamId: string) => ({
+            release_id: initialRelease.id,
+            team_id: teamId,
+          }));
+          await supabase.from("release_teams").insert(teamAssignments);
+        }
+      } else {
+        // Create new release
+        const templateRes = await fetch('/docs/release-notes-template.md');
+        const templateText = await templateRes.text();
+        const { data: created, error: createError } = await supabase
+          .from("releases")
+          .insert({
+            name: formData.name,
+            target_date: formData.targetDate,
+            state: "pending",
+            platform_update: formData.platformUpdate,
+            config_update: formData.configUpdate,
+            release_notes: templateText,
+            release_summary: formData.summary,
+          })
+          .select()
+          .single();
+        if (createError) {
+          setError("Failed to create release: " + createError.message);
+          return;
+        }
+        release = created;
+        if (formData.selectedTeams.length > 0) {
+          const teamAssignments = formData.selectedTeams.map((teamId: string) => ({
+            release_id: release.id,
+            team_id: teamId,
+          }));
+          await supabase.from("release_teams").insert(teamAssignments);
         }
       }
-
       setOpen(false);
-      onReleaseCreated();
+      onReleaseSaved(release);
     } catch (error) {
-      console.error("Error:", error);
       setError("An unexpected error occurred");
     } finally {
       setLoading(false);
@@ -128,24 +164,26 @@ export function CreateReleaseDialog({ onReleaseCreated }: CreateReleaseDialogPro
     setFormData(prev => ({
       ...prev,
       selectedTeams: prev.selectedTeams.includes(teamId)
-        ? prev.selectedTeams.filter(id => id !== teamId)
+        ? prev.selectedTeams.filter((id: string) => id !== teamId)
         : [...prev.selectedTeams, teamId]
     }));
   };
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          Create Release
-        </Button>
-      </DialogTrigger>
+      {!isEdit && (
+        <DialogTrigger asChild>
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            Create Release
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Create New Release</DialogTitle>
+          <DialogTitle>{isEdit ? "Edit Release" : "Create New Release"}</DialogTitle>
           <DialogDescription>
-            Set up a new software release with target date and team assignments.
+            {isEdit ? "Edit the release details and assignments." : "Set up a new software release with target date and team assignments."}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
@@ -153,7 +191,6 @@ export function CreateReleaseDialog({ onReleaseCreated }: CreateReleaseDialogPro
             {/* Release Details */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Release Details</h3>
-              
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="name" className="text-right">
                   Release Name *
@@ -168,7 +205,6 @@ export function CreateReleaseDialog({ onReleaseCreated }: CreateReleaseDialogPro
                   placeholder="e.g., v2.1.0 - Feature Release"
                 />
               </div>
-
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="targetDate" className="text-right">
                   Target Date *
@@ -183,13 +219,10 @@ export function CreateReleaseDialog({ onReleaseCreated }: CreateReleaseDialogPro
                   disabled={loading}
                 />
               </div>
-
             </div>
-
             {/* Release Scope */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Release Scope</h3>
-              
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="platformUpdate"
@@ -201,7 +234,6 @@ export function CreateReleaseDialog({ onReleaseCreated }: CreateReleaseDialogPro
                 />
                 <Label htmlFor="platformUpdate">Platform Update Required</Label>
               </div>
-
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="configUpdate"
@@ -214,11 +246,9 @@ export function CreateReleaseDialog({ onReleaseCreated }: CreateReleaseDialogPro
                 <Label htmlFor="configUpdate">Specs Update Required</Label>
               </div>
             </div>
-
             {/* Team Assignments */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Assign Teams</h3>
-              
               {teams.length > 0 ? (
                 <div className="space-y-2">
                   {teams.map((team) => (
@@ -239,19 +269,17 @@ export function CreateReleaseDialog({ onReleaseCreated }: CreateReleaseDialogPro
                 </p>
               )}
             </div>
-
             {error && (
               <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
                 {error}
               </div>
             )}
           </div>
-
           <DialogFooter>
             <Button
               type="button"
               variant="outline"
-              onClick={() => setOpen(false)}
+              onClick={() => handleOpenChange(false)}
               disabled={loading}
             >
               Cancel
@@ -260,10 +288,10 @@ export function CreateReleaseDialog({ onReleaseCreated }: CreateReleaseDialogPro
               {loading ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Creating...
+                  {isEdit ? "Saving..." : "Creating..."}
                 </>
               ) : (
-                "Create Release"
+                isEdit ? "Save Changes" : "Create Release"
               )}
             </Button>
           </DialogFooter>

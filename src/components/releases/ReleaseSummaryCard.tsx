@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ExternalLink, FileText } from "lucide-react";
 import Link from "next/link";
 import React from "react";
@@ -23,12 +24,14 @@ export interface ReleaseSummaryCardProps {
     is_archived?: boolean;
   };
   getStateIcon: (state: string) => React.ReactNode;
+  onReleaseUpdated?: () => void;
 }
 
 // Helper to calculate days until target date
 function getDaysUntil(dateString: string) {
+  const [year, month, day] = dateString.split('-').map(Number);
+  const target = new Date(year, month - 1, day);
   const today = new Date();
-  const target = new Date(dateString);
   today.setHours(0,0,0,0);
   target.setHours(0,0,0,0);
   const diffTime = target.getTime() - today.getTime();
@@ -56,8 +59,15 @@ function getPaleBgForState(state: string, is_archived?: boolean) {
 export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
   release,
   getStateIcon,
+  onReleaseUpdated,
 }) => {
   const [teamNames, setTeamNames] = useState<string[]>([]);
+  const [isArchived, setIsArchived] = useState(release.is_archived);
+  const [archiving, setArchiving] = useState(false);
+
+  useEffect(() => {
+    setIsArchived(release.is_archived);
+  }, [release.is_archived]);
 
   useEffect(() => {
     const fetchTeams = async () => {
@@ -72,6 +82,29 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
     };
     fetchTeams();
   }, [release.id]);
+
+  const handleArchiveChange = async (checked: boolean) => {
+    setArchiving(true);
+    setIsArchived(checked);
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("releases")
+      .update({ is_archived: checked })
+      .eq("id", release.id);
+    if (error) {
+      console.error('Failed to update is_archived:', error);
+      // Revert the state if update failed
+      setIsArchived(!checked);
+    } else {
+      // Call the callback to refresh the parent component
+      onReleaseUpdated?.();
+    }
+    setArchiving(false);
+  };
+
+  // Helper to calculate days until target date
+  const days = getDaysUntil(release.target_date);
+  const isPast = days < 0;
 
   return (
     <Card className="hover:shadow-md transition-shadow rounded-lg">
@@ -99,8 +132,6 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
           <div className="flex-1 flex justify-center">
             <CardDescription className="m-0">
               {(() => {
-                const days = getDaysUntil(release.target_date);
-                const isPast = days < 0;
                 const label = isPast ? "Release Date" : "Target Date";
                 const [year, month, day] = release.target_date.split('-');
                 const dateStr = `${Number(month)}/${Number(day)}/${year}`;
@@ -111,6 +142,19 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
             </CardDescription>
           </div>
           <div className="flex items-center space-x-2 justify-end">
+            {isPast && (
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  checked={!!isArchived}
+                  onCheckedChange={checked => handleArchiveChange(!!checked)}
+                  disabled={archiving}
+                  id={`archive-${release.id}`}
+                />
+                <label htmlFor={`archive-${release.id}`} className="text-sm select-none cursor-pointer">
+                  Archive
+                </label>
+              </div>
+            )}
             {release.state === "ready" ? (
               <Badge className="bg-green-600 text-white" variant="default">
                 {release.state.replace("_", " ")}

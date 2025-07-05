@@ -305,8 +305,24 @@ export default function CalendarPage() {
     }
     const driReleaseIds = (driFeaturesRows ?? []).map(row => row.release_id);
 
-    // 4. Combine all involved release IDs
-    const involvedIds = new Set<string>([...teamReleaseIds, ...driReleaseIds]);
+    // 4. Get all release IDs where user is a team member AND is not ready (user_release_state.is_ready = false)
+    let notReadyReleaseIds: string[] = [];
+    if (teamReleaseIds.length > 0) {
+      const { data: notReadyRows, error: notReadyError } = await supabase
+        .from("user_release_state")
+        .select("release_id")
+        .eq("user_id", user.id)
+        .eq("is_ready", false)
+        .in("release_id", teamReleaseIds);
+      if (notReadyError) {
+        console.error("Error fetching not ready releases:", notReadyError);
+        return;
+      }
+      notReadyReleaseIds = (notReadyRows ?? []).map(row => row.release_id);
+    }
+
+    // 5. Combine all involved release IDs
+    const involvedIds = new Set<string>([...driReleaseIds, ...notReadyReleaseIds]);
     setUserInvolvedReleaseIds(involvedIds);
   };
 

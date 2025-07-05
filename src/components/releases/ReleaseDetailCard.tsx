@@ -3,12 +3,14 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, CheckCircle, AlertTriangle, Clock, Calendar } from "lucide-react";
+import { Users, CheckCircle, AlertTriangle, Clock, Calendar, Pencil, FileText } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FeatureReadyDialog } from "@/components/releases/FeatureReadyDialog";
 import { createClient } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import FeatureCard from "./FeatureCard";
+import { CreateReleaseDialog } from "./CreateReleaseDialog";
+import { AddFeatureDialog } from "./AddFeatureDialog";
 
 export function getStateColor(state: string) {
   switch (state) {
@@ -52,9 +54,27 @@ function getDaysUntil(dateString: string) {
   return diffDays;
 }
 
-export default function ReleaseDetailCard({ release, onMemberReadyChange } : {
+// Map release state to a pale background color for the header (copied from ReleaseSummaryCard)
+function getPaleBgForState(state: string, is_archived?: boolean) {
+  if (is_archived) return "bg-gray-200";
+  switch (state) {
+    case "ready":
+      return "bg-green-50";
+    case "pending":
+      return "bg-amber-50";
+    case "past_due":
+      return "bg-red-50";
+    case "complete":
+      return "bg-blue-50";
+    default:
+      return "bg-gray-50";
+  }
+}
+
+export default function ReleaseDetailCard({ release, onMemberReadyChange, onReleaseUpdated } : {
   release: any,
   onMemberReadyChange?: (releaseId: string, userId: string, isReady: boolean) => void,
+  onReleaseUpdated: (updatedRelease: any) => void,
 }) {
   const { user } = useAuth();
   const [readyDialogOpen, setReadyDialogOpen] = useState(false);
@@ -62,6 +82,7 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange } : {
   const [updatingFeature, setUpdatingFeature] = useState(false);
   const [isArchived, setIsArchived] = useState(release.is_archived);
   const [archiving, setArchiving] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
 
   useEffect(() => {
     setIsArchived(release.is_archived);
@@ -132,154 +153,184 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange } : {
   };
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className={`h-3 w-3 rounded-full ${getStateColor(release.state)}`} />
-            <CardTitle className="flex items-center">
+    <div className="flex flex-col gap-6">
+      <Card className={`w-full ${getPaleBgForState(release.state, release.is_archived)}`}>
+        <CardHeader className="flex flex-row items-center justify-between border-b">
+          <div className="relative w-full flex items-center" style={{ minHeight: '48px' }}>
+            <div className="flex items-center gap-3">
               {getStateIcon(release.state)}
-              <span className="ml-2">{release.name}</span>
-            </CardTitle>
+              <CardTitle className="truncate text-lg">{release.name}</CardTitle>
+              {release.state === "ready" ? (
+                <Badge className="bg-green-600 text-white ml-2" variant="default">
+                  {release.state.replace("_", " ")}
+                </Badge>
+              ) : release.state === "pending" ? (
+                <Badge className="bg-amber-400 text-black ml-2" variant="default">
+                  {release.state.replace("_", " ")}
+                </Badge>
+              ) : release.state === "past_due" ? (
+                <Badge className="bg-red-500 text-white ml-2" variant="default">
+                  {release.state.replace("_", " ")}
+                </Badge>
+              ) : release.state === "complete" ? (
+                <Badge className="bg-blue-500 text-white ml-2" variant="default">
+                  {release.state.replace("_", " ")}
+                </Badge>
+              ) : (
+                <Badge variant="secondary" className="ml-2">
+                  {release.state.replace("_", " ")}
+                </Badge>
+              )}
+            </div>
+            <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+              {(() => {
+                const days = getDaysUntil(release.target_date);
+                const [year, month, day] = release.target_date.split('-');
+                const dateStr = `${Number(month)}/${Number(day)}/${year}`;
+                return `Target Date: ${dateStr} (${days} days)`;
+              })()}
+            </span>
           </div>
-          <div className="flex items-center space-x-2">
-            <Badge variant="outline">{release.state.replace('_', ' ')}</Badge>
+          <div className="flex items-center gap-2">
             <a
               href={`/releases/${encodeURIComponent(release.name)}/releasenotes`}
-              className="ml-4 text-primary hover:underline font-medium"
-              target="_blank"
-              rel="noopener noreferrer"
+              className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded border bg-white hover:bg-gray-50 text-primary shadow-sm whitespace-nowrap"
             >
+              <FileText className="w-4 h-4 mr-1" />
               Release Notes
             </a>
+            <button
+              className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded border bg-white hover:bg-gray-50 text-gray-900 shadow-sm"
+              onClick={() => setEditOpen(true)}
+            >
+              <Pencil className="w-4 h-4 mr-1" />
+              Edit
+            </button>
           </div>
-        </div>
-        <CardDescription>
-          {(() => {
-            const days = getDaysUntil(release.target_date);
-            const isPast = days < 0;
-            const [year, month, day] = release.target_date.split('-');
-            const dateStr = `${Number(month)}/${Number(day)}/${year}`;
-            return (
-              <span className="flex items-center gap-2">
-                Target Date: {dateStr} ({days} days)
-                {isPast && (
-                  <span className="flex items-center ml-4">
-                    <Checkbox
-                      checked={!!isArchived}
-                      onCheckedChange={checked => handleArchiveChange(!!checked)}
-                      disabled={archiving}
-                      id="archive-checkbox"
-                    />
-                    <label htmlFor="archive-checkbox" className="ml-2 text-sm select-none cursor-pointer">Archive</label>
-                  </span>
+        </CardHeader>
+        <CardContent className="pt-2">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Teams</p>
+              <div className="flex flex-wrap gap-1 mt-1">
+                {release.teams && release.teams.length > 0 ? (
+                  release.teams.map((team: any) => (
+                    <Badge key={team.id} variant="secondary" className="text-xs">
+                      {team.name}
+                    </Badge>
+                  ))
+                ) : (
+                  <span className="text-muted-foreground text-sm">No teams</span>
                 )}
-              </span>
-            );
-          })()}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">Teams</p>
-            <p className="text-lg font-semibold">{release.team_count}</p>
+              </div>
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Members</p>
+              <p className="text-lg font-semibold">{release.ready_members}/{release.total_members}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Features</p>
+              <p className="text-lg font-semibold">
+                {release.ready_features}/{release.feature_count}
+              </p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Platform Update</p>
+              <Badge variant={release.platform_update ? "default" : "secondary"}>
+                {release.platform_update ? "Yes" : "No"}
+              </Badge>
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Specs Update</p>
+              <Badge variant={release.config_update ? "default" : "secondary"}>
+                {release.config_update ? "Yes" : "No"}
+              </Badge>
+            </div>
           </div>
-          <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">Features</p>
-            <p className="text-lg font-semibold">
-              {release.ready_features}/{release.feature_count}
-            </p>
-          </div>
-          <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">Platform Update</p>
-            <Badge variant={release.platform_update ? "default" : "secondary"}>
-              {release.platform_update ? "Yes" : "No"}
-            </Badge>
-          </div>
-          <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">Specs Update</p>
-            <Badge variant={release.config_update ? "default" : "secondary"}>
-              {release.config_update ? "Yes" : "No"}
-            </Badge>
-          </div>
-        </div>
-
-        {/* Features Section */}
-        <div className="mt-6">
-          <div className="flex items-center justify-between mb-3">
-            <h4 className="text-sm font-medium">Features</h4>
-          </div>
-          <div className="space-y-2">
-            {release.features.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No features added yet.</p>
-            ) : (
-              release.features.map((feature: any) => (
-                <FeatureCard
-                  key={feature.id}
-                  feature={feature}
-                  user={user}
-                  updatingFeature={updatingFeature}
-                  handleFeatureReadyChange={handleFeatureReadyChange}
-                />
-              ))
-            )}
-          </div>
-        </div>
-
-        {/* Team Members Section */}
-        <div className="mt-6">
-          <div className="flex items-center justify-between mb-3">
-            <h4 className="text-sm font-medium flex items-center">
-              <Users className="h-4 w-4 mr-2" />
-              Team Members
-            </h4>
-          </div>
-
-          <div className="space-y-4">
-            {release.teams.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No teams assigned to this release.</p>
-            ) : (
-              release.teams.map((team: any) => (
-                <div key={team.id} className="border rounded-lg p-4">
-                  <h5 className="font-medium text-sm mb-2">{team.name}</h5>
-                  {team.description && (
-                    <p className="text-xs text-muted-foreground mb-3">{team.description}</p>
-                  )}
-                  <div className="space-y-2">
-                    {team.members.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">No members in this team.</p>
-                    ) : (
-                      team.members.map((member: any) => (
-                        <div key={member.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                          <div className="flex items-center space-x-3">
-                            {onMemberReadyChange && (
-                              <Checkbox
-                                checked={member.is_ready}
-                                onCheckedChange={(checked) => 
-                                  onMemberReadyChange(release.id, member.id, checked as boolean)
-                                }
-                              />
-                            )}
-                            <div>
-                              <p className="text-sm font-medium">{member.full_name}</p>
-                              <p className="text-xs text-muted-foreground">{member.email}</p>
-                            </div>
-                          </div>
-                          <Badge variant={member.is_ready ? "default" : "secondary"} className="text-xs">
-                            {member.is_ready ? "Ready" : "Not Ready"}
-                          </Badge>
-                        </div>
-                      ))
+        </CardContent>
+      </Card>
+      <div className="flex flex-col md:flex-row gap-6 w-full">
+        {/* Features Card */}
+        <Card className="w-full md:w-1/2">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-base flex items-center"><FileText className="h-4 w-4 mr-2" />Features</CardTitle>
+            <AddFeatureDialog 
+              releaseId={release.id} 
+              releaseName={release.name} 
+              onFeatureAdded={() => onReleaseUpdated(undefined)} 
+            />
+          </CardHeader>
+          <CardContent className="pb-4">
+            <div className="space-y-2">
+              {release.features.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No features added yet.</p>
+              ) : (
+                release.features.map((feature: any) => (
+                  <FeatureCard
+                    key={feature.id}
+                    feature={feature}
+                    user={user}
+                    updatingFeature={updatingFeature}
+                    handleFeatureReadyChange={handleFeatureReadyChange}
+                  />
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
+        {/* Teams Card */}
+        <Card className="w-full md:w-1/2">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center"><Users className="h-4 w-4 mr-2" />Team Members</CardTitle>
+          </CardHeader>
+          <CardContent className="pb-4">
+            <div className="space-y-4">
+              {release.teams.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No teams assigned to this release.</p>
+              ) : (
+                release.teams.map((team: any) => (
+                  <div key={team.id} className="border rounded-lg p-4">
+                    <h5 className="font-medium text-sm mb-2">{team.name}</h5>
+                    {team.description && (
+                      <p className="text-xs text-muted-foreground mb-3">{team.description}</p>
                     )}
+                    <div className="space-y-2">
+                      {team.members.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">No members in this team.</p>
+                      ) : (
+                        team.members.map((member: any) => (
+                          <div
+                            key={member.id}
+                            className={`flex items-center justify-between p-2 rounded border ${user && member.email === user.email ? 'bg-blue-50 border-blue-200' : 'bg-gray-50'}`}
+                          >
+                            <div className="flex items-center space-x-3">
+                              {onMemberReadyChange && (
+                                <Checkbox
+                                  checked={member.is_ready}
+                                  onCheckedChange={(checked) => 
+                                    onMemberReadyChange(release.id, member.id, checked as boolean)
+                                  }
+                                />
+                              )}
+                              <div>
+                                <p className="text-sm font-medium">{member.full_name}</p>
+                                <p className="text-xs text-muted-foreground">{member.email}</p>
+                              </div>
+                            </div>
+                            <Badge variant={member.is_ready ? "default" : "secondary"} className="text-xs">
+                              {member.is_ready ? "Ready" : "Not Ready"}
+                            </Badge>
+                          </div>
+                        ))
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      </CardContent>
-      
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
       <FeatureReadyDialog
         open={readyDialogOpen}
         onOpenChange={handleReadyDialogCancel}
@@ -287,6 +338,13 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange } : {
         onConfirm={handleReadyDialogConfirm}
         loading={updatingFeature}
       />
-    </Card>
+      <CreateReleaseDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        initialRelease={release}
+        onReleaseSaved={onReleaseUpdated}
+        isEdit={true}
+      />
+    </div>
   );
 } 

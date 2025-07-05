@@ -9,8 +9,9 @@ interface FeatureCardProps {
 }
 
 export default function FeatureCard({ feature, user, updatingFeature, handleFeatureReadyChange }: FeatureCardProps) {
+  const isDri = user && feature.dri_user && user.id === feature.dri_user.id;
   return (
-    <div className="p-3 border rounded-lg">
+    <div className={`p-3 border rounded-lg ${isDri ? 'bg-blue-50 border-blue-200' : ''}`}>
       {/* Top row: Feature name, DRI info, Ready badge/checkbox */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between w-full gap-2">
         {/* Left: Feature name and badges */}
