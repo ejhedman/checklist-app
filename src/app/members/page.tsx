@@ -6,16 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { User, Mail, Loader2 } from "lucide-react";
 import { AddMemberDialog } from "@/components/members/AddMemberDialog";
 import { createClient } from "@/lib/supabase";
-
-interface Member {
-  id: string;
-  full_name: string;
-  email: string;
-  nickname: string | null;
-  created_at: string;
-  teams: string[];
-  active_releases: number;
-}
+import { MemberCard, Member } from "@/components/members/MemberCard";
 
 type TeamUser = { teams: { name: string } };
 type UserWithTeams = {
@@ -113,54 +104,7 @@ export default function MembersPage() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {members.map((member) => (
-            <Card key={member.id}>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center">
-                    <User className="h-5 w-5 mr-2" />
-                    {member.full_name}
-                  </CardTitle>
-                </div>
-                <CardDescription className="flex items-center">
-                  <Mail className="h-3 w-3 mr-1" />
-                  {member.email}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {member.nickname && (
-                    <div>
-                      <p className="text-sm text-muted-foreground">Nickname</p>
-                      <p className="font-medium">{member.nickname}</p>
-                    </div>
-                  )}
-                  <div>
-                    <p className="text-sm text-muted-foreground">Teams</p>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {member.teams.length > 0 ? (
-                        member.teams.map((team) => (
-                          <Badge key={team} variant="secondary" className="text-xs">
-                            {team}
-                          </Badge>
-                        ))
-                      ) : (
-                        <p className="text-sm text-muted-foreground">No teams assigned</p>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <p className="text-sm text-muted-foreground">Active Releases</p>
-                      <p className="text-lg font-semibold">{member.active_releases}</p>
-                    </div>
-                    <div className="space-y-1 text-right">
-                      <p className="text-sm text-muted-foreground">Joined</p>
-                      <p className="text-sm">{new Date(member.created_at).toLocaleDateString()}</p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <MemberCard key={member.id} member={member} onMemberUpdated={handleMemberAdded} />
           ))}
         </div>
       )}

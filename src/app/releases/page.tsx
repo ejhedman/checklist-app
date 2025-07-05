@@ -120,9 +120,9 @@ export default function ReleasesPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto py-10 space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">Releases</h1>
+        <h1 className="text-3xl font-bold">Scheduled Releases</h1>
         <label className="flex items-center gap-2 text-sm">
           <input
             type="checkbox"

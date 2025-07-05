@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase";
-import { ReleaseNotesSummaryCard } from "@/components/releases/ReleaseNotesSummaryCard";
+import { ReleaseNotesSummaryCard } from "@/components/releasenotes/ReleaseNotesSummaryCard";
 
 export default function ReleaseNotesListPage() {
   const [releases, setReleases] = useState<any[]>([]);
@@ -27,7 +27,7 @@ export default function ReleaseNotesListPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto py-10 space-y-6">
+    <div className="space-y-6">
       <h1 className="text-3xl font-bold mb-6">Release Notes</h1>
       {releases.length === 0 ? (
         <div className="text-muted-foreground">No releases found.</div>

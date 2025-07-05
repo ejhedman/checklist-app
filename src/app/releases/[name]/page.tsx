@@ -152,14 +152,6 @@ export default function ReleaseDetailPage({ params }: { params: Promise<{ name: 
   if (error || !release) {
     return (
       <div className="container mx-auto p-6">
-        <div className="mb-4">
-          <Link href="/releases">
-            <Button variant="ghost" className="mb-4">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Releases
-            </Button>
-          </Link>
-        </div>
         <h1 className="text-2xl font-bold mb-4">Release Not Found</h1>
         <p className="text-muted-foreground">No release found with the name &quot;{decodedName}&quot;.</p>
         {error && <p className="text-muted-foreground">Error: {error}</p>}
@@ -169,14 +161,6 @@ export default function ReleaseDetailPage({ params }: { params: Promise<{ name: 
 
   return (
     <div className="container mx-auto p-6">
-      <div className="mb-4">
-        <Link href="/releases">
-          <Button variant="ghost" className="mb-4">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Releases
-          </Button>
-        </Link>
-      </div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">Release: {release.name}</h1>
       </div>

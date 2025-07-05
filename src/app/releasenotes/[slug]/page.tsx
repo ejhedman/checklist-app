@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase";
-import { ReleaseNotesDisplay } from "@/components/releases/ReleaseNotesDisplay";
+import { ReleaseNotesDisplay } from "@/components/releasenotes/ReleaseNotesDisplay";
 
 export default function DisplayReleaseNotesPage() {
   const { slug } = useParams();

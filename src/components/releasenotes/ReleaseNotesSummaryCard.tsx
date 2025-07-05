@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { AlertTriangle, CheckCircle, Clock, Calendar } from "lucide-react";
 
 interface ReleaseNotesSummaryCardProps {
   release: {
@@ -12,6 +13,21 @@ interface ReleaseNotesSummaryCardProps {
     release_summary?: string;
     state?: string;
   };
+}
+
+function getStateIcon(state?: string) {
+  switch (state) {
+    case "past_due":
+      return <AlertTriangle className="h-4 w-4" />;
+    case "ready":
+      return <CheckCircle className="h-4 w-4" />;
+    case "pending":
+      return <Clock className="h-4 w-4" />;
+    case "complete":
+      return <CheckCircle className="h-4 w-4" />;
+    default:
+      return <Calendar className="h-4 w-4" />;
+  }
 }
 
 export function ReleaseNotesSummaryCard({ release }: ReleaseNotesSummaryCardProps) {
@@ -50,28 +66,29 @@ export function ReleaseNotesSummaryCard({ release }: ReleaseNotesSummaryCardProp
 
   return (
     <Card className="overflow-hidden rounded-lg">
-      <CardHeader className={`px-2 py-3 border-b border-border rounded-none ${getHeaderBg(release.state)}`}>
+      <CardHeader className={`border-b border-border rounded-none px-4 py-3 ${getHeaderBg(release.state)}`}>
         <div className="flex items-center justify-between w-full">
           {/* Release Name (left) */}
-          <div className="flex-1 min-w-0">
-            <CardTitle className="truncate">{release.name}</CardTitle>
+          <div className="flex-1 min-w-0 flex items-center">
+            {getStateIcon(release.state)}
+            <CardTitle className="truncate ml-2">{release.name}</CardTitle>
           </div>
-          {/* View Full Release Notes Button (center) */}
+          {/* Date (center) */}
           <div className="flex-1 flex justify-center">
-            <Link href={`/releasenotes/${encodeURIComponent(release.name)}`}>
-              <Button size="sm" variant="outline">View Full Release Notes</Button>
-            </Link>
-          </div>
-          {/* Date (right) */}
-          <div className="flex-1 flex justify-end text-right">
             <CardDescription>
               <span className="font-medium mr-1">{getDateLabel(release.target_date)}:</span>
               {getDateDisplay(release.target_date)}
             </CardDescription>
           </div>
+          {/* View Full Release Notes Button (right) */}
+          <div className="flex-1 flex justify-end">
+            <Link href={`/releasenotes/${encodeURIComponent(release.name)}`}>
+              <Button size="sm" variant="outline">View Full Release Notes</Button>
+            </Link>
+          </div>
         </div>
       </CardHeader>
-      <CardContent className="px-2 py-4">
+      <CardContent className="px-4 py-2">
         <div className="prose prose-sm max-w-none mb-4">
           {release.release_summary ? (
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{release.release_summary}</ReactMarkdown>

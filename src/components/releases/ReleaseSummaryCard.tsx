@@ -56,8 +56,8 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
   getStateIcon,
 }) => {
   return (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardHeader className={`py-3 border-b border-border flex flex-row items-center justify-between ${getPaleBgForState(release.state, release.is_archived)}`}>
+    <Card className="hover:shadow-md transition-shadow rounded-lg">
+      <CardHeader className={`border-b border-border flex flex-row items-center justify-between px-4 py-3 rounded-t-lg ${getPaleBgForState(release.state, release.is_archived)}`}>
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center space-x-3">
             <CardTitle className="flex items-center m-0">
