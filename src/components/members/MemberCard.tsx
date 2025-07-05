@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
 
 export interface Member {
   id: string;
@@ -27,6 +28,10 @@ export interface Member {
 export function MemberCard({ member, onMemberUpdated }: { member: Member; onMemberUpdated: () => void }) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const { user } = useAuth();
+  
+  // Check if this member card represents the logged-in user
+  const isCurrentUser = user?.email === member.email;
 
   const handleDelete = async () => {
     setDeleting(true);
@@ -47,7 +52,7 @@ export function MemberCard({ member, onMemberUpdated }: { member: Member; onMemb
   };
 
   return (
-    <Card>
+    <Card className={isCurrentUser ? "bg-blue-50 border-blue-200" : ""}>
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center">

@@ -4,6 +4,7 @@ import { Users, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { EditTeamDialog } from "./EditTeamDialog";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 export interface Team {
   id: string;
@@ -28,9 +29,14 @@ interface TeamCardProps {
 }
 
 export function TeamCard({ team, expanded, onToggleExpand, onTeamUpdated }: TeamCardProps) {
+  const { user } = useAuth();
+  
+  // Check if the logged-in user belongs to this team
+  const isUserInTeam = user?.email && team.members.some(member => member.email === user.email);
+  
   // TODO: Add delete dialog logic if needed
   return (
-    <Card>
+    <Card className={isUserInTeam ? "bg-blue-50 border-blue-200" : ""}>
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center">
