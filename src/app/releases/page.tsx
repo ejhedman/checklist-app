@@ -1,14 +1,16 @@
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 "use client";
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, CheckCircle, AlertTriangle, Clock, ChevronDown, ChevronUp, Users } from "lucide-react";
+import { Calendar, CheckCircle, AlertTriangle, Clock, ChevronDown, ChevronUp, Users, ExternalLink } from "lucide-react";
 import { CreateReleaseDialog } from "@/components/releases/CreateReleaseDialog";
 import { AddFeatureDialog } from "@/components/releases/AddFeatureDialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { createClient } from "@/lib/supabase";
+import Link from "next/link";
 
 export default function ReleasesPage() {
   const [releases, setReleases] = useState<Array<{
@@ -103,7 +105,7 @@ export default function ReleasesPage() {
       console.error("Error fetching releases:", error);
     } else {
       // Transform the data to count teams and features
-      const transformedData = data?.map((release: any) => ({
+      const transformedData = data?.map((release) => ({
         id: release.id,
         name: release.name,
         target_date: release.target_date,
@@ -113,30 +115,37 @@ export default function ReleasesPage() {
         created_at: release.created_at,
         team_count: release.release_teams?.length || 0,
         feature_count: release.features?.length || 0,
-        ready_features: release.features?.filter((f: any) => f.is_ready)?.length || 0,
-        features: release.features?.map((feature: any) => ({
+        ready_features: release.features?.filter((f) => f.is_ready)?.length || 0,
+        features: release.features?.map((feature) => ({
           id: feature.id,
           name: feature.name,
           description: feature.description,
           jira_ticket: feature.jira_ticket,
           is_platform: feature.is_platform,
           is_ready: feature.is_ready,
-          dri_user: feature.dri_user ? {
-            id: feature.dri_user.id,
-            full_name: feature.dri_user.full_name,
-            email: feature.dri_user.email,
-          } : null,
+          dri_user: Array.isArray(feature.dri_user)
+            ? (feature.dri_user[0] as { id: string; full_name: string; email: string })
+            : feature.dri_user
+              ? {
+                  id: (feature.dri_user as any).id,
+                  full_name: (feature.dri_user as any).full_name,
+                  email: (feature.dri_user as any).email,
+                }
+              : null,
         })) || [],
-        teams: release.release_teams?.map((rt: any) => ({
-          id: rt.team.id,
-          name: rt.team.name,
-          description: rt.team.description,
-          members: rt.team.team_users?.map((tu: any) => {
-            const userReadyState = release.user_release_state?.find((urs: any) => urs.user_id === tu.user.id);
+        teams: release.release_teams?.map((rt) => ({
+          id: (rt.team as any).id,
+          name: (rt.team as any).name,
+          description: (rt.team as any).description,
+          members: (Array.isArray((rt.team as any).team_users)
+            ? (rt.team as any).team_users
+            : ((rt.team as any).team_users ? [(rt.team as any).team_users] : [])
+          )?.map((tu: any) => {
+            const userReadyState = release.user_release_state?.find((urs) => urs.user_id === (tu.user as any).id);
             return {
-              id: tu.user.id,
-              full_name: tu.user.full_name,
-              email: tu.user.email,
+              id: (tu.user as any).id,
+              full_name: (tu.user as any).full_name,
+              email: (tu.user as any).email,
               is_ready: userReadyState?.is_ready || false,
             };
           }) || [],
@@ -237,10 +246,24 @@ export default function ReleasesPage() {
                   <div className={`h-3 w-3 rounded-full ${getStateColor(release.state)}`} />
                   <CardTitle className="flex items-center">
                     {getStateIcon(release.state)}
-                    <span className="ml-2">{release.name}</span>
+                    <Link 
+                      href={`/releases/${encodeURIComponent(release.name)}`}
+                      className="ml-2 hover:underline cursor-pointer"
+                    >
+                      {release.name}
+                    </Link>
                   </CardTitle>
                 </div>
-                <Badge variant="outline">{release.state.replace('_', ' ')}</Badge>
+                <div className="flex items-center space-x-2">
+                  <Badge variant="outline">{release.state.replace('_', ' ')}</Badge>
+                  <Link 
+                    href={`/releases/${encodeURIComponent(release.name)}`}
+                    className="inline-flex items-center space-x-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <span>View Details</span>
+                    <ExternalLink className="h-3 w-3" />
+                  </Link>
+                </div>
               </div>
               <CardDescription>
                 Target Date: {new Date(release.target_date).toLocaleDateString()}

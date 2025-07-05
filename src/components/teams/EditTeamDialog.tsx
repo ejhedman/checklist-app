@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
+
 import { Edit, Loader2, X, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 
@@ -90,7 +90,7 @@ export function EditTeamDialog({ team, onTeamUpdated }: EditTeamDialogProps) {
       setAllUsers(users || []);
       
       // Transform team members data
-      const currentMembers = members?.map((member: any) => member.users) || [];
+      const currentMembers = (members?.map((member) => member.users) || []).flat();
       setTeamMembers(currentMembers);
     } catch (error) {
       console.error("Error fetching data:", error);

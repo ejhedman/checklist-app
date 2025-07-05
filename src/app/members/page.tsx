@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { User, Mail, Calendar, Loader2 } from "lucide-react";
+import { User, Mail, Loader2 } from "lucide-react";
 import { AddMemberDialog } from "@/components/members/AddMemberDialog";
 import { createClient } from "@/lib/supabase";
 
@@ -16,6 +16,16 @@ interface Member {
   teams: string[];
   active_releases: number;
 }
+
+type TeamUser = { teams: { name: string } };
+type UserWithTeams = {
+  id: string;
+  full_name: string;
+  email: string;
+  nickname: string | null;
+  created_at: string;
+  team_users?: TeamUser[];
+};
 
 export default function MembersPage() {
   const [members, setMembers] = useState<Member[]>([]);
@@ -48,13 +58,13 @@ export default function MembersPage() {
       }
 
       // Transform the data to include team names and active releases count
-      const transformedMembers: Member[] = users.map((user: any) => ({
+      const transformedMembers: Member[] = (users as unknown as UserWithTeams[]).map((user) => ({
         id: user.id,
         full_name: user.full_name,
         email: user.email,
         nickname: user.nickname,
         created_at: user.created_at,
-        teams: user.team_users?.map((tu: any) => tu.teams.name) || [],
+        teams: user.team_users?.map((tu) => tu.teams.name) || [],
         active_releases: 0, // TODO: Calculate this from user_release_state
       }));
 

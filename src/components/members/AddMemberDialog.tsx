@@ -49,7 +49,7 @@ export function AddMemberDialog({ onMemberAdded }: AddMemberDialogProps) {
       const supabase = createClient();
 
       // Insert new user
-      const { data: user, error: userError } = await supabase
+      const { error: userError } = await supabase
         .from("users")
         .insert({
           full_name: formData.fullName,

@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Home, Users, Calendar, User } from "lucide-react";
+import { Home, Users, Calendar, User, CalendarDays } from "lucide-react";
 import Link from "next/link";
 
 export function Sidebar() {
@@ -30,6 +30,12 @@ export function Sidebar() {
           <Button variant="ghost" className="w-full justify-start">
             <Calendar className="h-4 w-4 mr-2" />
             Releases
+          </Button>
+        </Link>
+        <Link href="/calendar">
+          <Button variant="ghost" className="w-full justify-start">
+            <CalendarDays className="h-4 w-4 mr-2" />
+            Calendar
           </Button>
         </Link>
       </nav>

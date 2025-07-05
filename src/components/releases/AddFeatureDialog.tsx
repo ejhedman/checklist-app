@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -77,7 +77,7 @@ export function AddFeatureDialog({ releaseId, releaseName, onFeatureAdded }: Add
       const supabase = createClient();
 
       // Insert new feature
-      const { data: feature, error: featureError } = await supabase
+      const { error: featureError } = await supabase
         .from("features")
         .insert({
           release_id: releaseId,

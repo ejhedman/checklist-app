@@ -57,14 +57,14 @@ export default function TeamsPage() {
       console.error("Error fetching teams:", error);
     } else {
       // Transform the data to count members and active releases
-      const transformedData = data?.map((team: any) => ({
+      const transformedData = data?.map((team) => ({
         id: team.id,
         name: team.name,
         description: team.description,
         member_count: team.team_users?.length || 0,
         active_releases: team.release_teams?.length || 0,
         created_at: team.created_at,
-        members: team.team_users?.map((tu: any) => tu.users).filter(Boolean) || [],
+        members: (team.team_users?.map((tu) => tu.users).filter(Boolean) || []).flat(),
       })) || [];
       
       setTeams(transformedData);

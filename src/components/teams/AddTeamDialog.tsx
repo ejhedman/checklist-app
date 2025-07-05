@@ -51,7 +51,7 @@ export function AddTeamDialog({ onTeamAdded }: AddTeamDialogProps) {
       const supabase = createClient();
 
       // Insert new team
-      const { data: team, error: teamError } = await supabase
+      const { error: teamError } = await supabase
         .from("teams")
         .insert({
           name: formData.name,
