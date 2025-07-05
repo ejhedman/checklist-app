@@ -1,0 +1,45 @@
+"use client";
+
+import { Button } from "@/components/ui/button";
+import { LogOut, User } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { LoginDialog } from "@/components/auth/LoginDialog";
+
+export function Header() {
+  const { user, signOut } = useAuth();
+
+  const handleLoginSuccess = () => {
+    // Refresh the page or update the UI as needed
+    window.location.reload();
+  };
+
+  return (
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-14 items-center justify-between">
+        <div className="flex items-center space-x-2">
+          <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
+            <span className="text-primary-foreground font-bold text-sm">RM</span>
+          </div>
+          <span className="font-semibold">Release Manager</span>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          {user ? (
+            <>
+              <Button variant="ghost" size="sm">
+                <User className="h-4 w-4 mr-2" />
+                {user.email}
+              </Button>
+              <Button variant="outline" size="sm" onClick={signOut}>
+                <LogOut className="h-4 w-4 mr-2" />
+                Sign Out
+              </Button>
+            </>
+          ) : (
+            <LoginDialog onLoginSuccess={handleLoginSuccess} />
+          )}
+        </div>
+      </div>
+    </header>
+  );
+} 
