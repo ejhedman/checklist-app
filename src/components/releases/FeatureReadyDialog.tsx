@@ -48,7 +48,7 @@ export function FeatureReadyDialog({
         <DialogHeader>
           <DialogTitle>Mark Feature as Ready</DialogTitle>
           <DialogDescription>
-            Add comments about the completion of "{featureName}"
+            Add comments about the completion of &quot;{featureName}&quot;
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>

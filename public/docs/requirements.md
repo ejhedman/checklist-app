@@ -63,7 +63,7 @@ The Release Management Checklist App helps engineering teams plan, track, and co
 |------|-------------|-------------------------|
 | **Administrator** | System-wide management and configuration | User management, system settings, audit logs |
 | **Release Manager** | Release lifecycle management | Create/edit/cancel releases, team assignments |
-| **Developer/Config Engineer** | Feature implementation and delivery | Mark features ready, update status, technical implementation |
+| **Developer/Specs Engineer** | Feature implementation and delivery | Mark features ready, update status, technical implementation |
 | **Team Member** | Individual readiness tracking | Mark personal readiness, view assigned work |
 
 ### User Personas

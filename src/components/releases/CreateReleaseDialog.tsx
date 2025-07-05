@@ -30,6 +30,7 @@ export function CreateReleaseDialog({ onReleaseCreated }: CreateReleaseDialogPro
     platformUpdate: false,
     configUpdate: false,
     selectedTeams: [] as string[],
+    summary: "",
   });
   const [error, setError] = useState("");
   const [teams, setTeams] = useState<Array<{ id: string; name: string }>>([]);
@@ -58,6 +59,7 @@ export function CreateReleaseDialog({ onReleaseCreated }: CreateReleaseDialogPro
         platformUpdate: false,
         configUpdate: false,
         selectedTeams: [],
+        summary: "",
       });
       setError("");
     }
@@ -68,6 +70,10 @@ export function CreateReleaseDialog({ onReleaseCreated }: CreateReleaseDialogPro
     setLoading(true);
 
     try {
+      // Fetch the release notes template
+      const templateRes = await fetch('/docs/release-notes-template.md');
+      const templateText = await templateRes.text();
+
       const supabase = createClient();
 
       // Insert new release
@@ -79,6 +85,8 @@ export function CreateReleaseDialog({ onReleaseCreated }: CreateReleaseDialogPro
           state: "pending",
           platform_update: formData.platformUpdate,
           config_update: formData.configUpdate,
+          release_notes: templateText,
+          release_summary: formData.summary,
         })
         .select()
         .single();
@@ -176,12 +184,11 @@ export function CreateReleaseDialog({ onReleaseCreated }: CreateReleaseDialogPro
                 />
               </div>
 
-
             </div>
 
-            {/* Update Types */}
+            {/* Release Scope */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Update Types</h3>
+              <h3 className="text-lg font-semibold">Release Scope</h3>
               
               <div className="flex items-center space-x-2">
                 <Checkbox
@@ -204,7 +211,7 @@ export function CreateReleaseDialog({ onReleaseCreated }: CreateReleaseDialogPro
                   }
                   disabled={loading}
                 />
-                <Label htmlFor="configUpdate">Configuration Update Required</Label>
+                <Label htmlFor="configUpdate">Specs Update Required</Label>
               </div>
             </div>
 

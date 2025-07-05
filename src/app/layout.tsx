@@ -21,19 +21,19 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className={inter.className + " h-screen overflow-hidden"}>
         <AuthProvider>
           <ProtectedRoute>
-            <div className="min-h-screen bg-background">
-              <Header />
-              <div className="flex">
-                <Sidebar />
-                <main className="flex-1 p-6">
-                  {children}
-                </main>
-              </div>
-              <Footer />
+            <Header />
+            <div className="flex h-[calc(100vh-80px)] pb-20">
+              <Sidebar />
+              <main
+                className="ml-64 flex-1 overflow-y-auto bg-background p-6 pt-4"
+              >
+                {children}
+              </main>
             </div>
+            <Footer />
           </ProtectedRoute>
         </AuthProvider>
       </body>

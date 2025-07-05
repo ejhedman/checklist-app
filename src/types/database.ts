@@ -80,6 +80,9 @@ export interface Database {
           state: 'pending' | 'ready' | 'past_due' | 'complete' | 'cancelled'
           created_at: string
           updated_at: string
+          release_notes: string | null
+          release_summary: string | null
+          is_archived: boolean
         }
         Insert: {
           id?: string
@@ -90,6 +93,9 @@ export interface Database {
           state?: 'pending' | 'ready' | 'past_due' | 'complete' | 'cancelled'
           created_at?: string
           updated_at?: string
+          release_notes?: string | null
+          release_summary?: string | null
+          is_archived?: boolean
         }
         Update: {
           id?: string
@@ -100,6 +106,9 @@ export interface Database {
           state?: 'pending' | 'ready' | 'past_due' | 'complete' | 'cancelled'
           created_at?: string
           updated_at?: string
+          release_notes?: string | null
+          release_summary?: string | null
+          is_archived?: boolean
         }
       }
       release_teams: {

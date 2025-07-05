@@ -1873,7 +1873,7 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, expand
             </Badge>
           </div>
           <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">Config Update</p>
+            <p className="text-sm text-muted-foreground">Specs Update</p>
             <Badge variant={release.config_update ? "default" : "secondary"}>
               {release.config_update ? "Yes" : "No"}
             </Badge>

@@ -26,7 +26,7 @@ The application helps engineering teams plan, track, and complete software relea
 | Role                            | Description                                                      |
 | ------------------------------- | ---------------------------------------------------------------- |
 | **Release Manager**             | Owns overall release readiness; may create/edit/cancel releases. |
-| **Developer / Config Engineer** | DRI for features; checks items as ready.                         |
+| **Developer / Specs Engineer** | DRI for features; checks items as ready.                         |
 | **Team Member**                 | Marks personal readiness.                                        |
 | **Administrator**               | Manages users, teams, and system settings.                       |
 

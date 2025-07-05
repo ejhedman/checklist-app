@@ -5,11 +5,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Users, CheckCircle, AlertTriangle, Clock, Calendar } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { FeatureReadyDialog } from "@/components/releases/FeatureReadyDialog";
 import { createClient } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import FeatureCard from "../../components/releases/FeatureCard";
-import { AddFeatureDialog } from "@/components/releases/AddFeatureDialog";
 
 export function getStateColor(state: string) {
   switch (state) {
@@ -41,14 +39,11 @@ export function getStateIcon(state: string) {
   }
 }
 
-export default function ReleaseDetailCard({ release, onMemberReadyChange, onFeatureAdded } : {
+export default function ReleaseDetailCard({ release, onMemberReadyChange } : {
   release: any,
   onMemberReadyChange?: (releaseId: string, userId: string, isReady: boolean) => void,
-  onFeatureAdded?: () => void
 }) {
   const { user } = useAuth();
-  const [readyDialogOpen, setReadyDialogOpen] = useState(false);
-  const [selectedFeature, setSelectedFeature] = useState<any>(null);
   const [updatingFeature, setUpdatingFeature] = useState(false);
 
   const handleFeatureReadyChange = async (feature: any, isReady: boolean) => {
@@ -60,8 +55,7 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onFeat
 
     if (isReady) {
       // Open dialog to collect comments
-      setSelectedFeature(feature);
-      setReadyDialogOpen(true);
+      // setSelectedFeature(feature);
     } else {
       // Directly update to false without comments
       await updateFeatureReady(feature.id, false, "");
@@ -87,19 +81,6 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onFeat
       window.location.reload();
     }
     setUpdatingFeature(false);
-  };
-
-  const handleReadyDialogConfirm = async (comments: string) => {
-    if (selectedFeature) {
-      await updateFeatureReady(selectedFeature.id, true, comments);
-      setReadyDialogOpen(false);
-      setSelectedFeature(null);
-    }
-  };
-
-  const handleReadyDialogCancel = () => {
-    setReadyDialogOpen(false);
-    setSelectedFeature(null);
   };
 
   return (
@@ -151,7 +132,7 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onFeat
             </Badge>
           </div>
           <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">Config Update</p>
+            <p className="text-sm text-muted-foreground">Specs Update</p>
             <Badge variant={release.config_update ? "default" : "secondary"}>
               {release.config_update ? "Yes" : "No"}
             </Badge>
@@ -229,14 +210,6 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onFeat
           </div>
         </div>
       </CardContent>
-      
-      <FeatureReadyDialog
-        open={readyDialogOpen}
-        onOpenChange={handleReadyDialogCancel}
-        featureName={selectedFeature?.name || ""}
-        onConfirm={handleReadyDialogConfirm}
-        loading={updatingFeature}
-      />
     </Card>
   );
 } 

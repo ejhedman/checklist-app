@@ -35,7 +35,7 @@ The application helps engineering teams plan, track, and complete software relea
 | Role                            | Description                                                      |
 | ------------------------------- | ---------------------------------------------------------------- |
 | **Release Manager**             | Owns overall release readiness; may create/edit/cancel releases. |
-| **Developer / Config Engineer** | DRI for features; checks items as ready.                         |
+| **Developer / Specs Engineer** | DRI for features; checks items as ready.                         |
 | **Team Member**                 | Marks personal readiness.                                        |
 | **Administrator**               | Manages users, teams, and system settings.                       |
 
@@ -1223,7 +1223,7 @@ export default function ReleasesPage() {
                   </Badge>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Config Update</p>
+                  <p className="text-sm text-muted-foreground">Specs Update</p>
                   <Badge variant={release.configUpdate ? "default" : "secondary"}>
                     {release.configUpdate ? "Yes" : "No"}
                   </Badge>

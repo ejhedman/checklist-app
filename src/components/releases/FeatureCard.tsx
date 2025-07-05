@@ -20,7 +20,7 @@ export default function FeatureCard({ feature, user, updatingFeature, handleFeat
             <Badge variant="outline" className="text-xs">Platform</Badge>
           )}
           {feature.is_config && (
-            <Badge variant="outline" className="text-xs">Config</Badge>
+            <Badge variant="outline" className="text-xs">Specs</Badge>
           )}
         </div>
         {/* Center: DRI info */}

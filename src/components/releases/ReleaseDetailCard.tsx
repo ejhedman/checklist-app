@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Users, CheckCircle, AlertTriangle, Clock, Calendar } from "lucide-react";
@@ -52,15 +52,33 @@ function getDaysUntil(dateString: string) {
   return diffDays;
 }
 
-export default function ReleaseDetailCard({ release, onMemberReadyChange, onFeatureAdded } : {
+export default function ReleaseDetailCard({ release, onMemberReadyChange } : {
   release: any,
   onMemberReadyChange?: (releaseId: string, userId: string, isReady: boolean) => void,
-  onFeatureAdded?: () => void
 }) {
   const { user } = useAuth();
   const [readyDialogOpen, setReadyDialogOpen] = useState(false);
   const [selectedFeature, setSelectedFeature] = useState<any>(null);
   const [updatingFeature, setUpdatingFeature] = useState(false);
+  const [isArchived, setIsArchived] = useState(release.is_archived);
+  const [archiving, setArchiving] = useState(false);
+
+  useEffect(() => {
+    setIsArchived(release.is_archived);
+  }, [release.is_archived]);
+
+  const handleArchiveChange = async (checked: boolean) => {
+    setArchiving(true);
+    setIsArchived(checked);
+    const supabase = createClient();
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { error } = await supabase
+      .from("releases")
+      .update({ is_archived: checked })
+      .eq("id", release.id);
+    setArchiving(false);
+    // Optionally, handle error or refresh data
+  };
 
   const handleFeatureReadyChange = async (feature: any, isReady: boolean) => {
     // Check if current user is the DRI for this feature
@@ -83,20 +101,15 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onFeat
     setUpdatingFeature(true);
     const supabase = createClient();
     
-    const { error } = await supabase
+    await supabase
       .from("features")
       .update({
         is_ready: isReady,
         comments: comments || null,
       })
       .eq("id", featureId);
-
-    if (error) {
-      console.error("Error updating feature:", error);
-    } else {
-      // Trigger a page refresh to update the data
-      window.location.reload();
-    }
+    // Trigger a page refresh to update the data
+    window.location.reload();
     setUpdatingFeature(false);
   };
 
@@ -124,10 +137,39 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onFeat
               <span className="ml-2">{release.name}</span>
             </CardTitle>
           </div>
-          <Badge variant="outline">{release.state.replace('_', ' ')}</Badge>
+          <div className="flex items-center space-x-2">
+            <Badge variant="outline">{release.state.replace('_', ' ')}</Badge>
+            <a
+              href={`/releases/${encodeURIComponent(release.name)}/releasenotes`}
+              className="ml-4 text-primary hover:underline font-medium"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Release Notes
+            </a>
+          </div>
         </div>
         <CardDescription>
-          Target Date: {new Date(release.target_date).toLocaleDateString()} ({getDaysUntil(release.target_date)} days)
+          {(() => {
+            const days = getDaysUntil(release.target_date);
+            const isPast = days < 0;
+            return (
+              <span className="flex items-center gap-2">
+                Target Date: {new Date(release.target_date).toLocaleDateString()} ({days} days)
+                {isPast && (
+                  <span className="flex items-center ml-4">
+                    <Checkbox
+                      checked={isArchived}
+                      onCheckedChange={checked => handleArchiveChange(!!checked)}
+                      disabled={archiving}
+                      id="archive-checkbox"
+                    />
+                    <label htmlFor="archive-checkbox" className="ml-2 text-sm select-none cursor-pointer">Archive</label>
+                  </span>
+                )}
+              </span>
+            );
+          })()}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -149,7 +191,7 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onFeat
             </Badge>
           </div>
           <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">Config Update</p>
+            <p className="text-sm text-muted-foreground">Specs Update</p>
             <Badge variant={release.config_update ? "default" : "secondary"}>
               {release.config_update ? "Yes" : "No"}
             </Badge>

@@ -4420,9 +4420,9 @@ export function CreateReleaseDialog({ onReleaseCreated }: CreateReleaseDialogPro
               </div>
             </div>
 
-            {/* Update Types */}
+            {/* Release Scope */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Update Types</h3>
+              <h3 className="text-lg font-semibold">Release Scope</h3>
               
               <div className="flex items-center space-x-2">
                 <Checkbox
@@ -4445,7 +4445,7 @@ export function CreateReleaseDialog({ onReleaseCreated }: CreateReleaseDialogPro
                   }
                   disabled={loading}
                 />
-                <Label htmlFor="configUpdate">Configuration Update Required</Label>
+                <Label htmlFor="configUpdate">Specs Update Required</Label>
               </div>
             </div>
 
@@ -4685,7 +4685,7 @@ export default function ReleasesPage() {
                   </Badge>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Config Update</p>
+                  <p className="text-sm text-muted-foreground">Specs Update</p>
                   <Badge variant={release.configUpdate ? "default" : "secondary"}>
                     {release.configUpdate ? "Yes" : "No"}
                   </Badge>
@@ -4717,7 +4717,7 @@ export default function ReleasesPage() {
                   </Badge>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Config Update</p>
+                  <p className="text-sm text-muted-foreground">Specs Update</p>
                   <Badge variant={release.config_update ? "default" : "secondary"}>
                     {release.config_update ? "Yes" : "No"}
                   </Badge>
@@ -4774,9 +4774,9 @@ Perfect! I've successfully created the Create Release functionality. Here's what
   - ✅ Target date (required, date picker)
   - ✅ Initial state (dropdown: pending, ready, past_due, complete, cancelled)
 
-- **Update Types**:
+- **Release Scope**:
   - ✅ Platform update checkbox
-  - ✅ Configuration update checkbox
+  - ✅ Specs update checkbox
 
 - **Team Assignments**:
   - ✅ Multi-select checkboxes for available teams
@@ -4967,7 +4967,7 @@ Perfect! I've successfully updated the CreateReleaseDialog to remove the state s
 1. **Release Name** (required)
 2. **Target Date** (required)
 3. **Platform Update** (checkbox)
-4. **Configuration Update** (checkbox)
+4. **Specs Update** (checkbox)
 5. **Team Assignments** (multi-select)
 
 The form is now more focused and user-friendly, with new releases automatically starting in the "pending" state, which makes logical sense for the release lifecycle!
@@ -5496,7 +5496,7 @@ Now let me add the expandable features section and the AddFeatureDialog to each 
                   </Badge>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Config Update</p>
+                  <p className="text-sm text-muted-foreground">Specs Update</p>
                   <Badge variant={release.config_update ? "default" : "secondary"}>
                     {release.config_update ? "Yes" : "No"}
                   </Badge>
@@ -5525,7 +5525,7 @@ Now let me add the expandable features section and the AddFeatureDialog to each 
                   </Badge>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Config Update</p>
+                  <p className="text-sm text-muted-foreground">Specs Update</p>
                   <Badge variant={release.config_update ? "default" : "secondary"}>
                     {release.config_update ? "Yes" : "No"}
                   </Badge>

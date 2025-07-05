@@ -800,7 +800,7 @@ COMMENT ON COLUMN features.is_config IS 'Indicates if this feature is a configur
 COMMENT ON COLUMN features.comments IS 'User comments/notes about the feature status';
 ```
 
-Now let me update the AddFeatureDialog component to change the "Feature is Ready" checkbox to "Config" and remove the is_ready field from the form:
+Now let me update the AddFeatureDialog component to change the "Feature is Ready" checkbox to "Specs" and remove the is_ready field from the form:
 
 
 ```typescriptreact
@@ -887,7 +887,7 @@ I need to fix all the references to `isReady` in the component. Let me update th
                   }
                   disabled={loading}
                 />
-                <Label htmlFor="isConfig">Config Feature</Label>
+                <Label htmlFor="isConfig">Specs Feature</Label>
               </div>
 ```
 
@@ -1140,7 +1140,7 @@ Now I need to update the feature display to show the new `is_config` badge and a
                         <Badge variant="outline" className="text-xs">Platform</Badge>
                       )}
                       {feature.is_config && (
-                        <Badge variant="outline" className="text-xs">Config</Badge>
+                        <Badge variant="outline" className="text-xs">Specs</Badge>
                       )}
                       {feature.is_ready && (
                         <Badge variant="default" className="text-xs">Ready</Badge>
@@ -1223,7 +1223,7 @@ Now I need to update the main releases page to also show the new `is_config` fie
                         <Badge variant="outline" className="text-xs">Platform</Badge>
                       )}
                       {feature.is_config && (
-                        <Badge variant="outline" className="text-xs">Config</Badge>
+                        <Badge variant="outline" className="text-xs">Specs</Badge>
                       )}
                       {feature.is_ready && (
                         <Badge variant="default" className="text-xs">Ready</Badge>
@@ -1422,7 +1422,7 @@ I've successfully implemented all the requested changes to the feature system. H
 ### ✅ **Add Feature Dialog Updates**
 
 **File: `checklist-app/src/components/releases/AddFeatureDialog.tsx`**
-- Changed "Feature is Ready" checkbox to "Config Feature" 
+- Changed "Feature is Ready" checkbox to "Specs Feature" 
 - Removed `is_ready` from form (now always defaults to `false` when creating)
 - Added `is_config` field to form data
 - Updated database insert to include `is_config` and set `is_ready: false`
@@ -1438,7 +1438,7 @@ I've successfully implemented all the requested changes to the feature system. H
 ### ✅ **Release Detail Card Updates**
 
 **File: `checklist-app/src/app/releases/ReleaseDetailCard.tsx`**
-- Added "Config" badge display (peer to "Platform" badge)
+- Added "Specs" badge display (peer to "Platform" badge)
 - Added comments display in feature cards
 - Added interactive checkbox for `is_ready` state
 - Integrated FeatureReadyDialog for comment collection
@@ -1449,7 +1449,7 @@ I've successfully implemented all the requested changes to the feature system. H
 **File: `checklist-app/src/app/releases/page.tsx`**
 - Updated Supabase query to include `is_config` and `comments` fields
 - Updated TypeScript interfaces to include new fields
-- Added "Config" badge display in feature list
+- Added "Specs" badge display in feature list
 - Updated data transformation to handle new fields
 
 ### ✅ **Release Detail Page Updates**
@@ -1460,7 +1460,7 @@ I've successfully implemented all the requested changes to the feature system. H
 
 ### ✅ **Key Features Implemented:**
 
-1. **Config vs Platform**: Features can now be marked as either "Platform" or "Config" (or both)
+1. **Specs vs Platform**: Features can now be marked as either "Platform" or "Specs" (or both)
 2. **Comments System**: When marking a feature as ready, users must provide comments
 3. **Interactive Ready State**: Checkboxes allow users to toggle feature ready status
 4. **Persistent Comments**: Comments are stored and displayed with each feature
@@ -1468,10 +1468,10 @@ I've successfully implemented all the requested changes to the feature system. H
 
 ### ✅ **User Experience:**
 
-1. **Add Feature**: Users can mark features as "Platform" or "Config" during creation
+1. **Add Feature**: Users can mark features as "Platform" or "Specs" during creation
 2. **Mark Ready**: Clicking the ready checkbox opens a dialog to collect comments
 3. **View Comments**: Comments are displayed below feature descriptions
-4. **Visual Indicators**: "Config" and "Platform" badges clearly identify feature types
+4. **Visual Indicators**: "Specs" and "Platform" badges clearly identify feature types
 
 ### ✅ **Database Changes:**
 
@@ -1862,7 +1862,7 @@ I’ll update the layout in `ReleaseDetailCard.tsx` to achieve this.
                         <Badge variant="outline" className="text-xs">Platform</Badge>
                       )}
                       {feature.is_config && (
-                        <Badge variant="outline" className="text-xs">Config</Badge>
+                        <Badge variant="outline" className="text-xs">Specs</Badge>
                       )}
                     </div>
                     {feature.description && (
@@ -1935,7 +1935,7 @@ Absolutely! You can place the DRI user information (name/email) on the same row 
 
 Here’s the plan:
 - The top row will be a flex container with three main sections:
-  1. **Left:** Feature name and badges (Platform/Config)
+  1. **Left:** Feature name and badges (Platform/Specs)
   2. **Center:** DRI user info (name/email, and “You are the DRI” if applicable)
   3. **Right:** Ready badge and (if DRI) the checkbox
 
@@ -1960,7 +1960,7 @@ I’ll update the layout in `ReleaseDetailCard.tsx` accordingly.
                         <Badge variant="outline" className="text-xs">Platform</Badge>
                       )}
                       {feature.is_config && (
-                        <Badge variant="outline" className="text-xs">Config</Badge>
+                        <Badge variant="outline" className="text-xs">Specs</Badge>
                       )}
                     </div>
                     {/* Center: DRI info */}
@@ -2260,7 +2260,7 @@ export default function FeatureCard({ feature, user, updatingFeature, handleFeat
             <Badge variant="outline" className="text-xs">Platform</Badge>
           )}
           {feature.is_config && (
-            <Badge variant="outline" className="text-xs">Config</Badge>
+            <Badge variant="outline" className="text-xs">Specs</Badge>
           )}
         </div>
         {/* Center: DRI info */}
@@ -3752,7 +3752,7 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
             </Badge>
           </div>
           <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">Config Update</p>
+            <p className="text-sm text-muted-foreground">Specs Update</p>
             <Badge variant={release.config_update ? "default" : "secondary"}>
               {release.config_update ? "Yes" : "No"}
             </Badge>
@@ -3823,7 +3823,7 @@ import { ReleaseSummaryCard } from "@/components/releases/ReleaseSummaryCard";
 -                  </Badge>
 -                </div>
 -                <div className="space-y-1">
--                  <p className="text-sm text-muted-foreground">Config Update</p>
+-                  <p className="text-sm text-muted-foreground">Specs Update</p>
 -                  <Badge variant={release.config_update ? "default" : "secondary"}>
 -                    {release.config_update ? "Yes" : "No"}
 -                  </Badge>
@@ -4077,14 +4077,14 @@ Perfect! I've updated the badge styling in the ReleaseSummaryCard to be consiste
 
 1. **State badge**: Changed from `variant="outline"` to `variant="secondary"` to give it a more prominent background color that's consistent with other secondary badges in the app.
 
-2. **Platform Update and Config Update badges**: These already use the correct pattern:
+2. **Platform Update and Specs Update badges**: These already use the correct pattern:
    - `variant="default"` (green background) for "Yes"
    - `variant="secondary"` (gray background) for "No"
 
 The badge colors are now consistent across the application:
 - **Green background** (`variant="default"`): Used for "Ready", "Yes" states
 - **Gray background** (`variant="secondary"`): Used for "Not Ready", "No" states, and release states
-- **Outline style** (`variant="outline"`): Used for informational badges like "Platform" and "Config"
+- **Outline style** (`variant="outline"`): Used for informational badges like "Platform" and "Specs"
 
 This creates a cohesive visual language throughout the release management interface.
 

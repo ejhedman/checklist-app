@@ -1,62 +1,16 @@
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 "use client";
 
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Calendar, CheckCircle, AlertTriangle, Clock, ChevronDown, ChevronUp, Users, ExternalLink } from "lucide-react";
 import { CreateReleaseDialog } from "@/components/releases/CreateReleaseDialog";
-import { Checkbox } from "@/components/ui/checkbox";
-import { createClient } from "@/lib/supabase";
-import Link from "next/link";
 import { ReleaseSummaryCard } from "@/components/releases/ReleaseSummaryCard";
+import { AlertTriangle, CheckCircle, Clock, Calendar } from "lucide-react";
+import { createClient } from "@/lib/supabase";
 
 export default function ReleasesPage() {
-  const [releases, setReleases] = useState<Array<{
-    id: string;
-    name: string;
-    target_date: string;
-    state: string;
-    platform_update: boolean;
-    config_update: boolean;
-    team_count: number;
-    feature_count: number;
-    ready_features: number;
-    created_at: string;
-    features: Array<{
-      id: string;
-      name: string;
-      description?: string;
-      jira_ticket?: string;
-      is_platform: boolean;
-      is_config: boolean;
-      is_ready: boolean;
-      comments?: string;
-      dri_user: {
-        id: string;
-        full_name: string;
-        email: string;
-      } | null;
-    }>;
-    teams: Array<{
-      id: string;
-      name: string;
-      description?: string;
-      members: Array<{
-        id: string;
-        full_name: string;
-        email: string;
-        is_ready: boolean;
-      }>;
-    }>;
-    total_members: number;
-    ready_members: number;
-  }>>([]);
+  const [releases, setReleases] = useState<Array<any>>([]);
   const [loading, setLoading] = useState(true);
-  const [expandedReleases, setExpandedReleases] = useState<Set<string>>(new Set());
 
-  const fetchReleases = async () => {
+  const fetchReleases = async (): Promise<void> => {
     setLoading(true);
     const supabase = createClient();
     
@@ -111,11 +65,11 @@ export default function ReleasesPage() {
       console.error("Error fetching releases:", error);
     } else {
       // Transform the data to count teams and features
-      const transformedData = data?.map((release) => {
+      const transformedData = data?.map((release: any) => {
         // Aggregate all members from all teams
         const allMembers: any[] = [];
         if (release.release_teams) {
-          release.release_teams.forEach((rt) => {
+          release.release_teams.forEach((rt: any) => {
             if (rt.team && (rt.team as any).team_users) {
               const members = Array.isArray((rt.team as any).team_users)
                 ? (rt.team as any).team_users
@@ -129,7 +83,7 @@ export default function ReleasesPage() {
         const total_members = allMembers.length;
         const ready_members = allMembers.filter((member) => {
           const userId = member.id;
-          const userReadyState = release.user_release_state?.find((urs) => urs.user_id === userId);
+          const userReadyState = release.user_release_state?.find((urs: any) => urs.user_id === userId);
           return userReadyState?.is_ready;
         }).length;
         return {
@@ -142,8 +96,8 @@ export default function ReleasesPage() {
           created_at: release.created_at,
           team_count: release.release_teams?.length || 0,
           feature_count: release.features?.length || 0,
-          ready_features: release.features?.filter((f) => f.is_ready)?.length || 0,
-          features: release.features?.map((feature) => ({
+          ready_features: release.features?.filter((f: any) => f.is_ready)?.length || 0,
+          features: release.features?.map((feature: any) => ({
             id: feature.id,
             name: feature.name,
             description: feature.description,
@@ -162,7 +116,7 @@ export default function ReleasesPage() {
                   }
                 : null,
           })) || [],
-          teams: release.release_teams?.map((rt) => ({
+          teams: release.release_teams?.map((rt: any) => ({
             id: (rt.team as any).id,
             name: (rt.team as any).name,
             description: (rt.team as any).description,
@@ -170,7 +124,7 @@ export default function ReleasesPage() {
               ? (rt.team as any).team_users
               : ((rt.team as any).team_users ? [(rt.team as any).team_users] : [])
             )?.map((tu: any) => {
-              const userReadyState = release.user_release_state?.find((urs) => urs.user_id === (tu.user as any).id);
+              const userReadyState = release.user_release_state?.find((urs: any) => urs.user_id === (tu.user as any).id);
               return {
                 id: (tu.user as any).id,
                 full_name: (tu.user as any).full_name,
@@ -193,21 +147,6 @@ export default function ReleasesPage() {
     fetchReleases();
   }, []);
 
-  const getStateColor = (state: string) => {
-    switch (state) {
-      case "past_due":
-        return "bg-red-500";
-      case "ready":
-        return "bg-green-500";
-      case "pending":
-        return "bg-yellow-300";
-      case "complete":
-        return "bg-blue-500";
-      default:
-        return "bg-gray-200";
-    }
-  };
-
   const getStateIcon = (state: string) => {
     switch (state) {
       case "past_due":
@@ -220,35 +159,6 @@ export default function ReleasesPage() {
         return <CheckCircle className="h-4 w-4" />;
       default:
         return <Calendar className="h-4 w-4" />;
-    }
-  };
-
-  const handleMemberReadyChange = async (releaseId: string, userId: string, isReady: boolean) => {
-    const supabase = createClient();
-    
-    console.log("Updating ready state:", { releaseId, userId, isReady });
-    
-    const { data, error } = await supabase
-      .from("user_release_state")
-      .upsert({
-        release_id: releaseId,
-        user_id: userId,
-        is_ready: isReady,
-      })
-      .select();
-
-    if (error) {
-      console.error("Error updating member ready state:", error);
-      console.error("Error details:", {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code
-      });
-    } else {
-      console.log("Successfully updated ready state:", data);
-      // Refresh the releases data
-      fetchReleases();
     }
   };
 
@@ -274,7 +184,6 @@ export default function ReleasesPage() {
             <ReleaseSummaryCard
               key={release.id}
               release={release}
-              getStateColor={getStateColor}
               getStateIcon={getStateIcon}
             />
           ))}

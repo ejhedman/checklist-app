@@ -19,11 +19,21 @@ export interface ReleaseSummaryCardProps {
     total_members: number;
     ready_members: number;
   };
-  getStateColor: (state: string) => string;
   getStateIcon: (state: string) => React.ReactNode;
 }
 
-// Map release state to a pale background color
+// Helper to calculate days until target date
+function getDaysUntil(dateString: string) {
+  const today = new Date();
+  const target = new Date(dateString);
+  today.setHours(0,0,0,0);
+  target.setHours(0,0,0,0);
+  const diffTime = target.getTime() - today.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays;
+}
+
+// Map release state to a pale background color for the header
 function getPaleBgForState(state: string) {
   switch (state) {
     case "ready":
@@ -39,29 +49,16 @@ function getPaleBgForState(state: string) {
   }
 }
 
-// Helper to calculate days until target date
-function getDaysUntil(dateString: string) {
-  const today = new Date();
-  const target = new Date(dateString);
-  today.setHours(0,0,0,0);
-  target.setHours(0,0,0,0);
-  const diffTime = target.getTime() - today.getTime();
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  return diffDays;
-}
-
 export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
   release,
-  getStateColor,
   getStateIcon,
 }) => {
   return (
-    <Card className={`hover:shadow-md transition-shadow ${getPaleBgForState(release.state)}`}>
-      <CardHeader>
-        <div className="flex items-center justify-between">
+    <Card className="hover:shadow-md transition-shadow">
+      <CardHeader className={`py-3 border-b border-border flex flex-row items-center justify-between ${getPaleBgForState(release.state)}`}>
+        <div className="flex items-center justify-between w-full">
           <div className="flex items-center space-x-3">
-            <div className={`h-3 w-3 rounded-full ${getStateColor(release.state)}`} />
-            <CardTitle className="flex items-center">
+            <CardTitle className="flex items-center m-0">
               {getStateIcon(release.state)}
               <Link
                 href={`/releases/${encodeURIComponent(release.name)}`}
@@ -72,12 +69,20 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
               </Link>
             </CardTitle>
           </div>
-          <div className="absolute left-1/2 transform -translate-x-1/2">
-            <CardDescription>
-              Target Date: {new Date(release.target_date).toLocaleDateString()} ({getDaysUntil(release.target_date)} days)
+          <div className="flex-1 flex justify-center">
+            <CardDescription className="m-0">
+              {(() => {
+                const days = getDaysUntil(release.target_date);
+                const isPast = days < 0;
+                const label = isPast ? "Release Date" : "Target Date";
+                const dateStr = new Date(release.target_date).toLocaleDateString();
+                return isPast
+                  ? `${label}: ${dateStr}`
+                  : `${label}: ${dateStr} (${days} days)`;
+              })()}
             </CardDescription>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 justify-end">
             {release.state === "ready" ? (
               <Badge className="bg-green-600 text-white" variant="default">
                 {release.state.replace("_", " ")}
@@ -117,11 +122,16 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
             </Badge>
           </div>
           <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">Config Update</p>
+            <p className="text-sm text-muted-foreground">Specs Update</p>
             <Badge variant={release.config_update ? "default" : "secondary"}>
               {release.config_update ? "Yes" : "No"}
             </Badge>
           </div>
+        </div>
+        <div className="mt-4 text-right">
+          <Link href={`/releases/${encodeURIComponent(release.name)}/releasenotes`} className="text-primary hover:underline font-medium">
+            Release Notes
+          </Link>
         </div>
       </CardContent>
     </Card>

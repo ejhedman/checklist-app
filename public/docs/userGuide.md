@@ -64,7 +64,7 @@ The app supports four distinct user roles, each with specific permissions:
 - Can manage team memberships
 - Can mark releases as complete
 
-#### Developer/Config Engineer
+#### Developer/Specs Engineer
 - **Feature implementation**
 - Can mark assigned features as ready
 - Can update feature descriptions and JIRA tickets
@@ -173,7 +173,7 @@ Each team card displays:
    - **Name**: Descriptive release name (e.g., "v2.1.0 - Feature Release")
    - **Target Date**: When the release should be deployed
    - **Platform Update**: Check if this release includes platform updates
-   - **Config Update**: Check if this release includes configuration changes
+   - **Specs Update**: Check if this release includes configuration changes
    - **Assigned Teams**: Select teams responsible for this release
 
 3. **Save Release**

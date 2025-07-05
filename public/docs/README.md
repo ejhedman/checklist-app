@@ -74,7 +74,7 @@ Complete database design documentation:
 |------|-------------|-------------|
 | **Administrator** | System-wide management | Full access to all features |
 | **Release Manager** | Release lifecycle management | Create/edit/cancel releases, manage teams |
-| **Developer/Config Engineer** | Feature implementation | Mark features as ready, update status |
+| **Developer/Specs Engineer** | Feature implementation | Mark features as ready, update status |
 | **Team Member** | Individual readiness tracking | Mark personal readiness for releases |
 
 ## Release States
