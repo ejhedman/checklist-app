@@ -71,11 +71,16 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange } : {
     setArchiving(true);
     setIsArchived(checked);
     const supabase = createClient();
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { error } = await supabase
       .from("releases")
       .update({ is_archived: checked })
       .eq("id", release.id);
+    if (error) {
+      console.error('Failed to update is_archived:', error);
+      // Optionally, show a toast or error message to the user
+    } else {
+      console.log('is_archived updated successfully');
+    }
     setArchiving(false);
     // Optionally, handle error or refresh data
   };
@@ -159,7 +164,7 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange } : {
                 {isPast && (
                   <span className="flex items-center ml-4">
                     <Checkbox
-                      checked={isArchived}
+                      checked={!!isArchived}
                       onCheckedChange={checked => handleArchiveChange(!!checked)}
                       disabled={archiving}
                       id="archive-checkbox"

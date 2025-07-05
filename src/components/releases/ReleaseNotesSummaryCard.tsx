@@ -58,7 +58,7 @@ export function ReleaseNotesSummaryCard({ release }: ReleaseNotesSummaryCardProp
           </div>
           {/* View Full Release Notes Button (center) */}
           <div className="flex-1 flex justify-center">
-            <Link href={`/releases/${encodeURIComponent(release.name)}/releasenotes`}>
+            <Link href={`/releasenotes/${encodeURIComponent(release.name)}`}>
               <Button size="sm" variant="outline">View Full Release Notes</Button>
             </Link>
           </div>

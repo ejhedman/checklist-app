@@ -1,0 +1,67 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
+import { createClient } from "@/lib/supabase";
+import { ReleaseNotesDisplay } from "@/components/releases/ReleaseNotesDisplay";
+
+export default function DisplayReleaseNotesPage() {
+  const { slug } = useParams();
+  const [releaseNotes, setReleaseNotes] = useState<string>("");
+  const [releaseSummary, setReleaseSummary] = useState<string>("");
+  const [releaseName, setReleaseName] = useState<string>("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchReleaseNotes = async () => {
+      setLoading(true);
+      setError(null);
+      const supabase = createClient();
+      
+      // Find release by name (slug)
+      const { data, error } = await supabase
+        .from("releases")
+        .select("id, name, release_notes, release_summary")
+        .eq("name", decodeURIComponent(slug as string))
+        .single();
+        
+      if (error) {
+        setError("Release not found");
+        setLoading(false);
+        return;
+      }
+      
+      setReleaseName(data.name);
+      setReleaseNotes(data.release_notes || "");
+      setReleaseSummary(data.release_summary || "");
+      setLoading(false);
+    };
+    
+    fetchReleaseNotes();
+  }, [slug]);
+
+  if (loading) {
+    return (
+      <div className="max-w-4xl mx-auto py-10">
+        <div className="p-8 text-center text-muted-foreground">Loading release notes...</div>
+      </div>
+    );
+  }
+  
+  if (error) {
+    return (
+      <div className="max-w-4xl mx-auto py-10">
+        <div className="p-8 text-center text-red-500">{error}</div>
+      </div>
+    );
+  }
+
+  return (
+    <ReleaseNotesDisplay
+      releaseName={releaseName}
+      releaseNotes={releaseNotes}
+      releaseSummary={releaseSummary}
+    />
+  );
+} 

@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, FileText } from "lucide-react";
 import Link from "next/link";
 import React from "react";
 
@@ -18,6 +18,7 @@ export interface ReleaseSummaryCardProps {
     created_at: string;
     total_members: number;
     ready_members: number;
+    is_archived?: boolean;
   };
   getStateIcon: (state: string) => React.ReactNode;
 }
@@ -34,7 +35,8 @@ function getDaysUntil(dateString: string) {
 }
 
 // Map release state to a pale background color for the header
-function getPaleBgForState(state: string) {
+function getPaleBgForState(state: string, is_archived?: boolean) {
+  if (is_archived) return "bg-gray-200";
   switch (state) {
     case "ready":
       return "bg-green-50";
@@ -55,7 +57,7 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
 }) => {
   return (
     <Card className="hover:shadow-md transition-shadow">
-      <CardHeader className={`py-3 border-b border-border flex flex-row items-center justify-between ${getPaleBgForState(release.state)}`}>
+      <CardHeader className={`py-3 border-b border-border flex flex-row items-center justify-between ${getPaleBgForState(release.state, release.is_archived)}`}>
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center space-x-3">
             <CardTitle className="flex items-center m-0">
@@ -66,6 +68,13 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
               >
                 <span>{release.name}</span>
                 <ExternalLink className="h-4 w-4 ml-1 text-muted-foreground group-hover:text-foreground transition-colors" />
+              </Link>
+              <Link
+                href={`/releases/${encodeURIComponent(release.name)}/releasenotes`}
+                className="ml-2 p-1 hover:bg-gray-100 rounded transition-colors"
+                title="View Release Notes"
+              >
+                <FileText className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
               </Link>
             </CardTitle>
           </div>
@@ -127,11 +136,6 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
               {release.config_update ? "Yes" : "No"}
             </Badge>
           </div>
-        </div>
-        <div className="mt-4 text-right">
-          <Link href={`/releases/${encodeURIComponent(release.name)}/releasenotes`} className="text-primary hover:underline font-medium">
-            Release Notes
-          </Link>
         </div>
       </CardContent>
     </Card>

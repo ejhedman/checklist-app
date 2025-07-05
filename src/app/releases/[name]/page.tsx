@@ -35,6 +35,7 @@ export default function ReleaseDetailPage({ params }: { params: Promise<{ name: 
         state,
         platform_update,
         config_update,
+        is_archived,
         created_at,
         release_teams (
           team:teams (
@@ -191,7 +192,6 @@ export default function ReleaseDetailPage({ params }: { params: Promise<{ name: 
         <ReleaseDetailCard 
           release={release} 
           onMemberReadyChange={handleMemberReadyChange}
-          onFeatureAdded={fetchRelease}
         />
       </div>
     </div>
