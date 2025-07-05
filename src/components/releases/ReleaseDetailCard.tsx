@@ -8,8 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { FeatureReadyDialog } from "@/components/releases/FeatureReadyDialog";
 import { createClient } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
-import FeatureCard from "../../components/releases/FeatureCard";
-import { AddFeatureDialog } from "@/components/releases/AddFeatureDialog";
+import FeatureCard from "./FeatureCard";
 
 export function getStateColor(state: string) {
   switch (state) {
@@ -39,6 +38,18 @@ export function getStateIcon(state: string) {
     default:
       return <Calendar className="h-4 w-4" />;
   }
+}
+
+// Helper to calculate days until target date
+function getDaysUntil(dateString: string) {
+  const today = new Date();
+  const target = new Date(dateString);
+  // Zero out the time for both dates
+  today.setHours(0,0,0,0);
+  target.setHours(0,0,0,0);
+  const diffTime = target.getTime() - today.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays;
 }
 
 export default function ReleaseDetailCard({ release, onMemberReadyChange, onFeatureAdded } : {
@@ -113,23 +124,10 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onFeat
               <span className="ml-2">{release.name}</span>
             </CardTitle>
           </div>
-          <Badge
-            className={
-              release.state === 'ready'
-                ? 'bg-green-600 text-white'
-                : release.state === 'pending'
-                ? 'bg-amber-400 text-black'
-                : release.state === 'past_due'
-                ? 'bg-red-500 text-white'
-                : ''
-            }
-            variant="outline"
-          >
-            {release.state.replace('_', ' ')}
-          </Badge>
+          <Badge variant="outline">{release.state.replace('_', ' ')}</Badge>
         </div>
         <CardDescription>
-          Target Date: {new Date(release.target_date).toLocaleDateString()}
+          Target Date: {new Date(release.target_date).toLocaleDateString()} ({getDaysUntil(release.target_date)} days)
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -139,7 +137,7 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onFeat
             <p className="text-lg font-semibold">{release.team_count}</p>
           </div>
           <div className="space-y-1">
-            <p className="text-lg text-muted-foreground">Features</p>
+            <p className="text-sm text-muted-foreground">Features</p>
             <p className="text-lg font-semibold">
               {release.ready_features}/{release.feature_count}
             </p>
@@ -160,6 +158,9 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onFeat
 
         {/* Features Section */}
         <div className="mt-6">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-sm font-medium">Features</h4>
+          </div>
           <div className="space-y-2">
             {release.features.length === 0 ? (
               <p className="text-sm text-muted-foreground">No features added yet.</p>
@@ -216,7 +217,7 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onFeat
                               <p className="text-xs text-muted-foreground">{member.email}</p>
                             </div>
                           </div>
-                          <Badge variant={member.is_ready ? "default" : "secondary"} className={member.is_ready ? "text-xs bg-green-600 text-white" : "text-xs bg-amber-400 text-black"}>
+                          <Badge variant={member.is_ready ? "default" : "secondary"} className="text-xs">
                             {member.is_ready ? "Ready" : "Not Ready"}
                           </Badge>
                         </div>

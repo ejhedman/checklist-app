@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { use } from "react";
-import ReleaseDetailCard from "../ReleaseDetailCard";
+import ReleaseDetailCard from "@/components/releases/ReleaseDetailCard";
 import { createClient } from "@/lib/supabase";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -60,7 +60,9 @@ export default function ReleaseDetailPage({ params }: { params: Promise<{ name: 
           description,
           jira_ticket,
           is_platform,
+          is_config,
           is_ready,
+          comments,
           dri_user_id,
           dri_user:users!dri_user_id (
             id,
@@ -176,16 +178,22 @@ export default function ReleaseDetailPage({ params }: { params: Promise<{ name: 
       </div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">Release: {release.name}</h1>
-        <AddFeatureDialog 
-          releaseId={release.id} 
-          releaseName={release.name} 
-          onFeatureAdded={fetchRelease} 
+      </div>
+      <div className="mt-6">
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="text-sm font-medium">Features</h4>
+          <AddFeatureDialog 
+            releaseId={release.id} 
+            releaseName={release.name} 
+            onFeatureAdded={fetchRelease} 
+          />
+        </div>
+        <ReleaseDetailCard 
+          release={release} 
+          onMemberReadyChange={handleMemberReadyChange}
+          onFeatureAdded={fetchRelease}
         />
       </div>
-      <ReleaseDetailCard 
-        release={release} 
-        onMemberReadyChange={handleMemberReadyChange}
-      />
     </div>
   );
 } 

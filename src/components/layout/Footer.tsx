@@ -8,6 +8,8 @@ export function Footer() {
           <span>© 2024 Release Manager</span>
         </div>
         <div className="flex items-center space-x-4">
+          <a href="/docs" className="hover:text-foreground">Docs</a>
+          <span>·</span>
           <a href="#" className="hover:text-foreground">Help</a>
           <span>·</span>
           <a href="#" className="hover:text-foreground">Feedback</a>

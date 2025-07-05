@@ -7,10 +7,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Calendar, CheckCircle, AlertTriangle, Clock, ChevronDown, ChevronUp, Users, ExternalLink } from "lucide-react";
 import { CreateReleaseDialog } from "@/components/releases/CreateReleaseDialog";
-import { AddFeatureDialog } from "@/components/releases/AddFeatureDialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { createClient } from "@/lib/supabase";
 import Link from "next/link";
+import { ReleaseSummaryCard } from "@/components/releases/ReleaseSummaryCard";
 
 export default function ReleasesPage() {
   const [releases, setReleases] = useState<Array<{
@@ -30,7 +30,9 @@ export default function ReleasesPage() {
       description?: string;
       jira_ticket?: string;
       is_platform: boolean;
+      is_config: boolean;
       is_ready: boolean;
+      comments?: string;
       dri_user: {
         id: string;
         full_name: string;
@@ -48,6 +50,8 @@ export default function ReleasesPage() {
         is_ready: boolean;
       }>;
     }>;
+    total_members: number;
+    ready_members: number;
   }>>([]);
   const [loading, setLoading] = useState(true);
   const [expandedReleases, setExpandedReleases] = useState<Set<string>>(new Set());
@@ -90,7 +94,9 @@ export default function ReleasesPage() {
           description,
           jira_ticket,
           is_platform,
+          is_config,
           is_ready,
+          comments,
           dri_user_id,
           dri_user:users!dri_user_id (
             id,
@@ -105,52 +111,78 @@ export default function ReleasesPage() {
       console.error("Error fetching releases:", error);
     } else {
       // Transform the data to count teams and features
-      const transformedData = data?.map((release) => ({
-        id: release.id,
-        name: release.name,
-        target_date: release.target_date,
-        state: release.state,
-        platform_update: release.platform_update,
-        config_update: release.config_update,
-        created_at: release.created_at,
-        team_count: release.release_teams?.length || 0,
-        feature_count: release.features?.length || 0,
-        ready_features: release.features?.filter((f) => f.is_ready)?.length || 0,
-        features: release.features?.map((feature) => ({
-          id: feature.id,
-          name: feature.name,
-          description: feature.description,
-          jira_ticket: feature.jira_ticket,
-          is_platform: feature.is_platform,
-          is_ready: feature.is_ready,
-          dri_user: Array.isArray(feature.dri_user)
-            ? (feature.dri_user[0] as { id: string; full_name: string; email: string })
-            : feature.dri_user
-              ? {
-                  id: (feature.dri_user as any).id,
-                  full_name: (feature.dri_user as any).full_name,
-                  email: (feature.dri_user as any).email,
-                }
-              : null,
-        })) || [],
-        teams: release.release_teams?.map((rt) => ({
-          id: (rt.team as any).id,
-          name: (rt.team as any).name,
-          description: (rt.team as any).description,
-          members: (Array.isArray((rt.team as any).team_users)
-            ? (rt.team as any).team_users
-            : ((rt.team as any).team_users ? [(rt.team as any).team_users] : [])
-          )?.map((tu: any) => {
-            const userReadyState = release.user_release_state?.find((urs) => urs.user_id === (tu.user as any).id);
-            return {
-              id: (tu.user as any).id,
-              full_name: (tu.user as any).full_name,
-              email: (tu.user as any).email,
-              is_ready: userReadyState?.is_ready || false,
-            };
-          }) || [],
-        })) || [],
-      })) || [];
+      const transformedData = data?.map((release) => {
+        // Aggregate all members from all teams
+        const allMembers: any[] = [];
+        if (release.release_teams) {
+          release.release_teams.forEach((rt) => {
+            if (rt.team && (rt.team as any).team_users) {
+              const members = Array.isArray((rt.team as any).team_users)
+                ? (rt.team as any).team_users
+                : [(rt.team as any).team_users];
+              members.forEach((tu: any) => {
+                allMembers.push(tu.user ? tu.user : tu);
+              });
+            }
+          });
+        }
+        const total_members = allMembers.length;
+        const ready_members = allMembers.filter((member) => {
+          const userId = member.id;
+          const userReadyState = release.user_release_state?.find((urs) => urs.user_id === userId);
+          return userReadyState?.is_ready;
+        }).length;
+        return {
+          id: release.id,
+          name: release.name,
+          target_date: release.target_date,
+          state: release.state,
+          platform_update: release.platform_update,
+          config_update: release.config_update,
+          created_at: release.created_at,
+          team_count: release.release_teams?.length || 0,
+          feature_count: release.features?.length || 0,
+          ready_features: release.features?.filter((f) => f.is_ready)?.length || 0,
+          features: release.features?.map((feature) => ({
+            id: feature.id,
+            name: feature.name,
+            description: feature.description,
+            jira_ticket: feature.jira_ticket,
+            is_platform: feature.is_platform,
+            is_config: feature.is_config,
+            is_ready: feature.is_ready,
+            comments: feature.comments,
+            dri_user: Array.isArray(feature.dri_user)
+              ? (feature.dri_user[0] as { id: string; full_name: string; email: string })
+              : feature.dri_user
+                ? {
+                    id: (feature.dri_user as any).id,
+                    full_name: (feature.dri_user as any).full_name,
+                    email: (feature.dri_user as any).email,
+                  }
+                : null,
+          })) || [],
+          teams: release.release_teams?.map((rt) => ({
+            id: (rt.team as any).id,
+            name: (rt.team as any).name,
+            description: (rt.team as any).description,
+            members: (Array.isArray((rt.team as any).team_users)
+              ? (rt.team as any).team_users
+              : ((rt.team as any).team_users ? [(rt.team as any).team_users] : [])
+            )?.map((tu: any) => {
+              const userReadyState = release.user_release_state?.find((urs) => urs.user_id === (tu.user as any).id);
+              return {
+                id: (tu.user as any).id,
+                full_name: (tu.user as any).full_name,
+                email: (tu.user as any).email,
+                is_ready: userReadyState?.is_ready || false,
+              };
+            }) || [],
+          })) || [],
+          total_members,
+          ready_members,
+        };
+      });
       
       setReleases(transformedData);
     }
@@ -239,187 +271,13 @@ export default function ReleasesPage() {
       ) : (
         <div className="space-y-4">
           {releases.map((release) => (
-          <Card key={release.id} className="hover:shadow-md transition-shadow">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className={`h-3 w-3 rounded-full ${getStateColor(release.state)}`} />
-                  <CardTitle className="flex items-center">
-                    {getStateIcon(release.state)}
-                    <Link 
-                      href={`/releases/${encodeURIComponent(release.name)}`}
-                      className="ml-2 hover:underline cursor-pointer"
-                    >
-                      {release.name}
-                    </Link>
-                  </CardTitle>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Badge variant="outline">{release.state.replace('_', ' ')}</Badge>
-                  <Link 
-                    href={`/releases/${encodeURIComponent(release.name)}`}
-                    className="inline-flex items-center space-x-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <span>View Details</span>
-                    <ExternalLink className="h-3 w-3" />
-                  </Link>
-                </div>
-              </div>
-              <CardDescription>
-                Target Date: {new Date(release.target_date).toLocaleDateString()}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Teams</p>
-                  <p className="text-lg font-semibold">{release.team_count}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Features</p>
-                  <p className="text-lg font-semibold">
-                    {release.ready_features}/{release.feature_count}
-                  </p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Platform Update</p>
-                  <Badge variant={release.platform_update ? "default" : "secondary"}>
-                    {release.platform_update ? "Yes" : "No"}
-                  </Badge>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Config Update</p>
-                  <Badge variant={release.config_update ? "default" : "secondary"}>
-                    {release.config_update ? "Yes" : "No"}
-                  </Badge>
-                </div>
-              </div>
-
-              {/* Features Section */}
-              <div className="mt-6">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="text-sm font-medium">Features</h4>
-                  <div className="flex items-center space-x-2">
-                    <AddFeatureDialog 
-                      releaseId={release.id} 
-                      releaseName={release.name} 
-                      onFeatureAdded={fetchReleases} 
-                    />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        const newExpanded = new Set(expandedReleases);
-                        if (newExpanded.has(release.id)) {
-                          newExpanded.delete(release.id);
-                        } else {
-                          newExpanded.add(release.id);
-                        }
-                        setExpandedReleases(newExpanded);
-                      }}
-                    >
-                      {expandedReleases.has(release.id) ? (
-                        <ChevronUp className="h-4 w-4" />
-                      ) : (
-                        <ChevronDown className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </div>
-                </div>
-
-                {expandedReleases.has(release.id) && (
-                  <div className="space-y-2">
-                    {release.features.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">No features added yet.</p>
-                    ) : (
-                      release.features.map((feature) => (
-                        <div key={feature.id} className="flex items-center justify-between p-3 border rounded-lg">
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-2">
-                              <h5 className="font-medium">{feature.name}</h5>
-                              {feature.is_platform && (
-                                <Badge variant="outline" className="text-xs">Platform</Badge>
-                              )}
-                              {feature.is_ready && (
-                                <Badge variant="default" className="text-xs">Ready</Badge>
-                              )}
-                            </div>
-                            {feature.description && (
-                              <p className="text-sm text-muted-foreground mt-1">{feature.description}</p>
-                            )}
-                            {feature.jira_ticket && (
-                              <p className="text-xs text-muted-foreground">JIRA: {feature.jira_ticket}</p>
-                            )}
-                          </div>
-                          <div className="text-right">
-                            {feature.dri_user ? (
-                              <div>
-                                <p className="text-sm font-medium">{feature.dri_user.full_name}</p>
-                                <p className="text-xs text-muted-foreground">{feature.dri_user.email}</p>
-                              </div>
-                            ) : (
-                              <p className="text-sm text-muted-foreground">No DRI assigned</p>
-                            )}
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Team Members Section */}
-              <div className="mt-6">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="text-sm font-medium flex items-center">
-                    <Users className="h-4 w-4 mr-2" />
-                    Team Members
-                  </h4>
-                </div>
-
-                <div className="space-y-4">
-                  {release.teams.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No teams assigned to this release.</p>
-                  ) : (
-                    release.teams.map((team) => (
-                      <div key={team.id} className="border rounded-lg p-4">
-                        <h5 className="font-medium text-sm mb-2">{team.name}</h5>
-                        {team.description && (
-                          <p className="text-xs text-muted-foreground mb-3">{team.description}</p>
-                        )}
-                        <div className="space-y-2">
-                          {team.members.length === 0 ? (
-                            <p className="text-sm text-muted-foreground">No members in this team.</p>
-                          ) : (
-                            team.members.map((member) => (
-                              <div key={member.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                                <div className="flex items-center space-x-3">
-                                  <Checkbox
-                                    checked={member.is_ready}
-                                    onCheckedChange={(checked) => 
-                                      handleMemberReadyChange(release.id, member.id, checked as boolean)
-                                    }
-                                  />
-                                  <div>
-                                    <p className="text-sm font-medium">{member.full_name}</p>
-                                    <p className="text-xs text-muted-foreground">{member.email}</p>
-                                  </div>
-                                </div>
-                                <Badge variant={member.is_ready ? "default" : "secondary"} className="text-xs">
-                                  {member.is_ready ? "Ready" : "Not Ready"}
-                                </Badge>
-                              </div>
-                            ))
-                          )}
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+            <ReleaseSummaryCard
+              key={release.id}
+              release={release}
+              getStateColor={getStateColor}
+              getStateIcon={getStateIcon}
+            />
+          ))}
         </div>
       )}
     </div>

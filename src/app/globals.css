@@ -120,3 +120,80 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Custom styles for markdown rendering */
+.prose {
+  @apply text-foreground;
+}
+
+.prose h1 {
+  @apply text-3xl font-bold mb-6 text-foreground;
+}
+
+.prose h2 {
+  @apply text-2xl font-semibold mb-4 mt-8 text-foreground border-b pb-2;
+}
+
+.prose h3 {
+  @apply text-xl font-semibold mb-3 mt-6 text-foreground;
+}
+
+.prose h4 {
+  @apply text-lg font-medium mb-2 mt-4 text-foreground;
+}
+
+.prose p {
+  @apply mb-4 text-foreground leading-relaxed;
+}
+
+.prose ul {
+  @apply list-disc list-inside mb-4 space-y-1 text-foreground;
+}
+
+.prose ol {
+  @apply list-decimal list-inside mb-4 space-y-1 text-foreground;
+}
+
+.prose li {
+  @apply text-foreground;
+}
+
+.prose code {
+  @apply bg-muted px-1 py-0.5 rounded text-sm font-mono text-foreground;
+}
+
+.prose pre {
+  @apply bg-muted p-4 rounded-lg overflow-x-auto mb-4;
+}
+
+.prose pre code {
+  @apply bg-transparent p-0;
+}
+
+.prose blockquote {
+  @apply border-l-4 border-primary pl-4 italic text-muted-foreground mb-4;
+}
+
+.prose table {
+  @apply w-full border-collapse border border-border mb-4;
+}
+
+.prose th {
+  @apply border border-border px-4 py-2 bg-muted font-semibold text-left;
+}
+
+.prose td {
+  @apply border border-border px-4 py-2;
+}
+
+.prose a {
+  @apply text-primary hover:underline;
+}
+
+.prose strong {
+  @apply font-semibold text-foreground;
+}
+
+.prose em {
+  @apply italic text-foreground;
+}

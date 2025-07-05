@@ -16,11 +16,12 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-sm">RM</span>
-          </div>
-          <span className="font-semibold">Release Manager</span>
+        <div className="flex items-center h-full">
+          <img 
+            src="/logo.png" 
+            alt="Release Manager Logo" 
+            className="h-24 w-auto object-contain max-h-full"
+          />
         </div>
         
         <div className="flex items-center space-x-2">

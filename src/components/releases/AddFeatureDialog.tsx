@@ -34,7 +34,7 @@ export function AddFeatureDialog({ releaseId, releaseName, onFeatureAdded }: Add
     jiraTicket: "",
     driUserId: "",
     isPlatform: false,
-    isReady: false,
+    isConfig: false,
   });
   const [error, setError] = useState("");
   const [users, setUsers] = useState<Array<{ id: string; full_name: string; email: string }>>([]);
@@ -63,7 +63,7 @@ export function AddFeatureDialog({ releaseId, releaseName, onFeatureAdded }: Add
         jiraTicket: "",
         driUserId: "",
         isPlatform: false,
-        isReady: false,
+        isConfig: false,
       });
       setError("");
     }
@@ -86,7 +86,8 @@ export function AddFeatureDialog({ releaseId, releaseName, onFeatureAdded }: Add
           jira_ticket: formData.jiraTicket || null,
           dri_user_id: formData.driUserId || null,
           is_platform: formData.isPlatform,
-          is_ready: formData.isReady,
+          is_config: formData.isConfig,
+          is_ready: false, // Always default to false when creating
         })
         .select()
         .single();
@@ -206,14 +207,14 @@ export function AddFeatureDialog({ releaseId, releaseName, onFeatureAdded }: Add
 
               <div className="flex items-center space-x-2">
                 <Checkbox
-                  id="isReady"
-                  checked={formData.isReady}
+                  id="isConfig"
+                  checked={formData.isConfig}
                   onCheckedChange={(checked) => 
-                    setFormData({ ...formData, isReady: checked as boolean })
+                    setFormData({ ...formData, isConfig: checked as boolean })
                   }
                   disabled={loading}
                 />
-                <Label htmlFor="isReady">Feature is Ready</Label>
+                <Label htmlFor="isConfig">Config Feature</Label>
               </div>
             </div>
 
