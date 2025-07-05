@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface AddFeatureDialogProps {
   releaseId: string;
@@ -38,6 +39,7 @@ export function AddFeatureDialog({ releaseId, releaseName, onFeatureAdded }: Add
   });
   const [error, setError] = useState("");
   const [users, setUsers] = useState<Array<{ id: string; full_name: string; email: string }>>([]);
+  const { user } = useAuth();
 
   // Fetch users when dialog opens
   const fetchUsers = async () => {
@@ -77,7 +79,7 @@ export function AddFeatureDialog({ releaseId, releaseName, onFeatureAdded }: Add
       const supabase = createClient();
 
       // Insert new feature
-      const { error: featureError } = await supabase
+      const { error: featureError, data: featureData } = await supabase
         .from("features")
         .insert({
           release_id: releaseId,
@@ -96,6 +98,19 @@ export function AddFeatureDialog({ releaseId, releaseName, onFeatureAdded }: Add
         console.error("Error creating feature:", featureError);
         setError("Failed to create feature: " + featureError.message);
         return;
+      }
+      // Log activity: feature added to release
+      const { error: activityError } = await supabase.from("activity_log").insert({
+        release_id: releaseId,
+        feature_id: featureData.id,
+        user_id: user?.id,
+        activity_type: "feature_added",
+        activity_details: { name: formData.name },
+      });
+      if (activityError) {
+        console.error("Failed to log feature added activity:", activityError);
+      } else {
+        console.log("Successfully logged feature added activity");
       }
 
       setOpen(false);

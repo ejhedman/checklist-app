@@ -33,15 +33,18 @@ async function getDashboardData() {
     .order('target_date', { ascending: true })
     .limit(3);
 
-  // Get recent features activity
-  const { data: recentFeatures } = await supabase
-    .from('features')
-    .select(`
-      *,
-      releases(name)
-    `)
-    .order('updated_at', { ascending: false })
+  // Get recent activity log
+  const { data: recentActivity, error: activityError } = await supabase
+    .from('activity_log')
+    .select(`*, users(full_name, email), features(name), teams(name), releases(name)`)
+    .order('created_at', { ascending: false })
     .limit(5);
+
+  if (activityError) {
+    console.error("Failed to fetch recent activity:", activityError);
+  } else {
+    console.log("Recent activity data:", recentActivity);
+  }
 
   // Calculate statistics
   const totalReleases = releases?.length || 0;
@@ -55,7 +58,7 @@ async function getDashboardData() {
     readyReleases,
     pastDueReleases,
     upcomingReleases: upcomingReleases || [],
-    recentFeatures: recentFeatures || []
+    recentActivity: recentActivity || []
   };
 }
 
@@ -152,14 +155,27 @@ export default async function HomePage() {
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge 
-                          variant={
-                            release.state === 'ready' ? 'default' :
-                            release.state === 'past_due' ? 'destructive' : 'secondary'
-                          }
-                        >
-                          {release.state.replace('_', ' ')}
-                        </Badge>
+                        {release.state === "ready" ? (
+                          <Badge className="bg-green-600 text-white" variant="default">
+                            {release.state.replace("_", " ")}
+                          </Badge>
+                        ) : release.state === "pending" ? (
+                          <Badge className="bg-amber-400 text-black" variant="default">
+                            {release.state.replace("_", " ")}
+                          </Badge>
+                        ) : release.state === "past_due" ? (
+                          <Badge className="bg-red-500 text-white" variant="default">
+                            {release.state.replace("_", " ")}
+                          </Badge>
+                        ) : release.state === "complete" ? (
+                          <Badge className="bg-blue-500 text-white" variant="default">
+                            {release.state.replace("_", " ")}
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary">
+                            {release.state.replace("_", " ")}
+                          </Badge>
+                        )}
                         {daysRemaining > 0 && (
                           <div className="flex items-center space-x-1 text-sm text-muted-foreground">
                             <Clock className="h-3 w-3" />
@@ -190,23 +206,35 @@ export default async function HomePage() {
           <CardHeader className="pb-4">
             <CardTitle>Recent Activity</CardTitle>
             <CardDescription>
-              Latest feature updates
+              Latest project events
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-0">
             <div className="space-y-3">
-              {data.recentFeatures.length > 0 ? (
-                data.recentFeatures.map((feature) => (
-                  <div key={feature.id} className="flex items-center space-x-2">
-                    <div className={`h-2 w-2 rounded-full ${
-                      feature.is_ready ? 'bg-green-500' : 'bg-yellow-500'
-                    }`} />
-                    <span className="text-sm">
-                      {feature.name} {feature.is_ready ? 'marked ready' : 'updated'}
-                      {feature.releases && (
-                        <span className="text-muted-foreground"> in {feature.releases.name}</span>
-                      )}
+              {data.recentActivity.length > 0 ? (
+                data.recentActivity.map((activity) => (
+                  <div key={activity.id} className="flex items-center space-x-2 text-sm">
+                    <span className="font-medium">
+                      {(() => {
+                        switch (activity.activity_type) {
+                          case 'member_ready':
+                            return `${activity.users?.full_name || 'A member'} marked ready`;
+                          case 'feature_ready':
+                            return `${activity.users?.full_name || 'A DRI'} marked feature "${activity.features?.name || ''}" ready`;
+                          case 'release_created':
+                            return `${activity.users?.full_name || 'A user'} created release "${activity.releases?.name || ''}"`;
+                          case 'feature_added':
+                            return `${activity.users?.full_name || 'A user'} added feature "${activity.features?.name || ''}"`;
+                          case 'team_added':
+                            return `${activity.users?.full_name || 'A user'} added team "${activity.teams?.name || ''}" to release`;
+                          case 'release_state_change':
+                            return `${activity.users?.full_name || 'A user'} changed release state to "${activity.activity_details?.newState || ''}"`;
+                          default:
+                            return activity.activity_type;
+                        }
+                      })()}
                     </span>
+                    <span className="text-muted-foreground ml-2">{new Date(activity.created_at).toLocaleDateString()}</span>
                   </div>
                 ))
               ) : (

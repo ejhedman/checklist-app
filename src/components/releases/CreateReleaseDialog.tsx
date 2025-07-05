@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface CreateReleaseDialogProps {
   onReleaseSaved: (release: any) => void;
@@ -38,6 +39,7 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
   });
   const [error, setError] = useState("");
   const [teams, setTeams] = useState<Array<{ id: string; name: string }>>([]);
+  const { user } = useAuth();
 
   // Fetch teams when dialog opens
   const fetchTeams = async () => {
@@ -120,6 +122,21 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
             team_id: teamId,
           }));
           await supabase.from("release_teams").insert(teamAssignments);
+          // Log activity: team added to release
+          for (const teamId of formData.selectedTeams) {
+            const { error: teamActivityError } = await supabase.from("activity_log").insert({
+              release_id: initialRelease.id,
+              team_id: teamId,
+              user_id: user?.id,
+              activity_type: "team_added",
+              activity_details: {},
+            });
+            if (teamActivityError) {
+              console.error("Failed to log team added activity:", teamActivityError);
+            } else {
+              console.log("Successfully logged team added activity");
+            }
+          }
         }
       } else {
         // Create new release
@@ -143,12 +160,39 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
           return;
         }
         release = created;
+        // Log activity: release created
+        const { error: activityError } = await supabase.from("activity_log").insert({
+          release_id: release.id,
+          user_id: user?.id,
+          activity_type: "release_created",
+          activity_details: { name: release.name },
+        });
+        if (activityError) {
+          console.error("Failed to log release created activity:", activityError);
+        } else {
+          console.log("Successfully logged release created activity");
+        }
         if (formData.selectedTeams.length > 0) {
           const teamAssignments = formData.selectedTeams.map((teamId: string) => ({
             release_id: release.id,
             team_id: teamId,
           }));
           await supabase.from("release_teams").insert(teamAssignments);
+          // Log activity: team added to release
+          for (const teamId of formData.selectedTeams) {
+            const { error: teamActivityError } = await supabase.from("activity_log").insert({
+              release_id: release.id,
+              team_id: teamId,
+              user_id: user?.id,
+              activity_type: "team_added",
+              activity_details: {},
+            });
+            if (teamActivityError) {
+              console.error("Failed to log team added activity:", teamActivityError);
+            } else {
+              console.log("Successfully logged team added activity");
+            }
+          }
         }
       }
       setOpen(false);
