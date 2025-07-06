@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar, Users, CheckCircle, Clock, AlertTriangle, Plus, ArrowRight } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import Link from "next/link";
+import { ActivityIcon } from "@/components/ui/activity-icon";
 
 async function getDashboardData() {
   const supabase = createClient();
@@ -61,6 +62,8 @@ async function getDashboardData() {
     recentActivity: recentActivity || []
   };
 }
+
+
 
 export default async function HomePage() {
   const data = await getDashboardData();
@@ -213,28 +216,31 @@ export default async function HomePage() {
             <div className="space-y-3">
               {data.recentActivity.length > 0 ? (
                 data.recentActivity.map((activity) => (
-                  <div key={activity.id} className="flex items-center space-x-2 text-sm">
-                    <span className="font-medium">
-                      {(() => {
-                        switch (activity.activity_type) {
-                          case 'member_ready':
-                            return `${activity.users?.full_name || 'A member'} marked ready`;
-                          case 'feature_ready':
-                            return `${activity.users?.full_name || 'A DRI'} marked feature "${activity.features?.name || ''}" ready`;
-                          case 'release_created':
-                            return `${activity.users?.full_name || 'A user'} created release "${activity.releases?.name || ''}"`;
-                          case 'feature_added':
-                            return `${activity.users?.full_name || 'A user'} added feature "${activity.features?.name || ''}"`;
-                          case 'team_added':
-                            return `${activity.users?.full_name || 'A user'} added team "${activity.teams?.name || ''}" to release`;
-                          case 'release_state_change':
-                            return `${activity.users?.full_name || 'A user'} changed release state to "${activity.activity_details?.newState || ''}"`;
-                          default:
-                            return activity.activity_type;
-                        }
-                      })()}
-                    </span>
-                    <span className="text-muted-foreground ml-2">{new Date(activity.created_at).toLocaleDateString()}</span>
+                  <div key={activity.id} className="flex items-center space-x-3 text-sm">
+                    <ActivityIcon activityType={activity.activity_type} className="flex-shrink-0" />
+                    <div className="flex-1">
+                      <span className="font-medium">
+                        {(() => {
+                          switch (activity.activity_type) {
+                            case 'member_ready':
+                              return `${activity.users?.full_name || 'A member'} marked ready`;
+                            case 'feature_ready':
+                              return `${activity.users?.full_name || 'A DRI'} marked feature "${activity.features?.name || ''}" ready`;
+                            case 'release_created':
+                              return `${activity.users?.full_name || 'A user'} created release "${activity.releases?.name || ''}"`;
+                            case 'feature_added':
+                              return `${activity.users?.full_name || 'A user'} added feature "${activity.features?.name || ''}"`;
+                            case 'team_added':
+                              return `${activity.users?.full_name || 'A user'} added team "${activity.teams?.name || ''}" to release`;
+                            case 'release_state_change':
+                              return `${activity.users?.full_name || 'A user'} changed release state to "${activity.activity_details?.newState || ''}"`;
+                            default:
+                              return activity.activity_type;
+                          }
+                        })()}
+                      </span>
+                      <span className="text-muted-foreground ml-2">{new Date(activity.created_at).toLocaleDateString()}</span>
+                    </div>
                   </div>
                 ))
               ) : (
