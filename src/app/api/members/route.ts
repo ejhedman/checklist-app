@@ -56,11 +56,11 @@ export async function POST(request: NextRequest) {
       .from("members")
       .insert({
         id: authData.user.id,
-        member_id: crypto.randomUUID(), // Generate a new member_id
+        user_id: authData.user.id,
         email,
         full_name,
         nickname: nickname || null,
-        role: role || 'user',
+        role: role || 'member',
       });
 
     if (dbError) {

@@ -20,10 +20,10 @@ export async function GET() {
       );
     }
 
-    // Fetch user roles from uroles table
+    // Fetch user roles from sys_roles table
     const { data: userRoles, error: rolesError } = await supabase
-      .from('uroles')
-      .select('user_id, role');
+      .from('sys_roles')
+      .select('user_id, sys_role');
 
     if (rolesError) {
       console.error('Error fetching user roles:', rolesError);
@@ -36,7 +36,7 @@ export async function GET() {
     // Create a map of user_id to role for quick lookup
     const roleMap = new Map();
     userRoles?.forEach(userRole => {
-      roleMap.set(userRole.user_id, userRole.role);
+      roleMap.set(userRole.user_id, userRole.sys_role);
     });
 
     // Transform auth users to our User interface
@@ -113,12 +113,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create user role in uroles table
+    // Create user role in sys_roles table
     const { error: roleError } = await supabase
-      .from('uroles')
+      .from('sys_roles')
       .insert({
         user_id: authData.user.id,
-        role: role,
+        sys_role: role,
       });
 
     if (roleError) {

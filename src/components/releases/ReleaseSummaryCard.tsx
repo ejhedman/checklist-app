@@ -6,6 +6,7 @@ import { ExternalLink, FileText } from "lucide-react";
 import Link from "next/link";
 import React from "react";
 import { createClient } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
 
 export interface ReleaseSummaryCardProps {
   release: {
@@ -22,6 +23,36 @@ export interface ReleaseSummaryCardProps {
     total_members: number;
     ready_members: number;
     is_archived?: boolean;
+    release_teams?: Array<{
+      team: {
+        id: string;
+        name: string;
+        description: string;
+        team_members: Array<{
+          member: {
+            id: string;
+            full_name: string;
+            email: string;
+          };
+        }>;
+      };
+    }>;
+    features?: Array<{
+      id: string;
+      name: string;
+      description: string;
+      jira_ticket: string;
+      is_platform: boolean;
+      is_config: boolean;
+      is_ready: boolean;
+      comments: string;
+      dri_member_id: string;
+      dri_member: {
+        id: string;
+        full_name: string;
+        email: string;
+      };
+    }>;
   };
   getStateIcon: (state: string) => React.ReactNode;
   onReleaseUpdated?: () => void;
@@ -64,6 +95,16 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
   const [teamNames, setTeamNames] = useState<string[]>([]);
   const [isArchived, setIsArchived] = useState(release.is_archived);
   const [archiving, setArchiving] = useState(false);
+  const { user, memberId } = useAuth();
+
+  // Debug: Log features and user
+  // console.log('ReleaseSummaryCard:', {
+  //   releaseName: release.name,
+  //   features: release.features,
+  //   userId: user?.id,
+  //   memberId,
+  //   driIds: release.features?.map(f => f.dri_member_id)
+  // });
 
   useEffect(() => {
     setIsArchived(release.is_archived);
@@ -100,6 +141,24 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
       onReleaseUpdated?.();
     }
     setArchiving(false);
+  };
+
+  // Check if the current user is a DRI on any features
+  const isUserDRI = () => {
+    if (!memberId || !release.features) return false;
+    return release.features.some(feature => 
+      feature.dri_member_id === memberId
+    );
+  };
+
+  // Check if the current user is a member of any teams in this release
+  const isUserMember = () => {
+    if (!memberId || !release.release_teams) return false;
+    return release.release_teams.some(rt => 
+      rt.team?.team_members?.some(tm => 
+        tm.member?.id === memberId
+      )
+    );
   };
 
   // Helper to calculate days until target date
@@ -188,12 +247,14 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
             </div>
           </div>
           <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">Members</p>
-            <p className="text-lg font-semibold">{release.ready_members}/{release.total_members}</p>
+            <p className={`text-sm ${isUserMember() ? 'text-blue-600 font-bold' : 'text-muted-foreground'}`}>Members</p>
+            <p className={`text-lg font-semibold ${isUserMember() ? 'text-blue-600' : ''}`}>{release.ready_members}/{release.total_members}</p>
           </div>
           <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">Features</p>
-            <p className="text-lg font-semibold">
+            <p className={`text-sm ${isUserDRI() ? 'text-blue-600 font-bold' : 'text-muted-foreground'}`}>
+              Features
+            </p>
+            <p className={`text-lg font-semibold ${isUserDRI() ? 'text-blue-600' : ''}`}>
               {release.ready_features}/{release.feature_count}
             </p>
           </div>

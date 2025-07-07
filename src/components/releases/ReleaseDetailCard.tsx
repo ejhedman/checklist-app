@@ -76,7 +76,7 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onRele
   onMemberReadyChange?: (releaseId: string, userId: string, isReady: boolean) => void,
   onReleaseUpdated: (updatedRelease: any) => void,
 }) {
-  const { user } = useAuth();
+  const { user, memberId } = useAuth();
   const [readyDialogOpen, setReadyDialogOpen] = useState(false);
   const [selectedFeature, setSelectedFeature] = useState<any>(null);
   const [updatingFeature, setUpdatingFeature] = useState(false);
@@ -100,7 +100,7 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onRele
       console.error('Failed to update is_archived:', error);
       // Optionally, show a toast or error message to the user
     } else {
-      console.log('is_archived updated successfully');
+      // console.log('is_archived updated successfully');
     }
     setArchiving(false);
     // Optionally, handle error or refresh data
@@ -108,8 +108,8 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onRele
 
   const handleFeatureReadyChange = async (feature: any, isReady: boolean) => {
     // Check if current user is the DRI for this feature
-    if (!user || !feature.dri_user || user.id !== feature.dri_user.id) {
-      console.log("User is not the DRI for this feature");
+    if (!user || !feature.dri_member || user.id !== feature.dri_member.id) {
+      // console.log("User is not the DRI for this feature");
       return;
     }
 
@@ -147,14 +147,14 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onRele
       const { error: activityError } = await supabase.from("activity_log").insert({
         release_id: release.id,
         feature_id: selectedFeature.id,
-        user_id: user?.id,
+        member_id: user?.id,
         activity_type: "feature_ready",
         activity_details: { comments },
       });
       if (activityError) {
         console.error("Failed to log feature ready activity:", activityError);
       } else {
-        console.log("Successfully logged feature ready activity");
+        // console.log("Successfully logged feature ready activity");
       }
       setReadyDialogOpen(false);
       setSelectedFeature(null);
@@ -167,22 +167,22 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onRele
   };
 
   // Instrument member ready change
-  const handleMemberReadyChange = async (releaseId: string, userId: string, isReady: boolean) => {
+  const handleMemberReadyChange = async (releaseId: string, memberId: string, isReady: boolean) => {
     // Log activity: member signals ready
     const supabase = createClient();
     const { error: activityError } = await supabase.from("activity_log").insert({
       release_id: releaseId,
-      user_id: userId,
+      member_id: memberId,
       activity_type: "member_ready",
       activity_details: { isReady },
     });
     if (activityError) {
       console.error("Failed to log member ready activity:", activityError);
     } else {
-      console.log("Successfully logged member ready activity");
+      // console.log("Successfully logged member ready activity");
     }
     if (onMemberReadyChange) {
-      onMemberReadyChange(releaseId, userId, isReady);
+      onMemberReadyChange(releaseId, memberId, isReady);
     }
   };
 
@@ -197,18 +197,31 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onRele
       // Log activity: release state change
       const { error: activityError } = await supabase.from("activity_log").insert({
         release_id: release.id,
-        user_id: user?.id,
+        member_id: user?.id,
         activity_type: "release_state_change",
         activity_details: { oldState: release.state, newState },
       });
       if (activityError) {
         console.error("Failed to log release state change activity:", activityError);
       } else {
-        console.log("Successfully logged release state change activity");
+        // console.log("Successfully logged release state change activity");
       }
       // Optionally refresh or notify parent
       onReleaseUpdated?.(undefined);
     }
+  };
+
+  // Check if the current user is a DRI on any features
+  const isUserDRI = () => {
+    if (!memberId || !release.features) return false;
+    return release.features.some((feature: any) => feature.dri_member_id === memberId);
+  };
+  // Check if the current user is a member of any teams in this release
+  const isUserMember = () => {
+    if (!memberId || !release.teams) return false;
+    return release.teams.some((team: any) =>
+      team.members?.some((member: any) => member.id === memberId)
+    );
   };
 
   return (
@@ -284,14 +297,12 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onRele
               </div>
             </div>
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Members</p>
-              <p className="text-lg font-semibold">{release.ready_members}/{release.total_members}</p>
+              <p className={`text-sm ${isUserMember() ? 'text-blue-600 font-bold' : 'text-muted-foreground'}`}>Members</p>
+              <p className={`text-lg font-semibold ${isUserMember() ? 'text-blue-600' : ''}`}>{release.ready_members}/{release.total_members}</p>
             </div>
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Features</p>
-              <p className="text-lg font-semibold">
-                {release.ready_features}/{release.feature_count}
-              </p>
+              <p className={`text-sm ${isUserDRI() ? 'text-blue-600 font-bold' : 'text-muted-foreground'}`}>Features</p>
+              <p className={`text-lg font-semibold ${isUserDRI() ? 'text-blue-600' : ''}`}>{release.ready_features}/{release.feature_count}</p>
             </div>
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">Platform Update</p>

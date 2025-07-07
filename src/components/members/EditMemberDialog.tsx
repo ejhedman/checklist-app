@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Edit, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import type { Member } from "./MemberCard";
@@ -21,18 +22,16 @@ export function EditMemberDialog({ member, onMemberUpdated }: { member: Member; 
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    fullName: member.full_name,
-    email: member.email,
     nickname: member.nickname || "",
+    member_role: member.member_role || "member" as "member" | "release_manager" | "admin",
   });
 
   const handleOpenChange = (newOpen: boolean) => {
     setOpen(newOpen);
     if (newOpen) {
       setFormData({
-        fullName: member.full_name,
-        email: member.email,
         nickname: member.nickname || "",
+        member_role: member.member_role || "member",
       });
     }
   };
@@ -42,21 +41,34 @@ export function EditMemberDialog({ member, onMemberUpdated }: { member: Member; 
     setLoading(true);
     try {
       const supabase = createClient();
-      const { error } = await supabase
-        .from("users")
+      
+      // Debug logging
+      // console.log('Updating member:', member.id);
+      // console.log('New data:', {
+      //   nickname: formData.nickname || null,
+      //   member_role: formData.member_role,
+      // });
+      
+      const { data, error } = await supabase
+        .from("members")
         .update({
-          full_name: formData.fullName,
-          email: formData.email,
           nickname: formData.nickname || null,
+          member_role: formData.member_role,
         })
-        .eq("id", member.id);
+        .eq("id", member.id)
+        .select();
+        
       if (error) {
+        console.error('Update error:', error);
         alert("Failed to update member: " + error.message);
         return;
       }
+      
+      // console.log('Update successful:', data);
       setOpen(false);
       onMemberUpdated();
     } catch (error) {
+      console.error('Unexpected error:', error);
       alert("An unexpected error occurred");
     } finally {
       setLoading(false);
@@ -80,29 +92,20 @@ export function EditMemberDialog({ member, onMemberUpdated }: { member: Member; 
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="fullName" className="text-right">
-                Full Name *
+              <Label className="text-right">
+                Full Name
               </Label>
-              <Input
-                id="fullName"
-                value={formData.fullName}
-                onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                className="col-span-3"
-                required
-              />
+              <div className="col-span-3 text-sm text-muted-foreground">
+                {member.full_name}
+              </div>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="email" className="text-right">
-                Email *
+              <Label className="text-right">
+                Email
               </Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="col-span-3"
-                required
-              />
+              <div className="col-span-3 text-sm text-muted-foreground">
+                {member.email}
+              </div>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="nickname" className="text-right">
@@ -113,7 +116,30 @@ export function EditMemberDialog({ member, onMemberUpdated }: { member: Member; 
                 value={formData.nickname}
                 onChange={(e) => setFormData({ ...formData, nickname: e.target.value })}
                 className="col-span-3"
+                placeholder="Optional nickname"
               />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="member_role" className="text-right">
+                Role *
+              </Label>
+              <div className="col-span-3">
+                <Select
+                  value={formData.member_role}
+                  onValueChange={(value: "member" | "release_manager" | "admin") =>
+                    setFormData({ ...formData, member_role: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="member">Member</SelectItem>
+                    <SelectItem value="release_manager">Release Manager</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
           <DialogFooter>

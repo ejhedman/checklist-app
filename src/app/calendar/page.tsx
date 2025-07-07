@@ -266,17 +266,17 @@ export default function CalendarPage() {
     const supabase = createClient();
 
     // 1. Get all team IDs for the user
-    const { data: teamUserRows, error: teamUserError } = await supabase
-      .from("team_users")
+    const { data: teamMemberRows, error: teamMemberError } = await supabase
+      .from("team_members")
       .select("team_id")
-      .eq("user_id", user.id);
+      .eq("member_id", user.id);
 
-    if (teamUserError) {
-      console.error("Error fetching user teams:", teamUserError);
+    if (teamMemberError) {
+      console.error("Error fetching user teams:", teamMemberError);
       return;
     }
 
-    const userTeamIds = (teamUserRows ?? []).map(row => row.team_id);
+    const userTeamIds = (teamMemberRows ?? []).map(row => row.team_id);
 
     // 2. Get all release IDs for those teams
     let teamReleaseIds: string[] = [];
@@ -297,7 +297,7 @@ export default function CalendarPage() {
     const { data: driFeaturesRows, error: driFeaturesError } = await supabase
       .from("features")
       .select("release_id")
-      .eq("dri_user_id", user.id);
+      .eq("dri_member_id", user.id);
 
     if (driFeaturesError) {
       console.error("Error fetching DRI features:", driFeaturesError);
@@ -305,13 +305,13 @@ export default function CalendarPage() {
     }
     const driReleaseIds = (driFeaturesRows ?? []).map(row => row.release_id);
 
-    // 4. Get all release IDs where user is a team member AND is not ready (user_release_state.is_ready = false)
+    // 4. Get all release IDs where user is a team member AND is not ready (member_release_state.is_ready = false)
     let notReadyReleaseIds: string[] = [];
     if (teamReleaseIds.length > 0) {
       const { data: notReadyRows, error: notReadyError } = await supabase
-        .from("user_release_state")
+        .from("member_release_state")
         .select("release_id")
-        .eq("user_id", user.id)
+        .eq("member_id", user.id)
         .eq("is_ready", false)
         .in("release_id", teamReleaseIds);
       if (notReadyError) {

@@ -30,8 +30,8 @@ export default function ReleasesPage() {
             id,
             name,
             description,
-            team_users (
-              user:users (
+            team_members (
+              member:members (
                 id,
                 full_name,
                 email
@@ -39,8 +39,8 @@ export default function ReleasesPage() {
             )
           )
         ),
-        user_release_state (
-          user_id,
+        member_release_state (
+          member_id,
           is_ready
         ),
         features (
@@ -52,8 +52,8 @@ export default function ReleasesPage() {
           is_config,
           is_ready,
           comments,
-          dri_user_id,
-          dri_user:users!dri_user_id (
+          dri_member_id,
+          dri_member:members!dri_member_id (
             id,
             full_name,
             email
@@ -71,21 +71,21 @@ export default function ReleasesPage() {
       const allMembers: any[] = [];
       if (release.release_teams) {
         release.release_teams.forEach((rt: any) => {
-          if (rt.team && rt.team.team_users) {
-            const members = Array.isArray(rt.team.team_users)
-              ? rt.team.team_users
-              : [rt.team.team_users];
-            members.forEach((tu: any) => {
-              allMembers.push(tu.user ? tu.user : tu);
+          if (rt.team && rt.team.team_members) {
+            const members = Array.isArray(rt.team.team_members)
+              ? rt.team.team_members
+              : [rt.team.team_members];
+            members.forEach((tm: any) => {
+              allMembers.push(tm.member ? tm.member : tm);
             });
           }
         });
       }
       const total_members = allMembers.length;
       const ready_members = allMembers.filter((member) => {
-        const userId = member.id;
-        const userReadyState = release.user_release_state?.find((urs: any) => urs.user_id === userId);
-        return userReadyState?.is_ready;
+        const memberId = member.id;
+        const memberReadyState = release.member_release_state?.find((mrs: any) => mrs.member_id === memberId);
+        return memberReadyState?.is_ready;
       }).length;
       return {
         ...release,
@@ -94,6 +94,7 @@ export default function ReleasesPage() {
         ready_features: release.features?.filter((f: any) => f.is_ready)?.length || 0,
         total_members,
         ready_members,
+        features: release.features || [],
       };
     });
     setReleases(transformedData);

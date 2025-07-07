@@ -8,14 +8,15 @@ import { AddMemberDialog } from "@/components/members/AddMemberDialog";
 import { createClient } from "@/lib/supabase";
 import { MemberCard, Member } from "@/components/members/MemberCard";
 
-type TeamUser = { teams: { name: string } };
-type UserWithTeams = {
+type TeamMember = { teams: { name: string } };
+type MemberWithTeams = {
   id: string;
   full_name: string;
   email: string;
   nickname: string | null;
+  member_role: 'member' | 'release_manager' | 'admin';
   created_at: string;
-  team_users?: TeamUser[];
+  team_members?: TeamMember[];
 };
 
 export default function MembersPage() {
@@ -26,16 +27,17 @@ export default function MembersPage() {
     try {
       const supabase = createClient();
       
-      // Fetch users with their team memberships
-      const { data: users, error: usersError } = await supabase
-        .from("users")
+      // Fetch members with their team memberships
+      const { data: members, error: membersError } = await supabase
+        .from("members")
         .select(`
           id,
           full_name,
           email,
           nickname,
+          member_role,
           created_at,
-          team_users (
+          team_members (
             teams (
               name
             )
@@ -43,20 +45,21 @@ export default function MembersPage() {
         `)
         .order("full_name");
 
-      if (usersError) {
-        console.error("Error fetching users:", usersError);
+      if (membersError) {
+        console.error("Error fetching members:", membersError);
         return;
       }
 
       // Transform the data to include team names and active releases count
-      const transformedMembers: Member[] = (users as unknown as UserWithTeams[]).map((user) => ({
-        id: user.id,
-        full_name: user.full_name,
-        email: user.email,
-        nickname: user.nickname,
-        created_at: user.created_at,
-        teams: user.team_users?.map((tu) => tu.teams.name) || [],
-        active_releases: 0, // TODO: Calculate this from user_release_state
+      const transformedMembers: Member[] = (members as unknown as MemberWithTeams[]).map((member) => ({
+        id: member.id,
+        full_name: member.full_name,
+        email: member.email,
+        nickname: member.nickname,
+        member_role: member.member_role,
+        created_at: member.created_at,
+        teams: member.team_members?.map((tm) => tm.teams.name) || [],
+        active_releases: 0, // TODO: Calculate this from member_release_state
       }));
 
       setMembers(transformedMembers);

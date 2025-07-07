@@ -39,9 +39,9 @@ export default function TeamsPage() {
         name,
         description,
         created_at,
-        team_users (
-          user_id,
-          users (
+        team_members (
+          member_id,
+          members (
             id,
             full_name,
             email,
@@ -62,10 +62,10 @@ export default function TeamsPage() {
         id: team.id,
         name: team.name,
         description: team.description,
-        member_count: team.team_users?.length || 0,
+        member_count: team.team_members?.length || 0,
         active_releases: team.release_teams?.length || 0,
         created_at: team.created_at,
-        members: (team.team_users?.map((tu) => tu.users).filter(Boolean) || []).flat(),
+        members: (team.team_members?.map((tm) => tm.members).filter(Boolean) || []).flat(),
       })) || [];
       
       setTeams(transformedData);

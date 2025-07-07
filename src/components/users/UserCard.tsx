@@ -41,11 +41,11 @@ export function UserCard({ user, onUserUpdated }: { user: User; onUserUpdated: (
   const isAdmin = !loading && userRole === 'admin';
   
   // Debug logging
-  console.log('UserCard - loading:', loading);
-  console.log('UserCard - userRole:', userRole);
-  console.log('UserCard - isAdmin:', isAdmin);
-  console.log('UserCard - currentUser email:', currentUser?.email);
-  console.log('UserCard - user email:', user.email);
+  // console.log('UserCard - loading:', loading);
+  // console.log('UserCard - userRole:', userRole);
+  // console.log('UserCard - isAdmin:', isAdmin);
+  // console.log('UserCard - currentUser email:', currentUser?.email);
+  // console.log('UserCard - user email:', user.email);
 
   const formatLastLogin = (lastSignInAt?: string) => {
     if (!lastSignInAt) {

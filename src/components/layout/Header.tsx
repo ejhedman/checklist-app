@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { LoginDialog } from "@/components/auth/LoginDialog";
 
 export function Header() {
-  const { user, signOut } = useAuth();
+  const { user, userRole, memberId, memberRole, signOut } = useAuth();
 
   const handleLoginSuccess = () => {
     // Refresh the page or update the UI as needed
@@ -31,6 +31,12 @@ export function Header() {
                 <User className="h-4 w-4 mr-2" />
                 {user.email}
               </Button>
+              <div className="flex flex-col items-end mr-2">
+                <span className="text-xs text-gray-400">user_id: {user.id}</span>
+                <span className="text-xs text-gray-400">sys_role: {userRole}</span>
+                <span className="text-xs text-gray-400">member_id: {memberId}</span>
+                <span className="text-xs text-gray-400">member_role: {memberRole}</span>
+              </div>
               <Button variant="outline" size="sm" onClick={signOut}>
                 <LogOut className="h-4 w-4 mr-2" />
                 Sign Out

@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
 
     // Fetch existing user roles to avoid duplicates
     const { data: existingRoles, error: rolesError } = await supabase
-      .from('uroles')
+      .from('sys_roles')
       .select('user_id');
 
     if (rolesError) {
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
 
     // Insert the role records
     const { error: insertError } = await supabase
-      .from('uroles')
+      .from('sys_roles')
       .insert(roleRecords);
 
     if (insertError) {
@@ -106,8 +106,8 @@ export async function GET() {
 
     // Fetch existing user roles
     const { data: existingRoles, error: rolesError } = await supabase
-      .from('uroles')
-      .select('user_id, role');
+      .from('sys_roles')
+      .select('user_id, sys_role');
 
     if (rolesError) {
       console.error('Error fetching existing roles:', rolesError);
@@ -120,7 +120,7 @@ export async function GET() {
     // Create a map of user roles
     const roleMap = new Map();
     existingRoles?.forEach(role => {
-      roleMap.set(role.user_id, role.role);
+      roleMap.set(role.user_id, role.sys_role);
     });
 
     // Count users with and without roles

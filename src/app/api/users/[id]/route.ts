@@ -59,10 +59,10 @@ export async function PUT(
     // Update user role if provided
     if (role) {
       const { error: roleError } = await supabase
-        .from('uroles')
+        .from('sys_roles')
         .upsert({
           user_id: userId,
-          role: role,
+          sys_role: role,
         }, {
           onConflict: 'user_id'
         });
@@ -103,7 +103,7 @@ export async function DELETE(
 
     // Delete user role first
     const { error: roleError } = await supabase
-      .from('uroles')
+      .from('sys_roles')
       .delete()
       .eq('user_id', userId);
 

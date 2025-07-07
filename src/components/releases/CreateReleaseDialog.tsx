@@ -127,14 +127,14 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
             const { error: teamActivityError } = await supabase.from("activity_log").insert({
               release_id: initialRelease.id,
               team_id: teamId,
-              user_id: user?.id,
+              member_id: user?.id,
               activity_type: "team_added",
               activity_details: {},
             });
             if (teamActivityError) {
               console.error("Failed to log team added activity:", teamActivityError);
             } else {
-              console.log("Successfully logged team added activity");
+              // console.log("Successfully logged team added activity");
             }
           }
         }
@@ -163,14 +163,14 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
         // Log activity: release created
         const { error: activityError } = await supabase.from("activity_log").insert({
           release_id: release.id,
-          user_id: user?.id,
+          member_id: user?.id,
           activity_type: "release_created",
           activity_details: { name: release.name },
         });
         if (activityError) {
           console.error("Failed to log release created activity:", activityError);
         } else {
-          console.log("Successfully logged release created activity");
+          // console.log("Successfully logged release created activity");
         }
         if (formData.selectedTeams.length > 0) {
           const teamAssignments = formData.selectedTeams.map((teamId: string) => ({
@@ -183,14 +183,14 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
             const { error: teamActivityError } = await supabase.from("activity_log").insert({
               release_id: release.id,
               team_id: teamId,
-              user_id: user?.id,
+              member_id: user?.id,
               activity_type: "team_added",
               activity_details: {},
             });
             if (teamActivityError) {
               console.error("Failed to log team added activity:", teamActivityError);
             } else {
-              console.log("Successfully logged team added activity");
+              // console.log("Successfully logged team added activity");
             }
           }
         }

@@ -33,37 +33,37 @@ export function AddFeatureDialog({ releaseId, releaseName, onFeatureAdded }: Add
     name: "",
     description: "",
     jiraTicket: "",
-    driUserId: "",
+    driMemberId: "",
     isPlatform: false,
     isConfig: false,
   });
   const [error, setError] = useState("");
-  const [users, setUsers] = useState<Array<{ id: string; full_name: string; email: string }>>([]);
+  const [members, setMembers] = useState<Array<{ id: string; full_name: string; email: string }>>([]);
   const { user } = useAuth();
 
-  // Fetch users when dialog opens
-  const fetchUsers = async () => {
+  // Fetch members when dialog opens
+  const fetchMembers = async () => {
     const supabase = createClient();
     const { data, error } = await supabase
-      .from("users")
+      .from("members")
       .select("id, full_name, email")
       .order("full_name");
     
     if (!error && data) {
-      setUsers(data);
+      setMembers(data);
     }
   };
 
   const handleOpenChange = (newOpen: boolean) => {
     setOpen(newOpen);
     if (newOpen) {
-      fetchUsers();
+      fetchMembers();
       // Reset form
       setFormData({
         name: "",
         description: "",
         jiraTicket: "",
-        driUserId: "",
+        driMemberId: "",
         isPlatform: false,
         isConfig: false,
       });
@@ -86,7 +86,7 @@ export function AddFeatureDialog({ releaseId, releaseName, onFeatureAdded }: Add
           name: formData.name,
           description: formData.description || null,
           jira_ticket: formData.jiraTicket || null,
-          dri_user_id: formData.driUserId || null,
+          dri_member_id: formData.driMemberId || null,
           is_platform: formData.isPlatform,
           is_config: formData.isConfig,
           is_ready: false, // Always default to false when creating
@@ -103,14 +103,14 @@ export function AddFeatureDialog({ releaseId, releaseName, onFeatureAdded }: Add
       const { error: activityError } = await supabase.from("activity_log").insert({
         release_id: releaseId,
         feature_id: featureData.id,
-        user_id: user?.id,
+        member_id: user?.id,
         activity_type: "feature_added",
         activity_details: { name: formData.name },
       });
       if (activityError) {
         console.error("Failed to log feature added activity:", activityError);
       } else {
-        console.log("Successfully logged feature added activity");
+        // console.log("Successfully logged feature added activity");
       }
 
       setOpen(false);
@@ -189,8 +189,8 @@ export function AddFeatureDialog({ releaseId, releaseName, onFeatureAdded }: Add
                 DRI
               </Label>
               <Select
-                value={formData.driUserId || "none"}
-                onValueChange={(value) => setFormData({ ...formData, driUserId: value === "none" ? "" : value })}
+                value={formData.driMemberId || "none"}
+                onValueChange={(value) => setFormData({ ...formData, driMemberId: value === "none" ? "" : value })}
                 disabled={loading}
               >
                 <SelectTrigger className="col-span-3">
@@ -198,9 +198,9 @@ export function AddFeatureDialog({ releaseId, releaseName, onFeatureAdded }: Add
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">No DRI assigned</SelectItem>
-                  {users.map((user) => (
-                    <SelectItem key={user.id} value={user.id}>
-                      {user.full_name} ({user.email})
+                  {members.map((member) => (
+                    <SelectItem key={member.id} value={member.id}>
+                      {member.full_name} ({member.email})
                     </SelectItem>
                   ))}
                 </SelectContent>

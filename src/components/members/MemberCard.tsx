@@ -20,6 +20,7 @@ export interface Member {
   full_name: string;
   email: string;
   nickname: string | null;
+  member_role: 'member' | 'release_manager' | 'admin';
   created_at: string;
   teams: string[];
   active_releases: number;
@@ -33,11 +34,23 @@ export function MemberCard({ member, onMemberUpdated }: { member: Member; onMemb
   // Check if this member card represents the logged-in user
   const isCurrentUser = user?.email === member.email;
 
+  // Function to get badge styling based on role
+  const getRoleBadgeStyle = (role: string) => {
+    switch (role) {
+      case 'admin':
+        return "bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-200";
+      case 'release_manager':
+        return "bg-green-100 text-green-800 border-green-200 hover:bg-green-200";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-200";
+    }
+  };
+
   const handleDelete = async () => {
     setDeleting(true);
     try {
       const supabase = createClient();
-      const { error } = await supabase.from("users").delete().eq("id", member.id);
+      const { error } = await supabase.from("members").delete().eq("id", member.id);
       if (error) {
         alert("Failed to delete member: " + error.message);
         return;
@@ -87,9 +100,17 @@ export function MemberCard({ member, onMemberUpdated }: { member: Member; onMemb
             </Dialog>
           </div>
         </div>
-        <CardDescription className="flex items-center">
-          <Mail className="h-3 w-3 mr-1" />
-          {member.email}
+        <CardDescription className="flex items-center justify-between">
+          <div className="flex items-center">
+            <Mail className="h-3 w-3 mr-1" />
+            {member.email}
+          </div>
+          <Badge 
+            variant="outline" 
+            className={`text-xs ${getRoleBadgeStyle(member.member_role)}`}
+          >
+            {member.member_role.replace('_', ' ')}
+          </Badge>
         </CardDescription>
       </CardHeader>
       <CardContent className="pb-1">

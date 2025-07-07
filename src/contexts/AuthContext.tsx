@@ -9,6 +9,8 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   userRole: 'admin' | 'user' | null;
+  memberId: string | null;
+  memberRole: string | null;
   signOut: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -20,6 +22,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState<'admin' | 'user' | null>(null);
+  const [memberId, setMemberId] = useState<string | null>(null);
+  const [memberRole, setMemberRole] = useState<string | null>(null);
   
   // Use refs to prevent race conditions and duplicate fetches
   const roleFetchPromise = useRef<Promise<'admin' | 'user'> | null>(null);
@@ -29,21 +33,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const supabase = createClient();
 
   const fetchUserRole = async (userId: string, retryCount = 0): Promise<'admin' | 'user'> => {
-    console.log('🔍 FETCHING USER ROLE - User ID:', userId, retryCount > 0 ? `(retry ${retryCount})` : '');
+    // console.log('🔍 FETCHING USER ROLE - User ID:', userId, retryCount > 0 ? `(retry ${retryCount})` : '');
     
     // If we're already fetching for this user, return the existing promise
     if (roleFetchPromise.current && lastFetchedUserId.current === userId) {
-      console.log('🔄 RETURNING EXISTING ROLE FETCH PROMISE');
+      // console.log('🔄 RETURNING EXISTING ROLE FETCH PROMISE');
       return roleFetchPromise.current;
     }
 
     // If we're fetching for a different user, wait for the current fetch to complete
     if (roleFetchPromise.current && lastFetchedUserId.current !== userId) {
-      console.log('🔄 WAITING FOR PREVIOUS ROLE FETCH TO COMPLETE');
+      // console.log('🔄 WAITING FOR PREVIOUS ROLE FETCH TO COMPLETE');
       try {
         await roleFetchPromise.current;
       } catch (error) {
-        console.log('🔄 PREVIOUS ROLE FETCH FAILED, PROCEEDING WITH NEW FETCH');
+        // console.log('🔄 PREVIOUS ROLE FETCH FAILED, PROCEEDING WITH NEW FETCH');
         // Clear the failed promise and continue
         roleFetchPromise.current = null;
         lastFetchedUserId.current = null;
@@ -58,8 +62,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Create the fetch promise
     const fetchPromise = supabase
-      .from('uroles')
-      .select('role')
+      .from('sys_roles')
+      .select('sys_role')
       .eq('user_id', userId)
       .single();
 
@@ -73,13 +77,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error(`Role fetch failed: ${error.message}`);
       }
 
-      if (!data || !data.role) {
+      if (!data || !data.sys_role) {
         console.error('❌ NO ROLE DATA FOUND for user:', userId);
-        throw new Error(`No role data found in uroles table for user ${userId}`);
+        throw new Error(`No role data found in sys_roles table for user ${userId}`);
       }
 
-      console.log('✅ ROLE FETCHED SUCCESSFULLY:', data.role, 'for user:', userId);
-      return data.role as 'admin' | 'user';
+      // console.log('✅ ROLE FETCHED SUCCESSFULLY:', data.sys_role, 'for user:', userId);
+      return data.sys_role as 'admin' | 'user';
     }).catch((error) => {
       console.error('❌ ROLE FETCH EXCEPTION:', error);
       // Clear the promise reference so we can retry
@@ -88,7 +92,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Retry up to 2 times with exponential backoff
       if (retryCount < 2 && error.message.includes('timeout')) {
-        console.log(`🔄 RETRYING ROLE FETCH (attempt ${retryCount + 1})`);
+        // console.log(`🔄 RETRYING ROLE FETCH (attempt ${retryCount + 1})`);
         const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s
         return new Promise(resolve => setTimeout(resolve, delay))
           .then(() => fetchUserRole(userId, retryCount + 1));
@@ -116,7 +120,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshUser = async () => {
     try {
-      console.log('🔄 REFRESHING USER...');
+      // console.log('🔄 REFRESHING USER...');
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       const { data: { session: currentSession } } = await supabase.auth.getSession();
       
@@ -125,7 +129,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Only fetch role if user exists and we haven't fetched it yet for this user
       if (currentUser && lastFetchedUserId.current !== currentUser.id) {
-        console.log('🔄 FETCHING ROLE DURING REFRESH...');
+        // console.log('🔄 FETCHING ROLE DURING REFRESH...');
         try {
           const role = await fetchUserRole(currentUser.id);
           setUserRole(role);
@@ -141,34 +145,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    console.log('🚀 AUTH CONTEXT INITIALIZING...');
+    // console.log('🚀 AUTH CONTEXT INITIALIZING...');
     isInitializing.current = true;
     
     const initializeAuth = async () => {
       try {
         // Get initial session
-        console.log('📋 GETTING INITIAL SESSION...');
+        // console.log('📋 GETTING INITIAL SESSION...');
         const { data: { session } } = await supabase.auth.getSession();
         setSession(session);
         setUser(session?.user ?? null);
 
         // Fetch role if user exists and we haven't fetched it yet
         if (session?.user && lastFetchedUserId.current !== session.user.id) {
-          console.log('👤 SESSION USER FOUND, FETCHING ROLE ONCE...');
+          // console.log('👤 SESSION USER FOUND, FETCHING ROLE ONCE...');
           try {
             const role = await fetchUserRole(session.user.id);
             setUserRole(role);
-            console.log('✅ INITIAL ROLE SET:', role);
+            // console.log('✅ INITIAL ROLE SET:', role);
           } catch (error) {
             console.error('❌ INITIAL ROLE FETCH ERROR:', error);
             setUserRole(null);
           }
         } else if (!session?.user) {
-          console.log('👤 NO SESSION USER');
+          // console.log('👤 NO SESSION USER');
           setUserRole(null);
         }
 
-        console.log('✅ AUTH INITIALIZATION COMPLETE');
+        // console.log('✅ AUTH INITIALIZATION COMPLETE');
         setLoading(false);
         isInitializing.current = false;
       } catch (error) {
@@ -183,31 +187,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('🔄 AUTH STATE CHANGE:', event, session?.user?.id);
+        // console.log('🔄 AUTH STATE CHANGE:', event, session?.user?.id);
         
         setSession(session);
         setUser(session?.user ?? null);
 
         // Skip role fetching during initial auth state changes to avoid race conditions
         if (isInitializing.current && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {
-          console.log('🔄 SKIPPING ROLE FETCH DURING INITIALIZATION for event:', event);
+          // console.log('🔄 SKIPPING ROLE FETCH DURING INITIALIZATION for event:', event);
           setLoading(false);
           return;
         }
 
         // Only fetch role if user exists and we haven't fetched it yet for this user
         if (session?.user && lastFetchedUserId.current !== session.user.id) {
-          console.log('🔄 FETCHING ROLE ON AUTH CHANGE...');
+          // console.log('🔄 FETCHING ROLE ON AUTH CHANGE...');
           try {
             const role = await fetchUserRole(session.user.id);
             setUserRole(role);
-            console.log('✅ ROLE SET ON AUTH CHANGE:', role);
+            // console.log('✅ ROLE SET ON AUTH CHANGE:', role);
           } catch (error) {
             console.error('❌ ROLE FETCH ERROR ON AUTH CHANGE:', error);
             setUserRole(null);
           }
         } else if (!session?.user) {
-          console.log('🔄 CLEARING ROLE - no user');
+          // console.log('🔄 CLEARING ROLE - no user');
           setUserRole(null);
           // Clear the fetch promise and user ID
           roleFetchPromise.current = null;
@@ -224,11 +228,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  useEffect(() => {
+    if (user) {
+      // Fetch member_id and role from members table
+      console.log('🔄 FETCHING MEMBER INFO...');
+      const fetchMemberInfo = async () => {
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from('members')
+          .select('id, member_role')
+          .eq('user_id', user.id)
+          .single();
+        if (!error && data) {
+          setMemberId(data.id);
+          setMemberRole(data.member_role);
+          console.log('AuthContext: memberId set to', data.id, 'memberRole:', data.member_role);
+        } else {
+          setMemberId(null);
+          setMemberRole(null);
+          console.log('AuthContext: memberId set to null');
+        }
+      };
+      fetchMemberInfo();
+    } else {
+      setMemberId(null);
+      setMemberRole(null);
+    }
+  }, [user]);
+
   const value = {
     user,
     session,
     loading,
     userRole,
+    memberId,
+    memberRole,
     signOut,
     refreshUser,
   };

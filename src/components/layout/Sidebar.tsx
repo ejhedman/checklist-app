@@ -10,11 +10,11 @@ export function Sidebar() {
   const isAdmin = userRole === 'admin';
   
   // Debug logging
-  console.log('Sidebar - loading:', loading);
-  console.log('Sidebar - userRole:', userRole);
-  console.log('Sidebar - isAdmin:', isAdmin);
-  console.log('Sidebar - current user ID:', user?.id);
-  console.log('Sidebar - current user email:', user?.email);
+  // console.log('Sidebar - loading:', loading);
+  // console.log('Sidebar - userRole:', userRole);
+  // console.log('Sidebar - isAdmin:', isAdmin);
+  // console.log('Sidebar - current user ID:', user?.id);
+  // console.log('Sidebar - current user email:', user?.email);
 
   // Don't render admin features until we're sure about the user's role
   if (loading) {

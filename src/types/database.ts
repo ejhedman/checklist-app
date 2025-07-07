@@ -4,54 +4,54 @@ export interface Database {
       members: {
         Row: {
           id: string
-          member_id: string
+          member_id: string | null
           email: string
           full_name: string
           nickname: string | null
-          role: 'user' | 'release_manager' | 'admin' | 'superuser'
+          member_role: 'member' | 'release_manager' | 'admin'
           created_at: string
           updated_at: string
         }
         Insert: {
           id?: string
-          member_id?: string
+          member_id?: string | null
           email: string
           full_name: string
           nickname?: string | null
-          role?: 'user' | 'release_manager' | 'admin' | 'superuser'
+          member_role?: 'member' | 'release_manager' | 'admin'
           created_at?: string
           updated_at?: string
         }
         Update: {
           id?: string
-          member_id?: string
+          member_id?: string | null
           email?: string
           full_name?: string
           nickname?: string | null
-          role?: 'user' | 'release_manager' | 'admin' | 'superuser'
+          member_role?: 'member' | 'release_manager' | 'admin'
           created_at?: string
           updated_at?: string
         }
       }
-      uroles: {
+      sys_roles: {
         Row: {
           id: string
-          user_id: string
-          role: 'admin' | 'user'
+          member_id: string
+          sys_role: 'admin' | 'user'
           created_at: string
           updated_at: string
         }
         Insert: {
           id?: string
-          user_id: string
-          role?: 'admin' | 'user'
+          member_id: string
+          sys_role?: 'admin' | 'user'
           created_at?: string
           updated_at?: string
         }
         Update: {
           id?: string
-          user_id?: string
-          role?: 'admin' | 'user'
+          member_id?: string
+          sys_role?: 'admin' | 'user'
           created_at?: string
           updated_at?: string
         }

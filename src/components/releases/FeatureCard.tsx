@@ -9,7 +9,7 @@ interface FeatureCardProps {
 }
 
 export default function FeatureCard({ feature, user, updatingFeature, handleFeatureReadyChange }: FeatureCardProps) {
-  const isDri = user && feature.dri_user && user.id === feature.dri_user.id;
+  const isDri = user && feature.dri_member && user.id === feature.dri_member.id;
   return (
     <div className={`p-3 border rounded-lg ${isDri ? 'bg-blue-50 border-blue-200' : ''}`}>
       {/* Top row: Feature name, DRI info, Ready badge/checkbox */}
@@ -26,12 +26,12 @@ export default function FeatureCard({ feature, user, updatingFeature, handleFeat
         </div>
         {/* Center: DRI info */}
         <div className="flex flex-col items-center min-w-[120px] md:w-1/4">
-          {feature.dri_user ? (
+          {feature.dri_member ? (
             <>
               <span className="text-xs font-semibold text-muted-foreground mb-0.5">DRI:</span>
-              <span className="text-sm font-medium truncate">{feature.dri_user.full_name}</span>
-              <span className="text-xs text-muted-foreground truncate">{feature.dri_user.email}</span>
-              {user && user.id === feature.dri_user.id && (
+              <span className="text-sm font-medium truncate">{feature.dri_member.full_name}</span>
+              <span className="text-xs text-muted-foreground truncate">{feature.dri_member.email}</span>
+              {user && user.id === feature.dri_member.id && (
                 <span className="text-xs text-blue-600 font-medium">(You are the DRI)</span>
               )}
             </>
@@ -45,7 +45,7 @@ export default function FeatureCard({ feature, user, updatingFeature, handleFeat
             {feature.is_ready ? "Ready" : "Not Ready"}
           </span>
           {/* Show checkbox only if not ready and user is DRI */}
-          {!feature.is_ready && user && feature.dri_user && user.id === feature.dri_user.id && (
+          {!feature.is_ready && user && feature.dri_member && user.id === feature.dri_member.id && (
             <div className="flex flex-col items-center">
               <Checkbox
                 checked={false}

@@ -39,8 +39,8 @@ export default function ReleaseDetailPage({ params }: { params: Promise<{ name: 
             id,
             name,
             description,
-            team_users (
-              user:users (
+            team_members (
+              member:members (
                 id,
                 full_name,
                 email
@@ -48,8 +48,8 @@ export default function ReleaseDetailPage({ params }: { params: Promise<{ name: 
             )
           )
         ),
-        user_release_state (
-          user_id,
+        member_release_state (
+          member_id,
           is_ready
         ),
         features (
@@ -61,8 +61,8 @@ export default function ReleaseDetailPage({ params }: { params: Promise<{ name: 
           is_config,
           is_ready,
           comments,
-          dri_user_id,
-          dri_user:users!dri_user_id (
+          dri_member_id,
+          dri_member:members!dri_member_id (
             id,
             full_name,
             email
@@ -82,21 +82,21 @@ export default function ReleaseDetailPage({ params }: { params: Promise<{ name: 
     const allMembers: any[] = [];
     if (data.release_teams) {
       data.release_teams.forEach((rt: any) => {
-        if (rt.team && rt.team.team_users) {
-          const members = Array.isArray(rt.team.team_users)
-            ? rt.team.team_users
-            : [rt.team.team_users];
-          members.forEach((tu: any) => {
-            allMembers.push(tu.user ? tu.user : tu);
+        if (rt.team && rt.team.team_members) {
+          const members = Array.isArray(rt.team.team_members)
+            ? rt.team.team_members
+            : [rt.team.team_members];
+          members.forEach((tm: any) => {
+            allMembers.push(tm.member ? tm.member : tm);
           });
         }
       });
     }
     const total_members = allMembers.length;
     const ready_members = allMembers.filter((member) => {
-      const userId = member.id;
-      const userReadyState = data.user_release_state?.find((urs: any) => urs.user_id === userId);
-      return userReadyState?.is_ready;
+      const memberId = member.id;
+      const memberReadyState = data.member_release_state?.find((mrs: any) => mrs.member_id === memberId);
+      return memberReadyState?.is_ready;
     }).length;
 
     // Transform the data to match the card props
@@ -107,24 +107,24 @@ export default function ReleaseDetailPage({ params }: { params: Promise<{ name: 
       ready_features: data.features?.filter((f: any) => f.is_ready)?.length || 0,
       features: data.features?.map((feature: any) => ({
         ...feature,
-        dri_user: Array.isArray(feature.dri_user)
-          ? feature.dri_user[0]
-          : feature.dri_user,
+        dri_member: Array.isArray(feature.dri_member)
+          ? feature.dri_member[0]
+          : feature.dri_member,
       })) || [],
       teams: data.release_teams?.map((rt: any) => ({
         id: rt.team.id,
         name: rt.team.name,
         description: rt.team.description,
-        members: (Array.isArray(rt.team.team_users)
-          ? rt.team.team_users
-          : (rt.team.team_users ? [rt.team.team_users] : [])
-        ).map((tu: any) => {
-          const userReadyState = data.user_release_state?.find((urs: any) => urs.user_id === tu.user.id);
+        members: (Array.isArray(rt.team.team_members)
+          ? rt.team.team_members
+          : (rt.team.team_members ? [rt.team.team_members] : [])
+        ).map((tm: any) => {
+          const memberReadyState = data.member_release_state?.find((mrs: any) => mrs.member_id === tm.member.id);
           return {
-            id: tu.user.id,
-            full_name: tu.user.full_name,
-            email: tu.user.email,
-            is_ready: userReadyState?.is_ready || false,
+            id: tm.member.id,
+            full_name: tm.member.full_name,
+            email: tm.member.email,
+            is_ready: memberReadyState?.is_ready || false,
           };
         }) || [],
       })) || [],
@@ -136,14 +136,14 @@ export default function ReleaseDetailPage({ params }: { params: Promise<{ name: 
     setLoading(false);
   };
 
-  const handleMemberReadyChange = async (releaseId: string, userId: string, isReady: boolean) => {
+  const handleMemberReadyChange = async (releaseId: string, memberId: string, isReady: boolean) => {
     const supabase = createClient();
     
     const { error: updateError } = await supabase
-      .from("user_release_state")
+      .from("member_release_state")
       .upsert({
         release_id: releaseId,
-        user_id: userId,
+        member_id: memberId,
         is_ready: isReady,
       });
 
