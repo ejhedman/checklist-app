@@ -19,7 +19,7 @@ export function Header() {
         <div className="flex items-center h-full pl-8">
           <img 
             src="/logo.png" 
-            alt="Release Manager Logo" 
+            alt="Releassimo Logo" 
             className="h-24 w-auto object-contain max-h-full"
           />
         </div>

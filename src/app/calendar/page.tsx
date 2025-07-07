@@ -384,6 +384,32 @@ export default function CalendarPage() {
     try {
       const supabase = createClient();
       
+      // Get current user's member info for activity logging
+      const { data: member, error: memberError } = await supabase
+        .from('members')
+        .select('id, tenant_id')
+        .eq('email', user?.email)
+        .single();
+
+      if (memberError || !member) {
+        console.error("No member record found for user");
+        throw new Error("No member record found for user");
+      }
+      
+      // Get the current release data to log the change
+      const { data: currentRelease, error: fetchError } = await supabase
+        .from("releases")
+        .select("name, target_date")
+        .eq("id", releaseId)
+        .single();
+
+      if (fetchError) {
+        console.error("Error fetching current release data:", fetchError);
+        throw fetchError;
+      }
+
+      const oldDate = currentRelease.target_date;
+      
       const { error } = await supabase
         .from("releases")
         .update({ target_date: newDate })
@@ -392,6 +418,27 @@ export default function CalendarPage() {
       if (error) {
         console.error("Database error:", error);
         throw error;
+      }
+
+      // Log activity: release date changed via calendar
+      if (oldDate !== newDate) {
+        const { error: activityError } = await supabase.from("activity_log").insert({
+          release_id: releaseId,
+          member_id: member.id,
+          tenant_id: member.tenant_id,
+          activity_type: "release_date_changed",
+          activity_details: { 
+            oldDate: oldDate,
+            newDate: newDate,
+            releaseName: currentRelease.name,
+            method: "calendar_drag_drop"
+          },
+        });
+        if (activityError) {
+          console.error("Failed to log release date change activity:", activityError);
+        } else {
+          // console.log("Successfully logged release date change activity");
+        }
       }
 
       // Update local state

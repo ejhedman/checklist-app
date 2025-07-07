@@ -431,6 +431,8 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onRele
                       memberId={memberId}
                       updatingFeature={updatingFeature}
                       handleFeatureReadyChange={handleFeatureReadyChange}
+                      onFeatureUpdated={() => onReleaseUpdated(undefined)}
+                      releaseName={release.name}
                     />
                   ))
               )}

@@ -26,7 +26,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center space-y-4">
           <div className="space-y-2">
-            <h1 className="text-2xl font-bold">Welcome to Release Manager</h1>
+            <h1 className="text-2xl font-bold">Welcome to Releassimo</h1>
             <p className="text-muted-foreground">
               Please sign in to access the application.
             </p>

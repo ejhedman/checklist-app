@@ -35,6 +35,26 @@ export default function RecentActivityCard({ activity }: { activity: any[] }) {
                           return `${memberName} added team "${activity.teams?.name || ''}" to release: ${activity.releases?.name || ''}`;
                         case 'release_state_change':
                           return `${memberName} changed release state to "${activity.activity_details?.newState || ''}"`;
+                        case 'release_updated':
+                          const releaseChanges = activity.activity_details?.changes || [];
+                          if (releaseChanges.length > 0) {
+                            return `${memberName} updated release "${activity.releases?.name || ''}" (${releaseChanges.join(', ')})`;
+                          }
+                          return `${memberName} updated release "${activity.releases?.name || ''}"`;
+                        case 'release_date_changed':
+                          const oldDate = new Date(activity.activity_details?.oldDate).toLocaleDateString();
+                          const newDate = new Date(activity.activity_details?.newDate).toLocaleDateString();
+                          return `${memberName} moved release "${activity.activity_details?.releaseName || ''}" from ${oldDate} to ${newDate}`;
+                        case 'release_notes_updated':
+                          return `${memberName} updated release notes for "${activity.releases?.name || ''}"`;
+                        case 'release_summary_updated':
+                          return `${memberName} updated release summary for "${activity.releases?.name || ''}"`;
+                        case 'feature_updated':
+                          const featureChanges = activity.activity_details?.changes || [];
+                          if (featureChanges.length > 0) {
+                            return `${memberName} updated feature "${activity.features?.name || ''}" (${featureChanges.join(', ')})`;
+                          }
+                          return `${memberName} updated feature "${activity.features?.name || ''}"`;
                         default:
                           return activity.activity_type;
                       }

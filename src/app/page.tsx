@@ -112,7 +112,7 @@ async function getDashboardData() {
       .select(`*, members(full_name, email, nickname), features(name), teams(name), releases(name)`)
       .eq('tenant_id', member.tenant_id)
       .order('created_at', { ascending: false })
-      .limit(5);
+      .limit(7);
 
     if (activityError) {
       console.error("Server: Failed to fetch recent activity:", activityError);

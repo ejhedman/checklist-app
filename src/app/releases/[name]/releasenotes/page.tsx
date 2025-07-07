@@ -84,6 +84,27 @@ export default function ReleaseNotesPage() {
     setSaving(true);
     setError(null);
     const supabase = createClient();
+    
+    // Get current user's member info for activity logging
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      setError("No authenticated user found");
+      setSaving(false);
+      return;
+    }
+
+    const { data: member, error: memberError } = await supabase
+      .from('members')
+      .select('id, tenant_id')
+      .eq('email', user.email)
+      .single();
+
+    if (memberError || !member) {
+      setError("No member record found for user");
+      setSaving(false);
+      return;
+    }
+    
     const { error } = await supabase
       .from("releases")
       .update({ release_notes: releaseNotes })
@@ -91,6 +112,22 @@ export default function ReleaseNotesPage() {
     if (error) {
       setError("Failed to save release notes");
     } else {
+      // Log activity: release notes updated
+      const { error: activityError } = await supabase.from("activity_log").insert({
+        release_id: releaseId,
+        member_id: member.id,
+        tenant_id: member.tenant_id,
+        activity_type: "release_notes_updated",
+        activity_details: { 
+          method: "manual_edit"
+        },
+      });
+      if (activityError) {
+        console.error("Failed to log release notes update activity:", activityError);
+      } else {
+        // console.log("Successfully logged release notes update activity");
+      }
+      
       setEditing(false);
     }
     setSaving(false);
@@ -101,6 +138,27 @@ export default function ReleaseNotesPage() {
     setSavingSummary(true);
     setError(null);
     const supabase = createClient();
+    
+    // Get current user's member info for activity logging
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      setError("No authenticated user found");
+      setSavingSummary(false);
+      return;
+    }
+
+    const { data: member, error: memberError } = await supabase
+      .from('members')
+      .select('id, tenant_id')
+      .eq('email', user.email)
+      .single();
+
+    if (memberError || !member) {
+      setError("No member record found for user");
+      setSavingSummary(false);
+      return;
+    }
+    
     const { error } = await supabase
       .from("releases")
       .update({ release_summary: releaseSummary })
@@ -108,6 +166,22 @@ export default function ReleaseNotesPage() {
     if (error) {
       setError("Failed to save release summary");
     } else {
+      // Log activity: release summary updated
+      const { error: activityError } = await supabase.from("activity_log").insert({
+        release_id: releaseId,
+        member_id: member.id,
+        tenant_id: member.tenant_id,
+        activity_type: "release_summary_updated",
+        activity_details: { 
+          method: "manual_edit"
+        },
+      });
+      if (activityError) {
+        console.error("Failed to log release summary update activity:", activityError);
+      } else {
+        // console.log("Successfully logged release summary update activity");
+      }
+      
       setEditingSummary(false);
     }
     setSavingSummary(false);

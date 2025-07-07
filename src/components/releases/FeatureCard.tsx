@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { EditFeatureDialog } from "./EditFeatureDialog";
 
 interface FeatureCardProps {
   feature: any;
@@ -7,20 +8,28 @@ interface FeatureCardProps {
   memberId: string | null;
   updatingFeature: boolean;
   handleFeatureReadyChange: (feature: any, isReady: boolean) => void;
+  onFeatureUpdated?: () => void;
+  releaseName?: string;
 }
 
-export default function FeatureCard({ feature, user, memberId, updatingFeature, handleFeatureReadyChange }: FeatureCardProps) {
+export default function FeatureCard({ feature, user, memberId, updatingFeature, handleFeatureReadyChange, onFeatureUpdated, releaseName }: FeatureCardProps) {
   const isDri = memberId && feature.dri_member && memberId === feature.dri_member.id;
   // Only the logged-in user who is the DRI can check the box (by memberId)
   const canMarkReady = memberId && feature.dri_member && memberId === feature.dri_member.id;
   return (
-    <div className={`p-3 border rounded-lg ${isDri ? 'bg-blue-50 border-blue-200' : ''}`}>
-      {/* Top row: Feature name: description (left), Platform/Specs badges (right) */}
-      <div className="flex flex-row items-center justify-between w-full gap-2">
-        <p className="text-sm text-muted-foreground flex-1 min-w-0 truncate">
-          {feature.name}{feature.description ? `: ${feature.description}` : ''}
-        </p>
-        <div className="flex flex-row items-center space-x-2 min-w-[80px] justify-end">
+    <div className={`p-3 border rounded-lg relative ${isDri ? 'bg-blue-50 border-blue-200' : ''}`}>
+      {/* Edit button in top right corner */}
+      <div className="absolute top-2 right-2">
+        <EditFeatureDialog 
+          feature={feature} 
+          releaseName={releaseName || "this release"} 
+          onFeatureUpdated={onFeatureUpdated || (() => {})} 
+        />
+      </div>
+      
+      {/* Top row: Platform/Specs badges (left), Feature name: description (right) */}
+      <div className="flex flex-row items-center w-full gap-2 pr-8">
+        <div className="flex flex-row items-center space-x-2 min-w-[80px]">
           {feature.is_platform && (
             <Badge variant="outline" className="text-xs">Platform</Badge>
           )}
@@ -28,6 +37,9 @@ export default function FeatureCard({ feature, user, memberId, updatingFeature, 
             <Badge variant="outline" className="text-xs">Specs</Badge>
           )}
         </div>
+        <p className="text-sm text-muted-foreground flex-1 min-w-0 truncate">
+          {feature.name}{feature.description ? `: ${feature.description}` : ''}
+        </p>
       </div>
       {/* Bottom row: DRI info (left), JIRA and comments (center), Ready checkbox/state (right) */}
       <div className="mt-2 flex flex-row items-center w-full gap-2">

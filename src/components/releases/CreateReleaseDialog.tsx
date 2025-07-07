@@ -159,6 +159,12 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
       const supabase = createClient();
       let release: any;
       if (isEdit && initialRelease) {
+        // Get member info for activity logging
+        let memberInfo = null;
+        if (user?.id) {
+          memberInfo = await getMemberInfo(user.id);
+        }
+        
         // Update existing release
         const { data: updated, error: updateError } = await supabase
           .from("releases")
@@ -177,6 +183,47 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
           return;
         }
         release = updated;
+        
+        // Log activity: release updated
+        if (user?.id && memberInfo) {
+          const changes = [];
+          if (initialRelease.name !== formData.name) changes.push(`name: "${initialRelease.name}" → "${formData.name}"`);
+          if (initialRelease.target_date !== formData.targetDate) changes.push(`target date: "${initialRelease.target_date}" → "${formData.targetDate}"`);
+          if (initialRelease.platform_update !== formData.platformUpdate) changes.push(`platform update: ${initialRelease.platform_update} → ${formData.platformUpdate}`);
+          if (initialRelease.config_update !== formData.configUpdate) changes.push(`config update: ${initialRelease.config_update} → ${formData.configUpdate}`);
+          if (initialRelease.release_summary !== formData.summary) changes.push(`summary updated`);
+          
+          if (changes.length > 0) {
+            const { error: activityError } = await supabase.from("activity_log").insert({
+              release_id: initialRelease.id,
+              member_id: memberInfo.id,
+              tenant_id: memberInfo.tenant_id,
+              activity_type: "release_updated",
+              activity_details: { 
+                changes: changes,
+                oldValues: {
+                  name: initialRelease.name,
+                  target_date: initialRelease.target_date,
+                  platform_update: initialRelease.platform_update,
+                  config_update: initialRelease.config_update,
+                  release_summary: initialRelease.release_summary
+                },
+                newValues: {
+                  name: formData.name,
+                  target_date: formData.targetDate,
+                  platform_update: formData.platformUpdate,
+                  config_update: formData.configUpdate,
+                  release_summary: formData.summary
+                }
+              },
+            });
+            if (activityError) {
+              console.error("Failed to log release updated activity:", activityError);
+            } else {
+              console.log("Successfully logged release updated activity");
+            }
+          }
+        }
         // Update team assignments
         await supabase.from("release_teams").delete().eq("release_id", initialRelease.id);
         if (formData.selectedTeams.length > 0) {
@@ -277,7 +324,7 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
             team_id: teamId,
             tenant_id: memberInfo?.tenant_id,
           }));
-          console.log("Inserting team assignments for new release:", teamAssignments);
+          // console.log("Inserting team assignments for new release:", teamAssignments);
           const { error: teamInsertError } = await supabase.from("release_teams").insert(teamAssignments);
           if (teamInsertError) {
             console.error("Error inserting team assignments for new release:", teamInsertError);

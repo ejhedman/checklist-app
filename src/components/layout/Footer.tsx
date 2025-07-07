@@ -5,7 +5,7 @@ export function Footer() {
         <div className="flex items-center space-x-4">
           <span>v1.0.0</span>
           <span>·</span>
-          <span>© 2024 Release Manager</span>
+          <span>© 2025 Releassimo</span>
         </div>
         <div className="flex items-center space-x-4">
           <a href="/docs" className="hover:text-foreground">Docs</a>

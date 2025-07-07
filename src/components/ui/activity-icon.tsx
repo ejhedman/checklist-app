@@ -1,4 +1,4 @@
-import { UserCheck, Zap, PlusCircle, Plus, Users2, Settings, CheckCircle } from "lucide-react";
+import { UserCheck, Zap, PlusCircle, Plus, Users2, Settings, CheckCircle, Edit, Calendar, FileText } from "lucide-react";
 
 export interface ActivityIconProps {
   activityType: string;
@@ -32,6 +32,16 @@ function getActivityIconConfig(activityType: string) {
       return { icon: Users2, color: 'text-indigo-500' };
     case 'release_state_change':
       return { icon: Settings, color: 'text-yellow-500' };
+    case 'release_updated':
+      return { icon: Edit, color: 'text-cyan-500' };
+    case 'release_date_changed':
+      return { icon: Calendar, color: 'text-pink-500' };
+    case 'release_notes_updated':
+      return { icon: FileText, color: 'text-teal-500' };
+    case 'release_summary_updated':
+      return { icon: FileText, color: 'text-emerald-500' };
+    case 'feature_updated':
+      return { icon: Edit, color: 'text-amber-500' };
     default:
       return { icon: CheckCircle, color: 'text-gray-500' };
   }
