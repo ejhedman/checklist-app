@@ -253,7 +253,7 @@ export default function CalendarPage() {
   const [userInvolvedReleaseIds, setUserInvolvedReleaseIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const { addToast } = useToast();
-  const { user } = useAuth();
+  const { user, selectedTenant } = useAuth();
   const [dragState, setDragState] = useState<DragState>({
     isDragging: false,
     releaseId: null,
@@ -262,27 +262,15 @@ export default function CalendarPage() {
   });
 
   const fetchUserInvolvement = async () => {
-    if (!user) return;
+    if (!user || !selectedTenant) return;
     const supabase = createClient();
-
-    // Get current user's member info for tenant filtering
-    const { data: member, error: memberError } = await supabase
-      .from('members')
-      .select('id, tenant_id')
-      .eq('email', user.email)
-      .single();
-
-    if (memberError || !member) {
-      console.error("No member record found for user");
-      return;
-    }
 
     // 1. Get all team IDs for the user (filtered by tenant)
     const { data: teamMemberRows, error: teamMemberError } = await supabase
       .from("team_members")
       .select("team_id")
       .eq("member_id", user.id)
-      .eq("tenant_id", member.tenant_id);
+      .eq("tenant_id", selectedTenant.id);
 
     if (teamMemberError) {
       console.error("Error fetching user teams:", teamMemberError);
@@ -297,7 +285,7 @@ export default function CalendarPage() {
       const { data: releaseTeamsRows, error: releaseTeamsError } = await supabase
         .from("release_teams")
         .select("release_id")
-        .eq("tenant_id", member.tenant_id)
+        .eq("tenant_id", selectedTenant.id)
         .in("team_id", userTeamIds);
 
       if (releaseTeamsError) {
@@ -312,7 +300,7 @@ export default function CalendarPage() {
       .from("features")
       .select("release_id")
       .eq("dri_member_id", user.id)
-      .eq("tenant_id", member.tenant_id);
+      .eq("tenant_id", selectedTenant.id);
 
     if (driFeaturesError) {
       console.error("Error fetching DRI features:", driFeaturesError);
@@ -327,7 +315,7 @@ export default function CalendarPage() {
         .from("member_release_state")
         .select("release_id")
         .eq("member_id", user.id)
-        .eq("tenant_id", member.tenant_id)
+        .eq("tenant_id", selectedTenant.id)
         .eq("is_ready", false)
         .in("release_id", teamReleaseIds);
       if (notReadyError) {
@@ -346,15 +334,8 @@ export default function CalendarPage() {
     try {
       const supabase = createClient();
       
-      // Get current user's member info for tenant filtering
-      const { data: member, error: memberError } = await supabase
-        .from('members')
-        .select('id, tenant_id')
-        .eq('email', user?.email)
-        .single();
-
-      if (memberError || !member) {
-        console.error("No member record found for user");
+      if (!selectedTenant) {
+        console.error("No tenant selected");
         setReleases([]);
         setLoading(false);
         return;
@@ -363,7 +344,7 @@ export default function CalendarPage() {
       const { data, error } = await supabase
         .from("releases")
         .select("id, name, target_date, state")
-        .eq("tenant_id", member.tenant_id)
+        .eq("tenant_id", selectedTenant.id)
         .order("target_date");
 
       if (error) {
@@ -384,16 +365,9 @@ export default function CalendarPage() {
     try {
       const supabase = createClient();
       
-      // Get current user's member info for activity logging
-      const { data: member, error: memberError } = await supabase
-        .from('members')
-        .select('id, tenant_id')
-        .eq('email', user?.email)
-        .single();
-
-      if (memberError || !member) {
-        console.error("No member record found for user");
-        throw new Error("No member record found for user");
+      if (!selectedTenant || !user) {
+        console.error("No tenant selected or user not found");
+        throw new Error("No tenant selected or user not found");
       }
       
       // Get the current release data to log the change
@@ -424,8 +398,8 @@ export default function CalendarPage() {
       if (oldDate !== newDate) {
         const { error: activityError } = await supabase.from("activity_log").insert({
           release_id: releaseId,
-          member_id: member.id,
-          tenant_id: member.tenant_id,
+          member_id: user.id,
+          tenant_id: selectedTenant.id,
           activity_type: "release_date_changed",
           activity_details: { 
             oldDate: oldDate,
@@ -475,9 +449,15 @@ export default function CalendarPage() {
   };
 
   useEffect(() => {
-    fetchReleases();
-    fetchUserInvolvement();
-  }, [user]);
+    if (selectedTenant && user) {
+      fetchReleases();
+      fetchUserInvolvement();
+    } else {
+      setReleases([]);
+      setUserInvolvedReleaseIds(new Set());
+      setLoading(false);
+    }
+  }, [selectedTenant, user]);
 
   // Global drag end handler to reset drag state
   useEffect(() => {

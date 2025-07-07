@@ -4,14 +4,23 @@ import { useState, useEffect } from "react";
 import { AddTargetDialog } from "@/components/targets/AddTargetDialog";
 import { createClient } from "@/lib/supabase";
 import { TargetCard, Target } from "@/components/targets/TargetCard";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function TargetsPage() {
   const [targets, setTargets] = useState<Target[]>([]);
   const [loading, setLoading] = useState(true);
+  const { selectedTenant } = useAuth();
 
   const fetchTargets = async () => {
     setLoading(true);
     const supabase = createClient();
+    
+    if (!selectedTenant) {
+      console.error("No tenant selected");
+      setTargets([]);
+      setLoading(false);
+      return;
+    }
     
     const { data, error } = await supabase
       .from("targets")
@@ -22,6 +31,7 @@ export default function TargetsPage() {
         is_live,
         created_at
       `)
+      .eq('tenant_id', selectedTenant.id)
       .order("name");
 
     if (error) {
@@ -33,8 +43,13 @@ export default function TargetsPage() {
   };
 
   useEffect(() => {
-    fetchTargets();
-  }, []);
+    if (selectedTenant) {
+      fetchTargets();
+    } else {
+      setTargets([]);
+      setLoading(false);
+    }
+  }, [selectedTenant]);
 
   return (
     <div className="space-y-6">

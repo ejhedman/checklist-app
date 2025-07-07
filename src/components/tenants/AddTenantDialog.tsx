@@ -81,14 +81,14 @@ export function AddTenantDialog({ onTenantAdded }: AddTenantDialogProps) {
       <DialogTrigger asChild>
         <Button>
           <Plus className="h-4 w-4 mr-2" />
-          New Tenant
+          New Project
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Add New Tenant</DialogTitle>
+          <DialogTitle>Add New Project</DialogTitle>
           <DialogDescription>
-            Create a new tenant for your organization.
+            Create a new project for your organization.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>

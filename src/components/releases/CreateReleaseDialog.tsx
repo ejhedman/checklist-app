@@ -39,7 +39,7 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
   });
   const [error, setError] = useState("");
   const [teams, setTeams] = useState<Array<{ id: string; name: string }>>([]);
-  const { user } = useAuth();
+  const { user, selectedTenant } = useAuth();
 
   // Helper function to get member info (id and tenant_id)
   const getMemberInfo = async (userId: string) => {
@@ -66,39 +66,28 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
   const fetchTeams = async () => {
     const supabase = createClient();
     
-    // Get tenant_id from the release being edited or current user
+    // Get tenant_id from the release being edited or selected tenant
     let tenantId = null;
     if (isEdit && initialRelease?.tenant?.id) {
       tenantId = initialRelease.tenant.id;
-    } else {
-      // For new releases, get the current user's tenant_id
-      if (user?.email) {
-        const { data: member, error: memberError } = await supabase
-          .from('members')
-          .select('tenant_id')
-          .eq('email', user.email)
-          .single();
-        
-        if (!memberError && member) {
-          tenantId = member.tenant_id;
-        }
-      }
+    } else if (selectedTenant) {
+      tenantId = selectedTenant.id;
     }
     
     console.log("Fetching teams for tenant_id:", tenantId);
     console.log("Initial release:", initialRelease);
     
-    let query = supabase
-      .from("teams")
-      .select("id, name")
-      .order("name");
-    
-    // Filter by tenant_id if available
-    if (tenantId) {
-      query = query.eq("tenant_id", tenantId);
+    if (!tenantId) {
+      console.error("No tenant ID available for fetching teams");
+      setError("Please select a project first");
+      return;
     }
     
-    const { data, error } = await query;
+    const { data, error } = await supabase
+      .from("teams")
+      .select("id, name")
+      .eq("tenant_id", tenantId)
+      .order("name");
     
     console.log("Teams query result:", { data, error, tenantId });
     
@@ -157,6 +146,13 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
     setLoading(true);
     try {
       const supabase = createClient();
+      
+      if (!selectedTenant) {
+        setError("Please select a project first");
+        setLoading(false);
+        return;
+      }
+      
       let release: any;
       if (isEdit && initialRelease) {
         // Get member info for activity logging
@@ -197,7 +193,7 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
             const { error: activityError } = await supabase.from("activity_log").insert({
               release_id: initialRelease.id,
               member_id: memberInfo.id,
-              tenant_id: memberInfo.tenant_id,
+              tenant_id: selectedTenant.id,
               activity_type: "release_updated",
               activity_details: { 
                 changes: changes,
@@ -236,7 +232,7 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
           const teamAssignments = formData.selectedTeams.map((teamId: string) => ({
             release_id: initialRelease.id,
             team_id: teamId,
-            tenant_id: memberInfo?.tenant_id,
+            tenant_id: selectedTenant.id,
           }));
           console.log("Inserting team assignments:", teamAssignments);
           const { error: teamInsertError } = await supabase.from("release_teams").insert(teamAssignments);
@@ -252,7 +248,7 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
                 release_id: initialRelease.id,
                 team_id: teamId,
                 member_id: memberInfo.id,
-                tenant_id: memberInfo.tenant_id,
+                tenant_id: selectedTenant.id,
                 activity_type: "team_added",
                 activity_details: {},
               });
@@ -285,7 +281,7 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
             config_update: formData.configUpdate,
             release_notes: templateText,
             release_summary: formData.summary,
-            tenant_id: memberInfo?.tenant_id,
+            tenant_id: selectedTenant.id,
           })
           .select()
           .single();
@@ -301,7 +297,7 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
             const { error: activityError } = await supabase.from("activity_log").insert({
               release_id: release.id,
               member_id: memberInfo.id,
-              tenant_id: memberInfo.tenant_id,
+              tenant_id: selectedTenant.id,
               activity_type: "release_created",
               activity_details: { name: release.name },
             });
@@ -322,7 +318,7 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
           const teamAssignments = formData.selectedTeams.map((teamId: string) => ({
             release_id: release.id,
             team_id: teamId,
-            tenant_id: memberInfo?.tenant_id,
+            tenant_id: selectedTenant.id,
           }));
           // console.log("Inserting team assignments for new release:", teamAssignments);
           const { error: teamInsertError } = await supabase.from("release_teams").insert(teamAssignments);
@@ -334,14 +330,14 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
           // Log activity: team added to release
           if (user?.id && memberInfo) {
             for (const teamId of formData.selectedTeams) {
-              const { error: teamActivityError } = await supabase.from("activity_log").insert({
-                release_id: release.id,
-                team_id: teamId,
-                member_id: memberInfo.id,
-                tenant_id: memberInfo.tenant_id,
-                activity_type: "team_added",
-                activity_details: {},
-              });
+                          const { error: teamActivityError } = await supabase.from("activity_log").insert({
+              release_id: release.id,
+              team_id: teamId,
+              member_id: memberInfo.id,
+              tenant_id: selectedTenant.id,
+              activity_type: "team_added",
+              activity_details: {},
+            });
               if (teamActivityError) {
                 console.error("Failed to log team added activity:", teamActivityError);
               } else {

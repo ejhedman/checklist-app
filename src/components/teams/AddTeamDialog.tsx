@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface AddTeamDialogProps {
   onTeamAdded: () => void;
@@ -29,6 +30,7 @@ export function AddTeamDialog({ onTeamAdded }: AddTeamDialogProps) {
     description: "",
   });
   const [error, setError] = useState("");
+  const { selectedTenant } = useAuth();
 
   const handleOpenChange = (newOpen: boolean) => {
     setOpen(newOpen);
@@ -50,22 +52,8 @@ export function AddTeamDialog({ onTeamAdded }: AddTeamDialogProps) {
     try {
       const supabase = createClient();
 
-      // Get current user's member info for tenant filtering
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) {
-        setError("No authenticated user found");
-        setLoading(false);
-        return;
-      }
-
-      const { data: member, error: memberError } = await supabase
-        .from('members')
-        .select('tenant_id')
-        .eq('email', user.email)
-        .single();
-
-      if (memberError || !member) {
-        setError("No member record found for user");
+      if (!selectedTenant) {
+        setError("Please select a project first");
         setLoading(false);
         return;
       }
@@ -76,7 +64,7 @@ export function AddTeamDialog({ onTeamAdded }: AddTeamDialogProps) {
         .insert({
           name: formData.name,
           description: formData.description || null,
-          tenant_id: member.tenant_id,
+          tenant_id: selectedTenant.id,
         })
         .select()
         .single();

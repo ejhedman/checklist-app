@@ -4,6 +4,11 @@ import { createContext, useContext, useEffect, useState, useRef } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase";
 
+interface Tenant {
+  id: string;
+  name: string;
+}
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
@@ -11,6 +16,9 @@ interface AuthContextType {
   userRole: 'admin' | 'user' | null;
   memberId: string | null;
   memberRole: string | null;
+  availableTenants: Tenant[];
+  selectedTenant: Tenant | null;
+  setSelectedTenant: (tenant: Tenant | null) => void;
   signOut: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -24,6 +32,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [userRole, setUserRole] = useState<'admin' | 'user' | null>(null);
   const [memberId, setMemberId] = useState<string | null>(null);
   const [memberRole, setMemberRole] = useState<string | null>(null);
+  const [availableTenants, setAvailableTenants] = useState<Tenant[]>([]);
+  const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
   
   // Use refs to prevent race conditions and duplicate fetches
   const roleFetchPromise = useRef<Promise<'admin' | 'user'> | null>(null);
@@ -31,6 +41,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isInitializing = useRef<boolean>(false);
 
   const supabase = createClient();
+
+  const fetchUserTenants = async (userId: string): Promise<Tenant[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('tenant_user_map')
+        .select(`
+          tenant_id,
+          tenants (
+            id,
+            name
+          )
+        `)
+        .eq('user_id', userId);
+
+      if (error) {
+        console.error('Error fetching user tenants:', error);
+        return [];
+      }
+
+      return data?.map((item: any) => ({
+        id: item.tenants.id,
+        name: item.tenants.name
+      })) || [];
+    } catch (error) {
+      console.error('Error fetching user tenants:', error);
+      return [];
+    }
+  };
 
   const fetchUserRole = async (userId: string, retryCount = 0): Promise<'admin' | 'user'> => {
     // console.log('🔍 FETCHING USER ROLE - User ID:', userId, retryCount > 0 ? `(retry ${retryCount})` : '');
@@ -104,12 +142,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return roleFetchPromise.current;
   };
 
+  const fetchMemberInfo = async (userId: string, tenantId: string | null) => {
+    if (!tenantId) {
+      setMemberId(null);
+      setMemberRole(null);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('members')
+        .select('id, member_role')
+        .eq('user_id', userId)
+        .eq('tenant_id', tenantId)
+        .single();
+
+      if (!error && data) {
+        setMemberId(data.id);
+        setMemberRole(data.member_role);
+        // console.log('AuthContext: memberId set to', data.id, 'memberRole:', data.member_role);
+      } else {
+        setMemberId(null);
+        setMemberRole(null);
+        // console.log('AuthContext: memberId set to null');
+      }
+    } catch (error) {
+      console.error('Error fetching member info:', error);
+      setMemberId(null);
+      setMemberRole(null);
+    }
+  };
+
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
       setUser(null);
       setSession(null);
       setUserRole(null);
+      setMemberId(null);
+      setMemberRole(null);
+      setAvailableTenants([]);
+      setSelectedTenant(null);
       // Clear the fetch promise and user ID
       roleFetchPromise.current = null;
       lastFetchedUserId.current = null;
@@ -141,6 +214,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error("❌ REFRESH ERROR:", error);
       setLoading(false);
+    }
+  };
+
+  // Handle tenant selection
+  const handleTenantSelection = (tenant: Tenant | null) => {
+    setSelectedTenant(tenant);
+    if (user && tenant) {
+      fetchMemberInfo(user.id, tenant.id);
+    } else {
+      setMemberId(null);
+      setMemberRole(null);
     }
   };
 
@@ -213,6 +297,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else if (!session?.user) {
           // console.log('🔄 CLEARING ROLE - no user');
           setUserRole(null);
+          setMemberId(null);
+          setMemberRole(null);
+          setAvailableTenants([]);
+          setSelectedTenant(null);
           // Clear the fetch promise and user ID
           roleFetchPromise.current = null;
           lastFetchedUserId.current = null;
@@ -230,27 +318,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (user) {
-      // Fetch member_id and role from members table
-      // console.log('🔄 FETCHING MEMBER INFO...');
-      const fetchMemberInfo = async () => {
-        const supabase = createClient();
-        const { data, error } = await supabase
-          .from('members')
-          .select('id, member_role')
-          .eq('user_id', user.id)
-          .single();
-        if (!error && data) {
-          setMemberId(data.id);
-          setMemberRole(data.member_role);
-          // console.log('AuthContext: memberId set to', data.id, 'memberRole:', data.member_role);
-        } else {
+      // Fetch available tenants for the user
+      const fetchTenants = async () => {
+        const tenants = await fetchUserTenants(user.id);
+        setAvailableTenants(tenants);
+        
+        // Auto-select tenant if user has only one
+        if (tenants.length === 1) {
+          handleTenantSelection(tenants[0]);
+        } else if (tenants.length === 0) {
+          // No tenants available
+          setSelectedTenant(null);
           setMemberId(null);
           setMemberRole(null);
-          // console.log('AuthContext: memberId set to null');
         }
+        // If user has multiple tenants, don't auto-select - let them choose
       };
-      fetchMemberInfo();
+      
+      fetchTenants();
     } else {
+      setAvailableTenants([]);
+      setSelectedTenant(null);
       setMemberId(null);
       setMemberRole(null);
     }
@@ -263,6 +351,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     userRole,
     memberId,
     memberRole,
+    availableTenants,
+    selectedTenant,
+    setSelectedTenant: handleTenantSelection,
     signOut,
     refreshUser,
   };

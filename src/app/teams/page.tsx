@@ -9,6 +9,7 @@ import { AddTeamDialog } from "@/components/teams/AddTeamDialog";
 import { EditTeamDialog } from "@/components/teams/EditTeamDialog";
 import { createClient } from "@/lib/supabase";
 import { TeamCard, Team } from "@/components/teams/TeamCard";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function TeamsPage() {
   const [teams, setTeams] = useState<Array<{
@@ -27,29 +28,14 @@ export default function TeamsPage() {
   }>>([]);
   const [loading, setLoading] = useState(true);
   const [expandedTeams, setExpandedTeams] = useState<Set<string>>(new Set());
+  const { selectedTenant } = useAuth();
 
   const fetchTeams = async () => {
     setLoading(true);
     const supabase = createClient();
     
-    // Get current user's member info for tenant filtering
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) {
-      console.error("No authenticated user found");
-      setTeams([]);
-      setLoading(false);
-      return;
-    }
-
-    // Get the member record for this user
-    const { data: member, error: memberError } = await supabase
-      .from('members')
-      .select('id, tenant_id')
-      .eq('email', user.email)
-      .single();
-
-    if (memberError || !member) {
-      console.error("No member record found for user");
+    if (!selectedTenant) {
+      console.error("No tenant selected");
       setTeams([]);
       setLoading(false);
       return;
@@ -75,7 +61,7 @@ export default function TeamsPage() {
           release_id
         )
       `)
-      .eq('tenant_id', member.tenant_id)
+      .eq('tenant_id', selectedTenant.id)
       .order("name");
 
     if (error) {
@@ -103,8 +89,13 @@ export default function TeamsPage() {
   };
 
   useEffect(() => {
-    fetchTeams();
-  }, []);
+    if (selectedTenant) {
+      fetchTeams();
+    } else {
+      setTeams([]);
+      setLoading(false);
+    }
+  }, [selectedTenant]);
 
   const toggleTeamExpansion = (teamId: string) => {
     setExpandedTeams(prev => {

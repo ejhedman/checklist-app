@@ -5,34 +5,20 @@ import { CreateReleaseDialog } from "@/components/releases/CreateReleaseDialog";
 import { ReleaseSummaryCard } from "@/components/releases/ReleaseSummaryCard";
 import { AlertTriangle, CheckCircle, Clock, Calendar } from "lucide-react";
 import { createClient } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function ReleasesPage() {
   const [releases, setReleases] = useState<Array<any>>([]);
   const [loading, setLoading] = useState(true);
   const [showArchived, setShowArchived] = useState(false);
+  const { selectedTenant } = useAuth();
 
   const fetchReleases = async (): Promise<void> => {
     setLoading(true);
     const supabase = createClient();
     
-    // Get current user's member info for tenant filtering
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) {
-      console.error("No authenticated user found");
-      setReleases([]);
-      setLoading(false);
-      return;
-    }
-
-    // Get the member record for this user
-    const { data: member, error: memberError } = await supabase
-      .from('members')
-      .select('id, tenant_id')
-      .eq('email', user.email)
-      .single();
-
-    if (memberError || !member) {
-      console.error("No member record found for user");
+    if (!selectedTenant) {
+      console.error("No tenant selected");
       setReleases([]);
       setLoading(false);
       return;
@@ -89,7 +75,7 @@ export default function ReleasesPage() {
           )
         )
       `)
-      .eq('tenant_id', member.tenant_id)
+      .eq('tenant_id', selectedTenant.id)
       .order("target_date", { ascending: true });
     if (!showArchived) {
       query = query.eq("is_archived", false);
@@ -133,8 +119,13 @@ export default function ReleasesPage() {
   };
 
   useEffect(() => {
-    fetchReleases();
-  }, [showArchived]);
+    if (selectedTenant) {
+      fetchReleases();
+    } else {
+      setReleases([]);
+      setLoading(false);
+    }
+  }, [selectedTenant, showArchived]);
 
   const getStateIcon = (state: string) => {
     switch (state) {

@@ -3,33 +3,20 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase";
 import { ReleaseNotesSummaryCard } from "@/components/releasenotes/ReleaseNotesSummaryCard";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function ReleaseNotesListPage() {
   const [releases, setReleases] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const { selectedTenant } = useAuth();
 
   useEffect(() => {
     const fetchReleases = async () => {
       setLoading(true);
       const supabase = createClient();
       
-      // Get current user's member info for tenant filtering
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) {
-        console.error("No authenticated user found");
-        setReleases([]);
-        setLoading(false);
-        return;
-      }
-
-      const { data: member, error: memberError } = await supabase
-        .from('members')
-        .select('tenant_id')
-        .eq('email', user.email)
-        .single();
-
-      if (memberError || !member) {
-        console.error("No member record found for user");
+      if (!selectedTenant) {
+        console.error("No tenant selected");
         setReleases([]);
         setLoading(false);
         return;
@@ -38,13 +25,19 @@ export default function ReleaseNotesListPage() {
       const { data } = await supabase
         .from("releases")
         .select("id, name, target_date, release_summary, state")
-        .eq("tenant_id", member.tenant_id)
+        .eq("tenant_id", selectedTenant.id)
         .order("target_date", { ascending: false });
       setReleases(data || []);
       setLoading(false);
     };
-    fetchReleases();
-  }, []);
+    
+    if (selectedTenant) {
+      fetchReleases();
+    } else {
+      setReleases([]);
+      setLoading(false);
+    }
+  }, [selectedTenant]);
 
   if (loading) {
     return <div className="p-8 text-center text-muted-foreground">Loading release notes...</div>;

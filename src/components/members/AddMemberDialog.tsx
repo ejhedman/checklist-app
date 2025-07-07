@@ -19,6 +19,7 @@ import { createClient } from "@/lib/supabase";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface AuthUser {
   id: string;
@@ -43,6 +44,7 @@ export function AddMemberDialog({ onMemberAdded }: AddMemberDialogProps) {
     nickname: "",
     member_role: "member" as "member" | "release_manager" | "admin",
   });
+  const { selectedTenant } = useAuth();
 
   const handleOpenChange = (newOpen: boolean) => {
     setOpen(newOpen);
@@ -98,6 +100,11 @@ export function AddMemberDialog({ onMemberAdded }: AddMemberDialogProps) {
       return;
     }
 
+    if (!selectedTenant) {
+      alert("Please select a project first");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -107,7 +114,8 @@ export function AddMemberDialog({ onMemberAdded }: AddMemberDialogProps) {
       const { data, error } = await supabase.rpc('create_member_from_auth_user', {
         auth_user_id: selectedUser.id,
         nickname: formData.nickname || null,
-        member_role: formData.member_role
+        member_role: formData.member_role,
+        tenant_id: selectedTenant.id
       });
 
       if (error) {

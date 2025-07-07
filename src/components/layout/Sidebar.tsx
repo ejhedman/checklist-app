@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 
 export function Sidebar() {
-  const { userRole, user, loading } = useAuth();
+  const { userRole, user, loading, selectedTenant } = useAuth();
   const isAdmin = userRole === 'admin';
   
   // Debug logging
@@ -38,26 +38,26 @@ export function Sidebar() {
       <nav className="space-y-2 h-full flex flex-col">
         <div className="flex-1 space-y-2">
           <Link href="/">
-            <Button variant="ghost" className="w-full justify-start">
+            <Button variant="ghost" className="w-full justify-start" disabled={!selectedTenant}>
               <Home className="h-4 w-4 mr-2" />
               Home
             </Button>
           </Link>
           <div className="border-t border-border my-2"></div>
           <Link href="/releases">
-            <Button variant="ghost" className="w-full justify-start">
+            <Button variant="ghost" className="w-full justify-start" disabled={!selectedTenant}>
               <Calendar className="h-4 w-4 mr-2" />
               Releases
             </Button>
           </Link>
           <Link href="/releasenotes">
-            <Button variant="ghost" className="w-full justify-start">
+            <Button variant="ghost" className="w-full justify-start" disabled={!selectedTenant}>
               <Pencil className="h-4 w-4 mr-2" />
               Release Notes
             </Button>
           </Link>
           <Link href="/calendar">
-            <Button variant="ghost" className="w-full justify-start">
+            <Button variant="ghost" className="w-full justify-start" disabled={!selectedTenant}>
               <CalendarDays className="h-4 w-4 mr-2" />
               Calendar
             </Button>
@@ -67,29 +67,29 @@ export function Sidebar() {
         
         <div className="mt-auto space-y-2">
           <div className="border-t border-border my-2"></div>
-          <Link href="/docs">
-            <Button variant="ghost" className="w-full justify-start">
-              <Book className="h-4 w-4 mr-2" />
-              Documentation
-            </Button>
-          </Link>
-          <div className="border-t border-border my-2"></div>
           <Link href="/members">
-            <Button variant="ghost" className="w-full justify-start">
+            <Button variant="ghost" className="w-full justify-start" disabled={!selectedTenant}>
               <User className="h-4 w-4 mr-2" />
               Project Members
             </Button>
           </Link>
           <Link href="/teams">
-            <Button variant="ghost" className="w-full justify-start">
+            <Button variant="ghost" className="w-full justify-start" disabled={!selectedTenant}>
               <Users className="h-4 w-4 mr-2" />
               ProjectTeams
             </Button>
           </Link>
           <Link href="/targets">
-            <Button variant="ghost" className="w-full justify-start">
+            <Button variant="ghost" className="w-full justify-start" disabled={!selectedTenant}>
               <Building2 className="h-4 w-4 mr-2" />
               Targets
+            </Button>
+          </Link>
+          <div className="border-t border-border my-2"></div>
+          <Link href="/docs">
+            <Button variant="ghost" className="w-full justify-start">
+              <Book className="h-4 w-4 mr-2" />
+              Documentation
             </Button>
           </Link>
           {isAdmin && (

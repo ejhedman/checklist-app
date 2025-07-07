@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { LogOut, User } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { LoginDialog } from "@/components/auth/LoginDialog";
+import { TenantSelector } from "./TenantSelector";
 
 export function Header() {
   const { user, userRole, memberId, memberRole, signOut } = useAuth();
@@ -14,7 +15,7 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b bg-red-50/95 backdrop-blur supports-[backdrop-filter]:bg-red-50/60">
       <div className="flex h-14 items-center justify-between px-4">
         <div className="flex items-center h-full pl-8">
           <img 
@@ -24,9 +25,10 @@ export function Header() {
           />
         </div>
         
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-4">
           {user ? (
             <>
+              <TenantSelector />
               <Button variant="ghost" size="sm">
                 <User className="h-4 w-4 mr-2" />
                 {user.email}

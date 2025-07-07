@@ -7,6 +7,7 @@ import { User, Mail, Loader2 } from "lucide-react";
 import { AddMemberDialog } from "@/components/members/AddMemberDialog";
 import { createClient } from "@/lib/supabase";
 import { MemberCard, Member } from "@/components/members/MemberCard";
+import { useAuth } from "@/contexts/AuthContext";
 
 type TeamMember = { teams: { name: string } };
 type MemberWithTeams = {
@@ -22,29 +23,14 @@ type MemberWithTeams = {
 export default function MembersPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
+  const { selectedTenant } = useAuth();
 
   const fetchMembers = async () => {
     try {
       const supabase = createClient();
       
-      // Get current user's member info for tenant filtering
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) {
-        console.error("No authenticated user found");
-        setMembers([]);
-        setLoading(false);
-        return;
-      }
-
-      // Get the member record for this user
-      const { data: member, error: memberError } = await supabase
-        .from('members')
-        .select('id, tenant_id')
-        .eq('email', user.email)
-        .single();
-
-      if (memberError || !member) {
-        console.error("No member record found for user");
+      if (!selectedTenant) {
+        console.error("No tenant selected");
         setMembers([]);
         setLoading(false);
         return;
@@ -66,7 +52,7 @@ export default function MembersPage() {
             )
           )
         `)
-        .eq('tenant_id', member.tenant_id)
+        .eq('tenant_id', selectedTenant.id)
         .order("full_name");
 
       if (membersError) {
@@ -95,8 +81,13 @@ export default function MembersPage() {
   };
 
   useEffect(() => {
-    fetchMembers();
-  }, []);
+    if (selectedTenant) {
+      fetchMembers();
+    } else {
+      setMembers([]);
+      setLoading(false);
+    }
+  }, [selectedTenant]);
 
   const handleMemberAdded = () => {
     fetchMembers(); // Refresh the list

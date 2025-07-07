@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface AddTargetDialogProps {
   onTargetAdded: () => void;
@@ -30,6 +31,7 @@ export function AddTargetDialog({ onTargetAdded }: AddTargetDialogProps) {
     is_live: false,
   });
   const [error, setError] = useState("");
+  const { selectedTenant } = useAuth();
 
   const handleOpenChange = (newOpen: boolean) => {
     setOpen(newOpen);
@@ -52,6 +54,12 @@ export function AddTargetDialog({ onTargetAdded }: AddTargetDialogProps) {
     try {
       const supabase = createClient();
 
+      if (!selectedTenant) {
+        setError("Please select a project first");
+        setLoading(false);
+        return;
+      }
+
       // Insert new target
       const { error: targetError } = await supabase
         .from("targets")
@@ -59,6 +67,7 @@ export function AddTargetDialog({ onTargetAdded }: AddTargetDialogProps) {
           short_name: formData.short_name,
           name: formData.name,
           is_live: formData.is_live,
+          tenant_id: selectedTenant.id,
         })
         .select()
         .single();
