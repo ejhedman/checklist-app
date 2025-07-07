@@ -108,32 +108,28 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onRele
 
   const handleFeatureReadyChange = async (feature: any, isReady: boolean) => {
     // Check if current user is the DRI for this feature
-    if (!user || !feature.dri_member || user.id !== feature.dri_member.id) {
-      // console.log("User is not the DRI for this feature");
+    if (!user || !feature.dri_member || memberId !== feature.dri_member.id) {
       return;
     }
-
-    if (isReady) {
-      // Open dialog to collect comments
-      setSelectedFeature(feature);
-      setReadyDialogOpen(true);
-    } else {
-      // Directly update to false without comments
-      await updateFeatureReady(feature.id, false, "");
-    }
+    // Immediately update without dialog
+    await updateFeatureReady(feature.id, isReady, "");
   };
 
   const updateFeatureReady = async (featureId: string, isReady: boolean, comments: string) => {
     setUpdatingFeature(true);
     const supabase = createClient();
-    
-    await supabase
+    console.log('Attempting to update feature:', { featureId, isReady, comments });
+    const { data, error } = await supabase
       .from("features")
       .update({
         is_ready: isReady,
         comments: comments || null,
       })
       .eq("id", featureId);
+    console.log('Supabase update response:', { data, error });
+    if (error) {
+      console.error('Error updating feature ready state:', error);
+    }
     // Trigger a page refresh to update the data
     window.location.reload();
     setUpdatingFeature(false);
@@ -335,15 +331,18 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onRele
               {release.features.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No features added yet.</p>
               ) : (
-                release.features.map((feature: any) => (
-                  <FeatureCard
-                    key={feature.id}
-                    feature={feature}
-                    user={user}
-                    updatingFeature={updatingFeature}
-                    handleFeatureReadyChange={handleFeatureReadyChange}
-                  />
-                ))
+                [...release.features]
+                  .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+                  .map((feature: any) => (
+                    <FeatureCard
+                      key={feature.id}
+                      feature={feature}
+                      user={user}
+                      memberId={memberId}
+                      updatingFeature={updatingFeature}
+                      handleFeatureReadyChange={handleFeatureReadyChange}
+                    />
+                  ))
               )}
             </div>
           </CardContent>
@@ -354,49 +353,71 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onRele
             <CardTitle className="text-base flex items-center"><Users className="h-4 w-4 mr-2" />Team Members</CardTitle>
           </CardHeader>
           <CardContent className="pb-4">
-            <div className="space-y-4">
-              {release.teams.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No teams assigned to this release.</p>
-              ) : (
-                release.teams.map((team: any) => (
-                  <div key={team.id} className="border rounded-lg p-4">
-                    <h5 className="font-medium text-sm mb-2">{team.name}</h5>
-                    {team.description && (
-                      <p className="text-xs text-muted-foreground mb-3">{team.description}</p>
-                    )}
-                    <div className="space-y-2">
-                      {team.members.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">No members in this team.</p>
-                      ) : (
-                        team.members.map((member: any) => (
-                          <div
-                            key={member.id}
-                            className={`flex items-center justify-between p-2 rounded border ${user && member.email === user.email ? 'bg-blue-50 border-blue-200' : 'bg-gray-50'}`}
-                          >
-                            <div className="flex items-center space-x-3">
-                              {onMemberReadyChange && (
-                                <Checkbox
-                                  checked={member.is_ready}
-                                  onCheckedChange={(checked) => 
-                                    handleMemberReadyChange(release.id, member.id, checked as boolean)
-                                  }
-                                />
-                              )}
-                              <div>
-                                <p className="text-sm font-medium">{member.full_name}</p>
-                                <p className="text-xs text-muted-foreground">{member.email}</p>
-                              </div>
-                            </div>
-                            <Badge variant={member.is_ready ? "default" : "secondary"} className="text-xs">
-                              {member.is_ready ? "Ready" : "Not Ready"}
-                            </Badge>
-                          </div>
-                        ))
-                      )}
+            <div className="space-y-2">
+              {/* Flat list of unique members */}
+              {(() => {
+                // Collect all unique members from all teams
+                const memberMap = new Map();
+                release.teams.forEach((team: any) => {
+                  team.members.forEach((member: any) => {
+                    if (!memberMap.has(member.id)) {
+                      memberMap.set(member.id, member);
+                    }
+                  });
+                });
+                const allMembers = Array.from(memberMap.values());
+                if (allMembers.length === 0) {
+                  return <p className="text-sm text-muted-foreground">No members assigned to this release.</p>;
+                }
+                return allMembers.map((member: any) => {
+                  // Find all teams this member belongs to
+                  const memberTeams = release.teams.filter((team: any) =>
+                    team.members.some((m: any) => m.id === member.id)
+                  );
+                  return (
+                    <div
+                      key={member.id}
+                      className={`flex items-center justify-between p-2 rounded border ${user && member.email === user.email ? 'bg-blue-50 border-blue-200' : 'bg-gray-50'}`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div>
+                          <p className="text-sm font-medium">{member.full_name}</p>
+                          <p className="text-xs text-muted-foreground">{member.email}</p>
+                        </div>
+                      </div>
+                      {/* Team badges (center) */}
+                      <div className="flex flex-row flex-wrap gap-1 justify-center items-center">
+                        {memberTeams.map((team: any) => (
+                          <Badge key={team.id} variant="secondary" className="text-xs">
+                            {team.name}
+                          </Badge>
+                        ))}
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        {/* Show 'Ready' label to the left of the checkbox */}
+                        {onMemberReadyChange && (
+                          <>
+                            <label htmlFor={`member-ready-${member.id}`} className="text-xs text-muted-foreground cursor-pointer select-none">Ready</label>
+                            <Checkbox
+                              checked={member.is_ready}
+                              onCheckedChange={(checked) => 
+                                handleMemberReadyChange(release.id, member.id, checked as boolean)
+                              }
+                              id={`member-ready-${member.id}`}
+                            />
+                          </>
+                        )}
+                        {/* Only show Not Ready/Ready badge if not the logged in user */}
+                        {!(user && member.email === user.email) && (
+                          <Badge variant={member.is_ready ? "default" : "secondary"} className="text-xs">
+                            {member.is_ready ? "Ready" : "Not Ready"}
+                          </Badge>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))
-              )}
+                  );
+                });
+              })()}
             </div>
           </CardContent>
         </Card>

@@ -231,7 +231,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (user) {
       // Fetch member_id and role from members table
-      console.log('🔄 FETCHING MEMBER INFO...');
+      // console.log('🔄 FETCHING MEMBER INFO...');
       const fetchMemberInfo = async () => {
         const supabase = createClient();
         const { data, error } = await supabase
@@ -242,11 +242,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!error && data) {
           setMemberId(data.id);
           setMemberRole(data.member_role);
-          console.log('AuthContext: memberId set to', data.id, 'memberRole:', data.member_role);
+          // console.log('AuthContext: memberId set to', data.id, 'memberRole:', data.member_role);
         } else {
           setMemberId(null);
           setMemberRole(null);
-          console.log('AuthContext: memberId set to null');
+          // console.log('AuthContext: memberId set to null');
         }
       };
       fetchMemberInfo();
