@@ -41,16 +41,57 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
   const [teams, setTeams] = useState<Array<{ id: string; name: string }>>([]);
   const { user } = useAuth();
 
+  // Helper function to get member info (id and tenant_id)
+  const getMemberInfo = async (userId: string) => {
+    console.log("Getting member info for user:", userId);
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from("members")
+      .select("id, tenant_id")
+      .eq("user_id", userId)
+      .single();
+    
+    console.log("Member query result:", { data, error });
+    
+    if (error) {
+      console.error("Error fetching member info:", error);
+      return null;
+    }
+    
+    console.log("Found member info:", data);
+    return data;
+  };
+
   // Fetch teams when dialog opens
   const fetchTeams = async () => {
     const supabase = createClient();
-    const { data, error } = await supabase
+    
+    // Get tenant_id from the release being edited
+    let tenantId = null;
+    if (isEdit && initialRelease?.tenant?.id) {
+      tenantId = initialRelease.tenant.id;
+    }
+    
+    console.log("Fetching teams for tenant_id:", tenantId);
+    console.log("Initial release:", initialRelease);
+    
+    let query = supabase
       .from("teams")
       .select("id, name")
       .order("name");
     
+    // Filter by tenant_id if available
+    if (tenantId) {
+      query = query.eq("tenant_id", tenantId);
+    }
+    
+    const { data, error } = await query;
+    
+    console.log("Teams query result:", { data, error, tenantId });
+    
     if (!error && data) {
       setTeams(data);
+      console.log("Teams set:", data);
     } else if (error) {
       console.error("Error fetching teams:", error);
       setError("Failed to load teams: " + error.message);
@@ -61,21 +102,26 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
     if (controlledOpen !== undefined) setOpen(controlledOpen);
   }, [controlledOpen]);
 
+  // Ensure fetchTeams is called when dialog opens
+  useEffect(() => {
+    if (open) {
+      console.log("Dialog opened, fetching teams...");
+      fetchTeams();
+    }
+  }, [open]);
+
   const handleOpenChange = (newOpen: boolean) => {
     setOpen(newOpen);
     onOpenChange?.(newOpen);
-    if (newOpen) {
-      fetchTeams();
-      if (!isEdit) {
-        setFormData({
-          name: "",
-          targetDate: "",
-          platformUpdate: false,
-          configUpdate: false,
-          selectedTeams: [],
-          summary: "",
-        });
-      }
+    if (newOpen && !isEdit) {
+      setFormData({
+        name: "",
+        targetDate: "",
+        platformUpdate: false,
+        configUpdate: false,
+        selectedTeams: [],
+        summary: "",
+      });
       setError("");
     }
   };
@@ -121,24 +167,40 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
         // Update team assignments
         await supabase.from("release_teams").delete().eq("release_id", initialRelease.id);
         if (formData.selectedTeams.length > 0) {
+          // Get member info for the user performing the action
+          let memberInfo = null;
+          if (user?.id) {
+            memberInfo = await getMemberInfo(user.id);
+          }
+          
           const teamAssignments = formData.selectedTeams.map((teamId: string) => ({
             release_id: initialRelease.id,
             team_id: teamId,
+            tenant_id: memberInfo?.tenant_id,
           }));
-          await supabase.from("release_teams").insert(teamAssignments);
+          console.log("Inserting team assignments:", teamAssignments);
+          const { error: teamInsertError } = await supabase.from("release_teams").insert(teamAssignments);
+          if (teamInsertError) {
+            console.error("Error inserting team assignments:", teamInsertError);
+            setError("Failed to update team assignments: " + teamInsertError.message);
+            return;
+          }
           // Log activity: team added to release
-          for (const teamId of formData.selectedTeams) {
-            const { error: teamActivityError } = await supabase.from("activity_log").insert({
-              release_id: initialRelease.id,
-              team_id: teamId,
-              member_id: user?.id,
-              activity_type: "team_added",
-              activity_details: {},
-            });
-            if (teamActivityError) {
-              console.error("Failed to log team added activity:", teamActivityError);
-            } else {
-              // console.log("Successfully logged team added activity");
+          if (user?.id && memberInfo) {
+            for (const teamId of formData.selectedTeams) {
+              const { error: teamActivityError } = await supabase.from("activity_log").insert({
+                release_id: initialRelease.id,
+                team_id: teamId,
+                member_id: memberInfo.id,
+                tenant_id: memberInfo.tenant_id,
+                activity_type: "team_added",
+                activity_details: {},
+              });
+              if (teamActivityError) {
+                console.error("Failed to log team added activity:", teamActivityError);
+              } else {
+                // console.log("Successfully logged team added activity");
+              }
             }
           }
         }
@@ -165,36 +227,58 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
         }
         release = created;
         // Log activity: release created
-        const { error: activityError } = await supabase.from("activity_log").insert({
-          release_id: release.id,
-          member_id: user?.id,
-          activity_type: "release_created",
-          activity_details: { name: release.name },
-        });
-        if (activityError) {
-          console.error("Failed to log release created activity:", activityError);
-        } else {
-          // console.log("Successfully logged release created activity");
+        if (user?.id) {
+          const memberInfo = await getMemberInfo(user.id);
+          if (memberInfo) {
+            const { error: activityError } = await supabase.from("activity_log").insert({
+              release_id: release.id,
+              member_id: memberInfo.id,
+              tenant_id: memberInfo.tenant_id,
+              activity_type: "release_created",
+              activity_details: { name: release.name },
+            });
+            if (activityError) {
+              console.error("Failed to log release created activity:", activityError);
+            } else {
+              // console.log("Successfully logged release created activity");
+            }
+          }
         }
         if (formData.selectedTeams.length > 0) {
+          // Get member info for the user performing the action
+          let memberInfo = null;
+          if (user?.id) {
+            memberInfo = await getMemberInfo(user.id);
+          }
+          
           const teamAssignments = formData.selectedTeams.map((teamId: string) => ({
             release_id: release.id,
             team_id: teamId,
+            tenant_id: memberInfo?.tenant_id,
           }));
-          await supabase.from("release_teams").insert(teamAssignments);
+          console.log("Inserting team assignments for new release:", teamAssignments);
+          const { error: teamInsertError } = await supabase.from("release_teams").insert(teamAssignments);
+          if (teamInsertError) {
+            console.error("Error inserting team assignments for new release:", teamInsertError);
+            setError("Failed to assign teams to release: " + teamInsertError.message);
+            return;
+          }
           // Log activity: team added to release
-          for (const teamId of formData.selectedTeams) {
-            const { error: teamActivityError } = await supabase.from("activity_log").insert({
-              release_id: release.id,
-              team_id: teamId,
-              member_id: user?.id,
-              activity_type: "team_added",
-              activity_details: {},
-            });
-            if (teamActivityError) {
-              console.error("Failed to log team added activity:", teamActivityError);
-            } else {
-              // console.log("Successfully logged team added activity");
+          if (user?.id && memberInfo) {
+            for (const teamId of formData.selectedTeams) {
+              const { error: teamActivityError } = await supabase.from("activity_log").insert({
+                release_id: release.id,
+                team_id: teamId,
+                member_id: memberInfo.id,
+                tenant_id: memberInfo.tenant_id,
+                activity_type: "team_added",
+                activity_details: {},
+              });
+              if (teamActivityError) {
+                console.error("Failed to log team added activity:", teamActivityError);
+              } else {
+                // console.log("Successfully logged team added activity");
+              }
             }
           }
         }

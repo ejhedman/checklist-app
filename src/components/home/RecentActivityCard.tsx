@@ -7,7 +7,7 @@ export default function RecentActivityCard({ activity }: { activity: any[] }) {
   return (
     <Card className="hover:shadow-md transition-shadow">
       <CardHeader className="pb-4">
-        <CardTitle>Recent Activity</CardTitle>
+        <CardTitle>Recent Release Activity</CardTitle>
         <CardDescription>
           Latest project events
         </CardDescription>

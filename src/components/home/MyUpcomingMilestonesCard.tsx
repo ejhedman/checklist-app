@@ -24,15 +24,23 @@ export default function MyUpcomingMilestonesCard({ milestones }: { milestones: a
                 <div key={milestone.id} className="flex items-center justify-between">
                   <div>
                     <h3 className="font-semibold">
-                      <Link href={`/releases/${encodeURIComponent(milestone.title)}`} className="hover:underline text-primary">
-                        {milestone.tenant_name ? `${milestone.tenant_name}: ` : ''}{milestone.title}
-                      </Link>
+                      {milestone.type === 'team_member' ? (
+                        <Link href={`/releases/${encodeURIComponent(milestone.title)}`} className="hover:underline text-primary">
+                          {milestone.tenant_name ? `${milestone.tenant_name}: ` : ''}{milestone.title}
+                        </Link>
+                      ) : (
+                        <Link href={`/releases/${encodeURIComponent(milestone.release_name)}`} className="hover:underline text-primary">
+                          {milestone.tenant_name ? `${milestone.tenant_name}: ` : ''}{milestone.release_name}
+                        </Link>
+                      )}
                     </h3>
                     <p className="text-sm text-muted-foreground">
                       Target: {new Date(milestone.target_date).toLocaleDateString()}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {milestone.type === 'team_member' ? 'Team Member' : 'DRI'}
+                      {milestone.type === 'team_member'
+                        ? 'Team Member Readiness'
+                        : `DRI: ${milestone.title}`}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
