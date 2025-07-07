@@ -66,10 +66,23 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
   const fetchTeams = async () => {
     const supabase = createClient();
     
-    // Get tenant_id from the release being edited
+    // Get tenant_id from the release being edited or current user
     let tenantId = null;
     if (isEdit && initialRelease?.tenant?.id) {
       tenantId = initialRelease.tenant.id;
+    } else {
+      // For new releases, get the current user's tenant_id
+      if (user?.email) {
+        const { data: member, error: memberError } = await supabase
+          .from('members')
+          .select('tenant_id')
+          .eq('email', user.email)
+          .single();
+        
+        if (!memberError && member) {
+          tenantId = member.tenant_id;
+        }
+      }
     }
     
     console.log("Fetching teams for tenant_id:", tenantId);
@@ -208,6 +221,13 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
         // Create new release
         const templateRes = await fetch('/docs/release-notes-template.md');
         const templateText = await templateRes.text();
+        
+        // Get member info for tenant_id
+        let memberInfo = null;
+        if (user?.id) {
+          memberInfo = await getMemberInfo(user.id);
+        }
+        
         const { data: created, error: createError } = await supabase
           .from("releases")
           .insert({
@@ -218,6 +238,7 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
             config_update: formData.configUpdate,
             release_notes: templateText,
             release_summary: formData.summary,
+            tenant_id: memberInfo?.tenant_id,
           })
           .select()
           .single();

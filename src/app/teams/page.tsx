@@ -32,7 +32,30 @@ export default function TeamsPage() {
     setLoading(true);
     const supabase = createClient();
     
-        const { data, error } = await supabase
+    // Get current user's member info for tenant filtering
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      console.error("No authenticated user found");
+      setTeams([]);
+      setLoading(false);
+      return;
+    }
+
+    // Get the member record for this user
+    const { data: member, error: memberError } = await supabase
+      .from('members')
+      .select('id, tenant_id')
+      .eq('email', user.email)
+      .single();
+
+    if (memberError || !member) {
+      console.error("No member record found for user");
+      setTeams([]);
+      setLoading(false);
+      return;
+    }
+    
+    const { data, error } = await supabase
       .from("teams")
       .select(`
         id,
@@ -52,6 +75,7 @@ export default function TeamsPage() {
           release_id
         )
       `)
+      .eq('tenant_id', member.tenant_id)
       .order("name");
 
     if (error) {

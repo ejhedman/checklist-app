@@ -23,6 +23,27 @@ export default function ReleaseDetailPage({ params }: { params: Promise<{ name: 
     
     const supabase = createClient();
     
+    // Get current user's member info for tenant filtering
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      setError("No authenticated user found");
+      setLoading(false);
+      return;
+    }
+
+    // Get the member record for this user
+    const { data: member, error: memberError } = await supabase
+      .from('members')
+      .select('id, tenant_id')
+      .eq('email', user.email)
+      .single();
+
+    if (memberError || !member) {
+      setError("No member record found for user");
+      setLoading(false);
+      return;
+    }
+    
     const { data, error: supabaseError } = await supabase
       .from("releases")
       .select(`
@@ -78,6 +99,7 @@ export default function ReleaseDetailPage({ params }: { params: Promise<{ name: 
         )
       `)
       .eq("name", decodedName)
+      .eq("tenant_id", member.tenant_id)
       .order("created_at", { foreignTable: "features", ascending: true })
       .single();
 

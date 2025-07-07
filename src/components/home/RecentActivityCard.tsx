@@ -21,19 +21,20 @@ export default function RecentActivityCard({ activity }: { activity: any[] }) {
                 <div className="flex-1">
                   <span className="font-medium">
                     {(() => {
+                      const memberName = activity.members?.nickname || activity.members?.full_name || 'A user';
                       switch (activity.activity_type) {
                         case 'member_ready':
-                          return `${activity.members?.full_name || 'A member'} marked ready`;
+                          return `${memberName} marked ready`;
                         case 'feature_ready':
-                          return `${activity.members?.full_name || 'A DRI'} marked feature "${activity.features?.name || ''}" ready`;
+                          return `${memberName} marked feature "${activity.features?.name || ''}" ready`;
                         case 'release_created':
-                          return `${activity.members?.full_name || 'A user'} created release "${activity.releases?.name || ''}"`;
+                          return `${memberName} created release "${activity.releases?.name || ''}"`;
                         case 'feature_added':
-                          return `${activity.members?.full_name || 'A user'} added feature "${activity.features?.name || ''}"`;
+                          return `${memberName} added feature "${activity.features?.name || ''}"`;
                         case 'team_added':
-                          return `${activity.members?.full_name || 'A user'} added team "${activity.teams?.name || ''}" to release`;
+                          return `${memberName} added team "${activity.teams?.name || ''}" to release: ${activity.releases?.name || ''}`;
                         case 'release_state_change':
-                          return `${activity.members?.full_name || 'A user'} changed release state to "${activity.activity_details?.newState || ''}"`;
+                          return `${memberName} changed release state to "${activity.activity_details?.newState || ''}"`;
                         default:
                           return activity.activity_type;
                       }

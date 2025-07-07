@@ -27,7 +27,30 @@ export default function MembersPage() {
     try {
       const supabase = createClient();
       
-      // Fetch members with their team memberships
+      // Get current user's member info for tenant filtering
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        console.error("No authenticated user found");
+        setMembers([]);
+        setLoading(false);
+        return;
+      }
+
+      // Get the member record for this user
+      const { data: member, error: memberError } = await supabase
+        .from('members')
+        .select('id, tenant_id')
+        .eq('email', user.email)
+        .single();
+
+      if (memberError || !member) {
+        console.error("No member record found for user");
+        setMembers([]);
+        setLoading(false);
+        return;
+      }
+      
+      // Fetch members with their team memberships (filtered by tenant)
       const { data: members, error: membersError } = await supabase
         .from("members")
         .select(`
@@ -43,6 +66,7 @@ export default function MembersPage() {
             )
           )
         `)
+        .eq('tenant_id', member.tenant_id)
         .order("full_name");
 
       if (membersError) {

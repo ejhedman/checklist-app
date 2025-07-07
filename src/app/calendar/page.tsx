@@ -265,11 +265,24 @@ export default function CalendarPage() {
     if (!user) return;
     const supabase = createClient();
 
-    // 1. Get all team IDs for the user
+    // Get current user's member info for tenant filtering
+    const { data: member, error: memberError } = await supabase
+      .from('members')
+      .select('id, tenant_id')
+      .eq('email', user.email)
+      .single();
+
+    if (memberError || !member) {
+      console.error("No member record found for user");
+      return;
+    }
+
+    // 1. Get all team IDs for the user (filtered by tenant)
     const { data: teamMemberRows, error: teamMemberError } = await supabase
       .from("team_members")
       .select("team_id")
-      .eq("member_id", user.id);
+      .eq("member_id", user.id)
+      .eq("tenant_id", member.tenant_id);
 
     if (teamMemberError) {
       console.error("Error fetching user teams:", teamMemberError);
@@ -278,12 +291,13 @@ export default function CalendarPage() {
 
     const userTeamIds = (teamMemberRows ?? []).map(row => row.team_id);
 
-    // 2. Get all release IDs for those teams
+    // 2. Get all release IDs for those teams (filtered by tenant)
     let teamReleaseIds: string[] = [];
     if (userTeamIds.length > 0) {
       const { data: releaseTeamsRows, error: releaseTeamsError } = await supabase
         .from("release_teams")
         .select("release_id")
+        .eq("tenant_id", member.tenant_id)
         .in("team_id", userTeamIds);
 
       if (releaseTeamsError) {
@@ -293,11 +307,12 @@ export default function CalendarPage() {
       teamReleaseIds = (releaseTeamsRows ?? []).map(row => row.release_id);
     }
 
-    // 3. Get all release IDs where user is DRI for a feature
+    // 3. Get all release IDs where user is DRI for a feature (filtered by tenant)
     const { data: driFeaturesRows, error: driFeaturesError } = await supabase
       .from("features")
       .select("release_id")
-      .eq("dri_member_id", user.id);
+      .eq("dri_member_id", user.id)
+      .eq("tenant_id", member.tenant_id);
 
     if (driFeaturesError) {
       console.error("Error fetching DRI features:", driFeaturesError);
@@ -305,13 +320,14 @@ export default function CalendarPage() {
     }
     const driReleaseIds = (driFeaturesRows ?? []).map(row => row.release_id);
 
-    // 4. Get all release IDs where user is a team member AND is not ready (member_release_state.is_ready = false)
+    // 4. Get all release IDs where user is a team member AND is not ready (member_release_state.is_ready = false, filtered by tenant)
     let notReadyReleaseIds: string[] = [];
     if (teamReleaseIds.length > 0) {
       const { data: notReadyRows, error: notReadyError } = await supabase
         .from("member_release_state")
         .select("release_id")
         .eq("member_id", user.id)
+        .eq("tenant_id", member.tenant_id)
         .eq("is_ready", false)
         .in("release_id", teamReleaseIds);
       if (notReadyError) {
@@ -330,9 +346,24 @@ export default function CalendarPage() {
     try {
       const supabase = createClient();
       
+      // Get current user's member info for tenant filtering
+      const { data: member, error: memberError } = await supabase
+        .from('members')
+        .select('id, tenant_id')
+        .eq('email', user?.email)
+        .single();
+
+      if (memberError || !member) {
+        console.error("No member record found for user");
+        setReleases([]);
+        setLoading(false);
+        return;
+      }
+      
       const { data, error } = await supabase
         .from("releases")
         .select("id, name, target_date, state")
+        .eq("tenant_id", member.tenant_id)
         .order("target_date");
 
       if (error) {

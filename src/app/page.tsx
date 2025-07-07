@@ -20,14 +20,48 @@ async function getDashboardData() {
   const supabase = createClient();
   
   try {
+    // Get current user's member info for tenant filtering
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      console.error("Server: No authenticated user found");
+      return {
+        totalReleases: 0,
+        activeTeams: 0,
+        readyReleases: 0,
+        pastDueReleases: 0,
+        upcomingReleases: [],
+        recentActivity: []
+      };
+    }
+
+    // Get the member record for this user
+    const { data: member, error: memberError } = await supabase
+      .from('members')
+      .select('id, tenant_id')
+      .eq('email', user.email)
+      .single();
+
+    if (memberError || !member) {
+      console.error("Server: No member record found for user");
+      return {
+        totalReleases: 0,
+        activeTeams: 0,
+        readyReleases: 0,
+        pastDueReleases: 0,
+        upcomingReleases: [],
+        recentActivity: []
+      };
+    }
+
     // console.log("Server:projects Starting dashboard data fetch...");
     
-    // Get releases statistics
+    // Get releases statistics (filtered by tenant)
     // console.log("Server:projects Fetching releases...");
     const { data: releases, error: releasesError } = await supabase
       .from('releases')
       .select('*')
-      .eq('is_archived', false);
+      .eq('is_archived', false)
+      .eq('tenant_id', member.tenant_id);
     
     if (releasesError) {
       console.error("Server: Releases fetch error:", releasesError);
@@ -35,11 +69,12 @@ async function getDashboardData() {
       // console.log("Server:projects Releases fetched successfully");
     }
 
-    // Get teams count
+    // Get teams count (filtered by tenant)
     // console.log("Server:projects Fetching teams...");
     const { data: teams, error: teamsError } = await supabase
       .from('teams')
-      .select('*');
+      .select('*')
+      .eq('tenant_id', member.tenant_id);
     
     if (teamsError) {
       console.error("Server: Teams fetch error:", teamsError);
@@ -47,7 +82,7 @@ async function getDashboardData() {
       // console.log("Server:projects Teams fetched successfully");
     }
 
-    // Get upcoming releases (not archived, not complete, not cancelled)
+    // Get upcoming releases (not archived, not complete, not cancelled, filtered by tenant)
     // console.log("Server:projects Fetching upcoming releases...");
     const { data: upcomingReleases, error: upcomingError } = await supabase
       .from('releases')
@@ -59,6 +94,7 @@ async function getDashboardData() {
         )
       `)
       .eq('is_archived', false)
+      .eq('tenant_id', member.tenant_id)
       .not('state', 'in', '(complete,cancelled)')
       .order('target_date', { ascending: true })
       .limit(3);
@@ -69,11 +105,12 @@ async function getDashboardData() {
       // console.log("Server:projects Upcoming releases fetched successfully");
     }
 
-    // Get recent activity log
+    // Get recent activity log (filtered by tenant)
     // console.log("Server:projects Fetching recent activity...");
     const { data: recentActivity, error: activityError } = await supabase
       .from('activity_log')
-      .select(`*, members(full_name, email), features(name), teams(name), releases(name)`)
+      .select(`*, members(full_name, email, nickname), features(name), teams(name), releases(name)`)
+      .eq('tenant_id', member.tenant_id)
       .order('created_at', { ascending: false })
       .limit(5);
 
@@ -128,7 +165,7 @@ async function getUserMilestones() {
     // Get the member record for this user
     const { data: member, error: memberError } = await supabase
       .from('members')
-      .select('id, full_name, email')
+      .select('id, full_name, email, tenant_id')
       .eq('email', user.email)
       .single();
 
@@ -156,6 +193,7 @@ async function getUserMilestones() {
         )
       `)
       .eq('is_archived', false)
+      .eq('tenant_id', member.tenant_id)
       .not('state', 'in', '(complete,cancelled)')
       .eq('release_teams.team.team_members.member_id', member.id)
       .order('target_date', { ascending: true })
@@ -194,6 +232,7 @@ async function getUserMilestones() {
       ).order('target_date', { ascending: true })
     `)
     .eq('dri_member_id', member.id)
+    .eq('tenant_id', member.tenant_id)
     .eq('releases.is_archived', false)
     .not('releases.state', 'in', '(complete,cancelled)')
     .limit(10);

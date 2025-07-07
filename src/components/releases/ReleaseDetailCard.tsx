@@ -85,6 +85,23 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onRele
   const [editOpen, setEditOpen] = useState(false);
   const [features, setFeatures] = useState(release.features);
 
+  // Helper function to get member info (id and tenant_id)
+  const getMemberInfo = async (userId: string) => {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from("members")
+      .select("id, tenant_id")
+      .eq("user_id", userId)
+      .single();
+    
+    if (error) {
+      console.error("Error fetching member info:", error);
+      return null;
+    }
+    
+    return data;
+  };
+
   // Add local state for summary counts
   const [readyMembers, setReadyMembers] = useState(release.ready_members);
   const [totalMembers, setTotalMembers] = useState(release.total_members);
@@ -179,18 +196,24 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onRele
     if (selectedFeature) {
       await updateFeatureReady(selectedFeature.id, true, comments);
       // Log activity: DRI marked feature ready
-      const supabase = createClient();
-      const { error: activityError } = await supabase.from("activity_log").insert({
-        release_id: release.id,
-        feature_id: selectedFeature.id,
-        member_id: user?.id,
-        activity_type: "feature_ready",
-        activity_details: { comments },
-      });
-      if (activityError) {
-        console.error("Failed to log feature ready activity:", activityError);
-      } else {
-        // console.log("Successfully logged feature ready activity");
+      if (user?.id) {
+        const memberInfo = await getMemberInfo(user.id);
+        if (memberInfo) {
+          const supabase = createClient();
+          const { error: activityError } = await supabase.from("activity_log").insert({
+            release_id: release.id,
+            feature_id: selectedFeature.id,
+            member_id: memberInfo.id,
+            tenant_id: memberInfo.tenant_id,
+            activity_type: "feature_ready",
+            activity_details: { comments },
+          });
+          if (activityError) {
+            console.error("Failed to log feature ready activity:", activityError);
+          } else {
+            // console.log("Successfully logged feature ready activity");
+          }
+        }
       }
       setReadyDialogOpen(false);
       setSelectedFeature(null);
@@ -250,16 +273,22 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onRele
       .eq("id", release.id);
     if (!error) {
       // Log activity: release state change
-      const { error: activityError } = await supabase.from("activity_log").insert({
-        release_id: release.id,
-        member_id: user?.id,
-        activity_type: "release_state_change",
-        activity_details: { oldState: release.state, newState },
-      });
-      if (activityError) {
-        console.error("Failed to log release state change activity:", activityError);
-      } else {
-        // console.log("Successfully logged release state change activity");
+      if (user?.id) {
+        const memberInfo = await getMemberInfo(user.id);
+        if (memberInfo) {
+          const { error: activityError } = await supabase.from("activity_log").insert({
+            release_id: release.id,
+            member_id: memberInfo.id,
+            tenant_id: memberInfo.tenant_id,
+            activity_type: "release_state_change",
+            activity_details: { oldState: release.state, newState },
+          });
+          if (activityError) {
+            console.error("Failed to log release state change activity:", activityError);
+          } else {
+            // console.log("Successfully logged release state change activity");
+          }
+        }
       }
       // Optionally refresh or notify parent
       onReleaseUpdated?.(undefined);

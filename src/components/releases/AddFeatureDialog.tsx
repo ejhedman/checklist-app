@@ -41,12 +41,48 @@ export function AddFeatureDialog({ releaseId, releaseName, onFeatureAdded }: Add
   const [members, setMembers] = useState<Array<{ id: string; full_name: string; email: string }>>([]);
   const { user } = useAuth();
 
-  // Fetch members when dialog opens
-  const fetchMembers = async () => {
+  // Helper function to get member info (id and tenant_id)
+  const getMemberInfo = async (userId: string) => {
     const supabase = createClient();
     const { data, error } = await supabase
       .from("members")
+      .select("id, tenant_id")
+      .eq("user_id", userId)
+      .single();
+    
+    if (error) {
+      console.error("Error fetching member info:", error);
+      return null;
+    }
+    
+    return data;
+  };
+
+  // Fetch members when dialog opens
+  const fetchMembers = async () => {
+    const supabase = createClient();
+    
+    // Get current user's member info for tenant filtering
+    if (!user?.email) {
+      console.error("No authenticated user found");
+      return;
+    }
+
+    const { data: member, error: memberError } = await supabase
+      .from('members')
+      .select('tenant_id')
+      .eq('email', user.email)
+      .single();
+
+    if (memberError || !member) {
+      console.error("No member record found for user");
+      return;
+    }
+    
+    const { data, error } = await supabase
+      .from("members")
       .select("id, full_name, email")
+      .eq("tenant_id", member.tenant_id)
       .order("full_name");
     
     if (!error && data) {
@@ -78,6 +114,12 @@ export function AddFeatureDialog({ releaseId, releaseName, onFeatureAdded }: Add
     try {
       const supabase = createClient();
 
+      // Get member info for the user performing the action
+      let memberInfo = null;
+      if (user?.id) {
+        memberInfo = await getMemberInfo(user.id);
+      }
+
       // Insert new feature
       const { error: featureError, data: featureData } = await supabase
         .from("features")
@@ -90,6 +132,7 @@ export function AddFeatureDialog({ releaseId, releaseName, onFeatureAdded }: Add
           is_platform: formData.isPlatform,
           is_config: formData.isConfig,
           is_ready: false, // Always default to false when creating
+          tenant_id: memberInfo?.tenant_id,
         })
         .select()
         .single();
@@ -99,18 +142,22 @@ export function AddFeatureDialog({ releaseId, releaseName, onFeatureAdded }: Add
         setError("Failed to create feature: " + featureError.message);
         return;
       }
+
       // Log activity: feature added to release
-      const { error: activityError } = await supabase.from("activity_log").insert({
-        release_id: releaseId,
-        feature_id: featureData.id,
-        member_id: user?.id,
-        activity_type: "feature_added",
-        activity_details: { name: formData.name },
-      });
-      if (activityError) {
-        console.error("Failed to log feature added activity:", activityError);
-      } else {
-        // console.log("Successfully logged feature added activity");
+      if (user?.id && memberInfo) {
+        const { error: activityError } = await supabase.from("activity_log").insert({
+          release_id: releaseId,
+          feature_id: featureData.id,
+          member_id: memberInfo.id,
+          tenant_id: memberInfo.tenant_id,
+          activity_type: "feature_added",
+          activity_details: { name: formData.name },
+        });
+        if (activityError) {
+          console.error("Failed to log feature added activity:", activityError);
+        } else {
+          // console.log("Successfully logged feature added activity");
+        }
       }
 
       setOpen(false);

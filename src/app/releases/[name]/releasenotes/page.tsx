@@ -38,11 +38,33 @@ export default function ReleaseNotesPage() {
       setLoading(true);
       setError(null);
       const supabase = createClient();
-      // Find release by name (slug)
+      
+      // Get current user's member info for tenant filtering
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        setError("No authenticated user found");
+        setLoading(false);
+        return;
+      }
+
+      const { data: member, error: memberError } = await supabase
+        .from('members')
+        .select('tenant_id')
+        .eq('email', user.email)
+        .single();
+
+      if (memberError || !member) {
+        setError("No member record found for user");
+        setLoading(false);
+        return;
+      }
+      
+      // Find release by name (slug) and tenant
       const { data, error } = await supabase
         .from("releases")
         .select("id, release_notes, release_summary")
         .eq("name", decodeURIComponent(name as string))
+        .eq("tenant_id", member.tenant_id)
         .single();
       if (error) {
         setError("Release not found");

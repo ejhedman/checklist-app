@@ -50,12 +50,33 @@ export function AddTeamDialog({ onTeamAdded }: AddTeamDialogProps) {
     try {
       const supabase = createClient();
 
+      // Get current user's member info for tenant filtering
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        setError("No authenticated user found");
+        setLoading(false);
+        return;
+      }
+
+      const { data: member, error: memberError } = await supabase
+        .from('members')
+        .select('tenant_id')
+        .eq('email', user.email)
+        .single();
+
+      if (memberError || !member) {
+        setError("No member record found for user");
+        setLoading(false);
+        return;
+      }
+
       // Insert new team
       const { error: teamError } = await supabase
         .from("teams")
         .insert({
           name: formData.name,
           description: formData.description || null,
+          tenant_id: member.tenant_id,
         })
         .select()
         .single();

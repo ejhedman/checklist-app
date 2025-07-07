@@ -14,6 +14,30 @@ export default function ReleasesPage() {
   const fetchReleases = async (): Promise<void> => {
     setLoading(true);
     const supabase = createClient();
+    
+    // Get current user's member info for tenant filtering
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      console.error("No authenticated user found");
+      setReleases([]);
+      setLoading(false);
+      return;
+    }
+
+    // Get the member record for this user
+    const { data: member, error: memberError } = await supabase
+      .from('members')
+      .select('id, tenant_id')
+      .eq('email', user.email)
+      .single();
+
+    if (memberError || !member) {
+      console.error("No member record found for user");
+      setReleases([]);
+      setLoading(false);
+      return;
+    }
+
     let query = supabase
       .from("releases")
       .select(`
@@ -65,6 +89,7 @@ export default function ReleasesPage() {
           )
         )
       `)
+      .eq('tenant_id', member.tenant_id)
       .order("target_date", { ascending: true });
     if (!showArchived) {
       query = query.eq("is_archived", false);
