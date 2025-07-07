@@ -1,12 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { ReleaseNotesDisplay } from "@/components/releasenotes/ReleaseNotesDisplay";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function DisplayReleaseNotesPage() {
   const { slug } = useParams();
+  const router = useRouter();
+  const { selectedTenant, user } = useAuth();
   const [releaseNotes, setReleaseNotes] = useState<string>("");
   const [releaseSummary, setReleaseSummary] = useState<string>("");
   const [releaseName, setReleaseName] = useState<string>("");
@@ -19,22 +22,15 @@ export default function DisplayReleaseNotesPage() {
       setError(null);
       const supabase = createClient();
       
-      // Get current user's member info for tenant filtering
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) {
+      // Check if user is authenticated and tenant is selected
+      if (!user) {
         setError("No authenticated user found");
         setLoading(false);
         return;
       }
 
-      const { data: member, error: memberError } = await supabase
-        .from('members')
-        .select('tenant_id')
-        .eq('email', user.email)
-        .single();
-
-      if (memberError || !member) {
-        setError("No member record found for user");
+      if (!selectedTenant) {
+        setError("No tenant selected");
         setLoading(false);
         return;
       }
@@ -42,14 +38,22 @@ export default function DisplayReleaseNotesPage() {
       // Find release by name (slug) and tenant
       const { data, error } = await supabase
         .from("releases")
-        .select("id, name, release_notes, release_summary")
+        .select("id, name, release_notes, release_summary, tenant_id")
         .eq("name", decodeURIComponent(slug as string))
-        .eq("tenant_id", member.tenant_id)
+        .eq("tenant_id", selectedTenant.id)
         .single();
         
       if (error) {
-        setError("Release not found");
-        setLoading(false);
+        // Release not found or doesn't belong to selected tenant - redirect to home
+        console.log('Release not found or tenant mismatch, redirecting to home');
+        router.push('/');
+        return;
+      }
+
+      // Additional validation: check if the release's tenant matches the selected tenant
+      if (data.tenant_id !== selectedTenant.id) {
+        console.log('Release tenant does not match selected tenant, redirecting to home');
+        router.push('/');
         return;
       }
       
@@ -59,8 +63,10 @@ export default function DisplayReleaseNotesPage() {
       setLoading(false);
     };
     
-    fetchReleaseNotes();
-  }, [slug]);
+    if (selectedTenant) {
+      fetchReleaseNotes();
+    }
+  }, [slug, selectedTenant]);
 
   if (loading) {
     return (

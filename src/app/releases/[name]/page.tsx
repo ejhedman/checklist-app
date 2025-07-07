@@ -2,14 +2,18 @@
 
 import { useState, useEffect } from "react";
 import { use } from "react";
+import { useRouter } from "next/navigation";
 import ReleaseDetailCard from "@/components/releases/ReleaseDetailCard";
 import { createClient } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
 
 
 export default function ReleaseDetailPage({ params }: { params: Promise<{ name: string }> }) {
   const [release, setRelease] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  const { selectedTenant, user } = useAuth();
 
   // Unwrap the params Promise using React.use()
   const resolvedParams = use(params);
@@ -23,23 +27,15 @@ export default function ReleaseDetailPage({ params }: { params: Promise<{ name: 
     
     const supabase = createClient();
     
-    // Get current user's member info for tenant filtering
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) {
+    // Check if user is authenticated and tenant is selected
+    if (!user) {
       setError("No authenticated user found");
       setLoading(false);
       return;
     }
 
-    // Get the member record for this user
-    const { data: member, error: memberError } = await supabase
-      .from('members')
-      .select('id, tenant_id')
-      .eq('email', user.email)
-      .single();
-
-    if (memberError || !member) {
-      setError("No member record found for user");
+    if (!selectedTenant) {
+      setError("No tenant selected");
       setLoading(false);
       return;
     }
@@ -99,13 +95,21 @@ export default function ReleaseDetailPage({ params }: { params: Promise<{ name: 
         )
       `)
       .eq("name", decodedName)
-      .eq("tenant_id", member.tenant_id)
+      .eq("tenant_id", selectedTenant.id)
       .order("created_at", { foreignTable: "features", ascending: true })
       .single();
 
     if (supabaseError || !data) {
-      setError(supabaseError?.message || "Release not found");
-      setLoading(false);
+      // Release not found or doesn't belong to selected tenant - redirect to home
+      console.log('Release not found or tenant mismatch, redirecting to home');
+      router.push('/');
+      return;
+    }
+
+    // Additional validation: check if the release's tenant matches the selected tenant
+    if (data.tenant_id !== selectedTenant.id) {
+      console.log('Release tenant does not match selected tenant, redirecting to home');
+      router.push('/');
       return;
     }
 
@@ -208,8 +212,10 @@ export default function ReleaseDetailPage({ params }: { params: Promise<{ name: 
   };
 
   useEffect(() => {
-    fetchRelease();
-  }, [decodedName]);
+    if (selectedTenant) {
+      fetchRelease();
+    }
+  }, [decodedName, selectedTenant]);
 
   if (loading) {
     return (
