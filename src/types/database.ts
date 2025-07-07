@@ -1,28 +1,57 @@
 export interface Database {
   public: {
     Tables: {
-      users: {
+      members: {
         Row: {
           id: string
+          member_id: string
           email: string
           full_name: string
           nickname: string | null
+          role: 'user' | 'release_manager' | 'admin' | 'superuser'
           created_at: string
           updated_at: string
         }
         Insert: {
           id?: string
+          member_id?: string
           email: string
           full_name: string
           nickname?: string | null
+          role?: 'user' | 'release_manager' | 'admin' | 'superuser'
           created_at?: string
           updated_at?: string
         }
         Update: {
           id?: string
+          member_id?: string
           email?: string
           full_name?: string
           nickname?: string | null
+          role?: 'user' | 'release_manager' | 'admin' | 'superuser'
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      uroles: {
+        Row: {
+          id: string
+          user_id: string
+          role: 'admin' | 'user'
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          role?: 'admin' | 'user'
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          role?: 'admin' | 'user'
           created_at?: string
           updated_at?: string
         }
@@ -50,22 +79,22 @@ export interface Database {
           updated_at?: string
         }
       }
-      team_users: {
+      team_members: {
         Row: {
           team_id: string
-          user_id: string
+          member_id: string
           created_at: string
           updated_at: string
         }
         Insert: {
           team_id: string
-          user_id: string
+          member_id: string
           created_at?: string
           updated_at?: string
         }
         Update: {
           team_id?: string
-          user_id?: string
+          member_id?: string
           created_at?: string
           updated_at?: string
         }
@@ -83,6 +112,7 @@ export interface Database {
           release_notes: string | null
           release_summary: string | null
           is_archived: boolean
+          targets: string[]
         }
         Insert: {
           id?: string
@@ -96,6 +126,7 @@ export interface Database {
           release_notes?: string | null
           release_summary?: string | null
           is_archived?: boolean
+          targets?: string[]
         }
         Update: {
           id?: string
@@ -109,6 +140,7 @@ export interface Database {
           release_notes?: string | null
           release_summary?: string | null
           is_archived?: boolean
+          targets?: string[]
         }
       }
       release_teams: {
@@ -138,7 +170,7 @@ export interface Database {
           name: string
           jira_ticket: string | null
           description: string | null
-          dri_user_id: string
+          dri_member_id: string | null
           is_platform: boolean
           is_ready: boolean
           created_at: string
@@ -150,7 +182,7 @@ export interface Database {
           name: string
           jira_ticket?: string | null
           description?: string | null
-          dri_user_id: string
+          dri_member_id?: string | null
           is_platform?: boolean
           is_ready?: boolean
           created_at?: string
@@ -162,34 +194,92 @@ export interface Database {
           name?: string
           jira_ticket?: string | null
           description?: string | null
-          dri_user_id?: string
+          dri_member_id?: string | null
           is_platform?: boolean
           is_ready?: boolean
           created_at?: string
           updated_at?: string
         }
       }
-      user_release_state: {
+      member_release_state: {
         Row: {
           release_id: string
-          user_id: string
+          member_id: string
           is_ready: boolean
           created_at: string
           updated_at: string
         }
         Insert: {
           release_id: string
-          user_id: string
+          member_id: string
           is_ready?: boolean
           created_at?: string
           updated_at?: string
         }
         Update: {
           release_id?: string
-          user_id?: string
+          member_id?: string
           is_ready?: boolean
           created_at?: string
           updated_at?: string
+        }
+      }
+      targets: {
+        Row: {
+          id: string
+          short_name: string
+          name: string
+          is_live: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          short_name: string
+          name: string
+          is_live?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          short_name?: string
+          name?: string
+          is_live?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      activity_log: {
+        Row: {
+          id: string
+          release_id: string | null
+          feature_id: string | null
+          team_id: string | null
+          member_id: string | null
+          activity_type: string
+          activity_details: any | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          release_id?: string | null
+          feature_id?: string | null
+          team_id?: string | null
+          member_id?: string | null
+          activity_type: string
+          activity_details?: any | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          release_id?: string | null
+          feature_id?: string | null
+          team_id?: string | null
+          member_id?: string | null
+          activity_type?: string
+          activity_details?: any | null
+          created_at?: string
         }
       }
     }

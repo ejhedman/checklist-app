@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,61 +11,98 @@ import { ActivityIcon } from "@/components/ui/activity-icon";
 async function getDashboardData() {
   const supabase = createClient();
   
-  // Get releases statistics
-  const { data: releases } = await supabase
-    .from('releases')
-    .select('*')
-    .eq('is_archived', false);
+  try {
+    console.log("Server: Starting dashboard data fetch...");
+    
+    // Get releases statistics
+    console.log("Server: Fetching releases...");
+    const { data: releases, error: releasesError } = await supabase
+      .from('releases')
+      .select('*')
+      .eq('is_archived', false);
+    
+    if (releasesError) {
+      console.error("Server: Releases fetch error:", releasesError);
+    } else {
+      console.log("Server: Releases fetched successfully");
+    }
 
-  // Get teams count
-  const { data: teams } = await supabase
-    .from('teams')
-    .select('*');
+    // Get teams count
+    console.log("Server: Fetching teams...");
+    const { data: teams, error: teamsError } = await supabase
+      .from('teams')
+      .select('*');
+    
+    if (teamsError) {
+      console.error("Server: Teams fetch error:", teamsError);
+    } else {
+      console.log("Server: Teams fetched successfully");
+    }
 
-  // Get upcoming releases (not archived, not complete, not cancelled)
-  const { data: upcomingReleases } = await supabase
-    .from('releases')
-    .select(`
-      *,
-      release_teams(
-        team_id
-      )
-    `)
-    .eq('is_archived', false)
-    .not('state', 'in', '(complete,cancelled)')
-    .order('target_date', { ascending: true })
-    .limit(3);
+    // Get upcoming releases (not archived, not complete, not cancelled)
+    console.log("Server: Fetching upcoming releases...");
+    const { data: upcomingReleases, error: upcomingError } = await supabase
+      .from('releases')
+      .select(`
+        *,
+        release_teams(
+          team_id
+        )
+      `)
+      .eq('is_archived', false)
+      .not('state', 'in', '(complete,cancelled)')
+      .order('target_date', { ascending: true })
+      .limit(3);
+    
+    if (upcomingError) {
+      console.error("Server: Upcoming releases fetch error:", upcomingError);
+    } else {
+      console.log("Server: Upcoming releases fetched successfully");
+    }
 
-  // Get recent activity log
-  const { data: recentActivity, error: activityError } = await supabase
-    .from('activity_log')
-    .select(`*, users(full_name, email), features(name), teams(name), releases(name)`)
-    .order('created_at', { ascending: false })
-    .limit(5);
+    // Get recent activity log
+    console.log("Server: Fetching recent activity...");
+    const { data: recentActivity, error: activityError } = await supabase
+      .from('activity_log')
+      .select(`*, members(full_name, email), features(name), teams(name), releases(name)`)
+      .order('created_at', { ascending: false })
+      .limit(5);
 
-  if (activityError) {
-    console.error("Failed to fetch recent activity:", activityError);
-  } else {
-    console.log("Recent activity data:", recentActivity);
+    if (activityError) {
+      console.error("Server: Failed to fetch recent activity:", activityError);
+    } else {
+      console.log("Server: Recent activity data:", recentActivity);
+    }
+
+    // Calculate statistics
+    const totalReleases = releases?.length || 0;
+    const activeTeams = teams?.length || 0;
+    const readyReleases = releases?.filter(r => r.state === 'ready').length || 0;
+    const pastDueReleases = releases?.filter(r => r.state === 'past_due').length || 0;
+
+    console.log("Server: Dashboard data fetch completed successfully");
+    
+    return {
+      totalReleases,
+      activeTeams,
+      readyReleases,
+      pastDueReleases,
+      upcomingReleases: upcomingReleases || [],
+      recentActivity: recentActivity || []
+    };
+  } catch (error) {
+    console.error("Server: Error in getDashboardData:", error);
+    // Return default data on error
+    return {
+      totalReleases: 0,
+      activeTeams: 0,
+      readyReleases: 0,
+      pastDueReleases: 0,
+      upcomingReleases: [],
+      recentActivity: []
+    };
   }
-
-  // Calculate statistics
-  const totalReleases = releases?.length || 0;
-  const activeTeams = teams?.length || 0;
-  const readyReleases = releases?.filter(r => r.state === 'ready').length || 0;
-  const pastDueReleases = releases?.filter(r => r.state === 'past_due').length || 0;
-
-  return {
-    totalReleases,
-    activeTeams,
-    readyReleases,
-    pastDueReleases,
-    upcomingReleases: upcomingReleases || [],
-    recentActivity: recentActivity || []
-  };
 }
-
-
 
 export default async function HomePage() {
   const data = await getDashboardData();
@@ -223,17 +262,17 @@ export default async function HomePage() {
                         {(() => {
                           switch (activity.activity_type) {
                             case 'member_ready':
-                              return `${activity.users?.full_name || 'A member'} marked ready`;
+                              return `${activity.members?.full_name || 'A member'} marked ready`;
                             case 'feature_ready':
-                              return `${activity.users?.full_name || 'A DRI'} marked feature "${activity.features?.name || ''}" ready`;
+                              return `${activity.members?.full_name || 'A DRI'} marked feature "${activity.features?.name || ''}" ready`;
                             case 'release_created':
-                              return `${activity.users?.full_name || 'A user'} created release "${activity.releases?.name || ''}"`;
+                              return `${activity.members?.full_name || 'A user'} created release "${activity.releases?.name || ''}"`;
                             case 'feature_added':
-                              return `${activity.users?.full_name || 'A user'} added feature "${activity.features?.name || ''}"`;
+                              return `${activity.members?.full_name || 'A user'} added feature "${activity.features?.name || ''}"`;
                             case 'team_added':
-                              return `${activity.users?.full_name || 'A user'} added team "${activity.teams?.name || ''}" to release`;
+                              return `${activity.members?.full_name || 'A user'} added team "${activity.teams?.name || ''}" to release`;
                             case 'release_state_change':
-                              return `${activity.users?.full_name || 'A user'} changed release state to "${activity.activity_details?.newState || ''}"`;
+                              return `${activity.members?.full_name || 'A user'} changed release state to "${activity.activity_details?.newState || ''}"`;
                             default:
                               return activity.activity_type;
                           }
