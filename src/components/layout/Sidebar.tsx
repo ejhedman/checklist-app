@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Home, Users, Calendar, User, CalendarDays, Pencil, Building2, Shield, Building } from "lucide-react";
+import { Home, Users, Calendar, User, CalendarDays, Pencil, Building2, Shield, Building, Book } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -66,6 +66,13 @@ export function Sidebar() {
         </div>
         
         <div className="mt-auto space-y-2">
+          <div className="border-t border-border my-2"></div>
+          <Link href="/docs">
+            <Button variant="ghost" className="w-full justify-start">
+              <Book className="h-4 w-4 mr-2" />
+              Documentation
+            </Button>
+          </Link>
           <div className="border-t border-border my-2"></div>
           <Link href="/members">
             <Button variant="ghost" className="w-full justify-start">

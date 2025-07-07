@@ -4,16 +4,16 @@
 
 1. [Overview](#overview)
 2. [Stakeholders & Users](#stakeholders--users)
-3. [Functional Requirements](#functional-requirements)
-4. [Business Rules & State Logic](#business-rules--state-logic)
-5. [Non-Functional Requirements](#non-functional-requirements)
-6. [UI/UX Specifications](#uiux-specifications)
-7. [API Specifications](#api-specifications)
-8. [Data Model](#data-model)
-9. [Security Requirements](#security-requirements)
-10. [Testing Requirements](#testing-requirements)
-11. [Deployment Requirements](#deployment-requirements)
-12. [Future Enhancements](#future-enhancements)
+3. [System Architecture](#system-architecture)
+4. [Page Specifications](#page-specifications)
+5. [Component Specifications](#component-specifications)
+6. [Form Specifications](#form-specifications)
+7. [User Interactions](#user-interactions)
+8. [Business Rules & State Logic](#business-rules--state-logic)
+9. [API Specifications](#api-specifications)
+10. [Security Requirements](#security-requirements)
+11. [Non-Functional Requirements](#non-functional-requirements)
+12. [Data Model](#data-model)
 
 ---
 
@@ -23,35 +23,25 @@
 
 The Release Management Checklist App helps engineering teams plan, track, and complete software releases by maintaining a structured checklist that captures **who** must do **what** by **when**. It keeps a continuous timeline of past and future releases, always surfacing the *next* scheduled release so teams know exactly what requires attention.
 
-### Scope
+### Key Features
 
-#### In Scope (v1.0)
-- Web application (desktop-first, responsive design)
-- User and team management
-- Release and feature tracking
-- Readiness status monitoring
-- Role-based access control
-- Basic auditing and activity tracking
-- Real-time updates
-- JIRA ticket integration
+- **Multi-Tenant Architecture**: Complete organization isolation with Row-Level Security
+- **Release Management**: Create, track, and manage software releases with automatic state transitions
+- **Team Collaboration**: Organize teams and assign members to releases
+- **Feature Tracking**: Attach key features to releases with designated DRIs
+- **Readiness Monitoring**: Track individual and team readiness with automatic release state calculation
+- **Calendar Planning**: Visual calendar interface with drag-and-drop release scheduling
+- **Target Management**: Manage deployment targets and environments
+- **Release Notes**: Generate and manage release documentation
+- **Activity Logging**: Comprehensive audit trail of all system activities
+- **Real-Time Updates**: Live status updates and progress tracking
 
-#### Out of Scope (v1.0)
-- Automated CI/CD integrations
-- Email/Slack notifications and alerts
-- API rate limiting and advanced security
-- Mobile-native clients
-- Advanced reporting and analytics
-- Custom workflow configurations
+### Technology Stack
 
-### Goals & Success Metrics
-
-| Goal | Metric | Target |
-|------|--------|--------|
-| Reduce missed release tasks | % releases reaching ready status ≥24h before target date | ≥90% |
-| Single source of truth | % release artifacts captured in app | 100% |
-| Ease of onboarding | Time for new user to complete profile & join team | <5 minutes |
-| System reliability | Uptime percentage | ≥99.5% |
-| Performance | Time to First Byte (TTFB) for authenticated pages | <200ms |
+- **Frontend**: Next.js 14 (App Router), TypeScript, Tailwind CSS
+- **UI Components**: shadcn/ui component library
+- **Backend**: Supabase (PostgreSQL database, authentication, real-time subscriptions)
+- **Deployment**: Vercel (frontend), Supabase (backend services)
 
 ---
 
@@ -59,12 +49,14 @@ The Release Management Checklist App helps engineering teams plan, track, and co
 
 ### User Roles
 
-| Role | Description | Primary Responsibilities |
-|------|-------------|-------------------------|
-| **Administrator** | System-wide management and configuration | User management, system settings, audit logs |
-| **Release Manager** | Release lifecycle management | Create/edit/cancel releases, team assignments |
-| **Developer/Specs Engineer** | Feature implementation and delivery | Mark features ready, update status, technical implementation |
-| **Team Member** | Individual readiness tracking | Mark personal readiness, view assigned work |
+#### System Roles (Global)
+- **Admin**: Full system access across all tenants
+- **User**: Standard user access within assigned tenants
+
+#### Tenant Roles (Per Organization)
+- **Admin**: Full access within the tenant organization
+- **Release Manager**: Release lifecycle management within the tenant
+- **Member**: Standard team member access within the tenant
 
 ### User Personas
 
@@ -88,104 +80,1010 @@ The Release Management Checklist App helps engineering teams plan, track, and co
 
 ---
 
-## Functional Requirements
+## System Architecture
+
+### Multi-Tenancy Design
+
+- **Complete Data Isolation**: Each organization's data is completely separate
+- **User Assignment**: Users can belong to multiple organizations with different roles
+- **Security**: Row-Level Security ensures users can only access their assigned organizations
+- **Independent Management**: Each organization manages its own teams, releases, and members
 
 ### Authentication & Authorization
 
-#### FR-001: User Authentication
-- **Requirement**: Users must authenticate via Email+Password or GitHub OAuth
-- **Implementation**: Supabase Auth with JWT tokens
-- **Session Management**: JWT stored in localStorage with 1-hour expiry
-- **Fallback**: Secure HTTP-only cookies for session persistence
+- **Supabase Auth**: Email/password and GitHub OAuth authentication
+- **JWT Tokens**: Secure session management with automatic refresh
+- **Row-Level Security**: Database-level security policies for tenant isolation
+- **Role-Based Access**: Different permissions for different user roles
 
-#### FR-002: Role-Based Access Control
-- **Requirement**: Different permissions based on user roles
-- **Implementation**: Row-Level Security (RLS) policies in Supabase
-- **Scope**: Users can only access teams they belong to and releases involving their teams
+---
 
-### User Management
+## Page Specifications
 
-#### FR-003: User CRUD Operations
-- **Create**: Administrators can create new users
-- **Read**: Users can view their own profile and team members
-- **Update**: Users can update their profile information
-- **Delete**: Administrators can deactivate users (soft delete)
+### 1. Authentication Page (Protected Route)
 
-#### FR-004: User Profile Management
-- **Fields**: id, email (PK), full_name, nickname, created_at, updated_at
-- **Validation**: Email must be unique and valid format
-- **Relationships**: Many-to-many with teams via team_users table
+**Purpose**: Handle user authentication and redirect to main application
 
-### Team Management
+**Components**:
+- LoginDialog component
+- Loading spinner during authentication check
+- Welcome message for unauthenticated users
 
-#### FR-005: Team CRUD Operations
-- **Create**: Administrators and Release Managers can create teams
-- **Read**: Users can view teams they belong to
-- **Update**: Team owners can update team information
-- **Delete**: Administrators can delete teams (cascade to team_users)
+**User Actions**:
+- Sign in with email/password
+- Sign in with GitHub OAuth
+- Automatic redirect to dashboard after successful authentication
 
-#### FR-006: Team Membership Management
-- **Add Members**: Team owners can add users to teams
-- **Remove Members**: Team owners can remove users from teams
-- **Validation**: Users can belong to multiple teams
+**Access Control**: Public access, redirects authenticated users to dashboard
 
-### Release Management
+### 2. Dashboard Page (/)
 
-#### FR-007: Release Creation
-- **Required Fields**: name, target_date, platform_update (bool), config_update (bool)
-- **Team Assignment**: Must assign ≥1 teams to release
-- **Validation**: Target date must be in the future
-- **Initial State**: Automatically set to 'pending'
+**Purpose**: Provide comprehensive overview of release management activities
 
-#### FR-008: Release State Management
-- **States**: pending, ready, past_due, complete, cancelled
-- **Transitions**: Automatic based on business rules (see Business Rules section)
-- **Manual Actions**: Release managers can mark complete or cancel
+**Layout**: Grid layout with metric cards and two-column content area
 
-#### FR-009: Release Updates
-- **Editable Fields**: name, target_date, platform_update, config_update, team assignments
-- **Restrictions**: Cannot edit completed or cancelled releases
-- **Audit Trail**: All changes tracked with timestamp and user
+**Components**:
+- **TotalReleasesCard**: Displays count of all active releases
+- **ReadyReleasesCard**: Shows releases that meet all readiness criteria
+- **PastDueCard**: Highlights overdue releases requiring attention
+- **ActiveTeamsCard**: Shows number of teams with active releases
+- **UpcomingReleasesCard**: Lists next 3 releases needing attention
+- **MyUpcomingMilestonesCard**: Shows releases where user is personally involved
+- **RecentActivityCard**: Displays latest system activities
 
-### Feature Tracking
+**User Actions**:
+- View release statistics
+- Navigate to specific releases
+- Mark personal readiness for releases
+- View recent activity details
 
-#### FR-010: Feature Management
-- **Fields**: id, release_id, name, jira_ticket, description, dri_user_id, is_platform (bool), is_ready (bool)
-- **DRI Assignment**: Each feature must have a Directly Responsible Individual
-- **JIRA Integration**: Optional JIRA ticket linking
-- **Platform Features**: Flag for platform-level features
+**Data Sources**:
+- Releases table (filtered by tenant)
+- Teams table (filtered by tenant)
+- Activity log (filtered by tenant)
+- Member release state (filtered by user)
 
-#### FR-011: Feature Readiness
-- **Toggle**: DRI can mark feature as ready/not ready
-- **Validation**: Only DRI can change feature readiness status
-- **Impact**: Feature readiness affects overall release readiness
+### 3. Releases Page (/releases)
 
-### Readiness Tracking
+**Purpose**: List and manage all releases in the organization
 
-#### FR-012: Individual Readiness
-- **Storage**: user_release_state table with release_id, user_id, is_ready
-- **Access**: Users can mark their own readiness for releases they're involved in
-- **Updates**: Real-time updates to release calculations
+**Layout**: Header with controls, list of release cards
 
-#### FR-013: Release Readiness Calculation
-- **Criteria**: Release becomes ready when ALL conditions are met:
-  - Every assigned team has all members marked as ready
-  - Every feature is marked as ready
-- **Automatic**: System automatically calculates and updates release state
-- **Real-time**: Changes immediately reflected in UI
+**Components**:
+- **Header Section**: Title, "Show archived" checkbox, CreateReleaseDialog
+- **ReleaseSummaryCard**: Individual release cards with status indicators
+- **Loading State**: Spinner while fetching data
 
-### Navigation & Layout
+**User Actions**:
+- Toggle archived releases visibility
+- Create new release
+- View release details
+- Edit release information
+- Cancel releases
+- Mark releases complete
 
-#### FR-014: Application Layout
-- **Header**: Sticky header with logo, app title, and auth buttons
-- **Sidebar**: Vertical navigation with Home, Teams, Releases icons
-- **Main Panel**: Routed content area
-- **Footer**: Sticky footer with version, copyright, help links
+**Form Controls**:
+- Checkbox: "Show archived" (default: unchecked)
+- Button: "Create Release" (opens CreateReleaseDialog)
 
-#### FR-015: Responsive Design
-- **Primary**: Desktop-first design
-- **Secondary**: Responsive for tablets and mobile devices
-- **Breakpoints**: Standard Tailwind CSS breakpoints
+**Data Sources**:
+- Releases table (filtered by tenant and archive status)
+- Release teams (for team count)
+- Features (for feature count and readiness)
+- Member release state (for readiness calculations)
+
+### 4. Release Detail Page (/releases/[name])
+
+**Purpose**: Detailed view of a specific release with all related information
+
+**Layout**: Header with release info, tabbed content area
+
+**Tabs**:
+- **Overview**: Release summary, team assignments, readiness status
+- **Features**: List of features with DRI assignments and readiness
+- **Team Readiness**: Individual team member readiness tracking
+
+**Components**:
+- **ReleaseDetailCard**: Main release information display
+- **FeatureCard**: Individual feature cards with edit/delete controls
+- **Readiness tracking**: Individual member readiness checkboxes
+
+**User Actions**:
+- Edit release details
+- Add/edit/delete features
+- Mark features ready
+- Mark personal readiness
+- View team readiness status
+- Cancel or complete release
+
+**Form Controls**:
+- Edit buttons for release and features
+- Checkboxes for feature and member readiness
+- Add feature button
+- Delete buttons (with confirmation)
+
+### 5. Teams Page (/teams)
+
+**Purpose**: Manage teams and team memberships
+
+**Layout**: Header with controls, grid of team cards
+
+**Components**:
+- **Header Section**: Title, AddTeamDialog
+- **TeamCard**: Individual team cards with member information
+- **Loading State**: Spinner while fetching data
+
+**User Actions**:
+- Create new team
+- Edit team information
+- Delete teams
+- Add/remove team members
+- View team details
+
+**Form Controls**:
+- Button: "Add Team" (opens AddTeamDialog)
+- Edit buttons on team cards
+- Delete buttons (with confirmation)
+
+**Data Sources**:
+- Teams table (filtered by tenant)
+- Team members (for member counts)
+- Release teams (for active release counts)
+
+### 6. Members Page (/members)
+
+**Purpose**: Manage organization members and their roles
+
+**Layout**: Header with controls, list of member cards
+
+**Components**:
+- **Header Section**: Title, AddMemberDialog
+- **MemberCard**: Individual member cards with role information
+- **Loading State**: Spinner while fetching data
+
+**User Actions**:
+- Add new members
+- Edit member information
+- Update member roles
+- Reset member passwords
+- Delete members
+
+**Form Controls**:
+- Button: "Add Member" (opens AddMemberDialog)
+- Edit buttons on member cards
+- Password reset buttons
+- Delete buttons (with confirmation)
+
+**Data Sources**:
+- Members table (filtered by tenant)
+- Auth users (for user search)
+
+### 7. Targets Page (/targets)
+
+**Purpose**: Manage deployment targets and environments
+
+**Layout**: Header with controls, grid of target cards
+
+**Components**:
+- **Header Section**: Title, AddTargetDialog
+- **TargetCard**: Individual target cards with environment information
+- **Loading State**: Spinner while fetching data
+
+**User Actions**:
+- Create new targets
+- Edit target information
+- Delete targets
+- Mark targets as live/production
+
+**Form Controls**:
+- Button: "Add Target" (opens AddTargetDialog)
+- Edit buttons on target cards
+- Delete buttons (with confirmation)
+
+**Data Sources**:
+- Targets table (filtered by tenant)
+
+### 8. Calendar Page (/calendar)
+
+**Purpose**: Visual calendar interface for release planning and scheduling
+
+**Layout**: Two-month calendar view with drag-and-drop functionality
+
+**Components**:
+- **Calendar Grid**: Two-month calendar display (current + next month)
+- **Release Items**: Color-coded release indicators on target dates
+- **Drag and Drop**: Visual feedback for release date changes
+
+**User Actions**:
+- View releases on calendar
+- Drag and drop releases to new dates
+- Click on releases to view details
+- Navigate between months
+
+**Form Controls**:
+- Drag handles on release items
+- Drop zones on calendar days
+- Visual feedback for valid/invalid drop zones
+
+**Data Sources**:
+- Releases table (filtered by tenant)
+- Member release state (for user involvement highlighting)
+
+**Special Features**:
+- **Drag and Drop**: Releases can be dragged to new dates
+- **Visual Feedback**: Valid drop zones (future dates) show green highlighting
+- **Date Validation**: Cannot drop releases on past dates
+- **User Involvement**: Releases where user is involved are highlighted
+
+### 9. Release Notes Page (/releasenotes)
+
+**Purpose**: List and manage release notes for all releases
+
+**Layout**: Header, list of release note cards
+
+**Components**:
+- **Header Section**: Title
+- **ReleaseNotesSummaryCard**: Individual release note cards
+- **Loading State**: Spinner while fetching data
+
+**User Actions**:
+- View release notes
+- Navigate to release details
+- Edit release notes (from release detail page)
+
+**Data Sources**:
+- Releases table (filtered by tenant, ordered by target date)
+
+### 10. Release Notes Detail Page (/releasenotes/[slug])
+
+**Purpose**: Display and edit release notes for a specific release
+
+**Layout**: Header with release info, markdown editor/viewer
+
+**Components**:
+- **ReleaseNotesDisplay**: Markdown content display
+- **Markdown Editor**: Rich text editor for editing notes
+
+**User Actions**:
+- View release notes
+- Edit release notes (if authorized)
+- Save changes
+- Reset to original content
+
+**Form Controls**:
+- Edit button (if authorized)
+- Save button
+- Reset button
+- Markdown editor
+
+**Data Sources**:
+- Releases table (filtered by tenant and release name)
+
+### 11. Tenants Page (/tenants) - Admin Only
+
+**Purpose**: Manage organizations/tenants (system-wide admin only)
+
+**Layout**: Header with controls, list of tenant cards
+
+**Components**:
+- **Header Section**: Title, AddTenantDialog
+- **TenantCard**: Individual tenant cards with organization information
+- **Loading State**: Spinner while fetching data
+
+**User Actions**:
+- Create new tenants
+- Edit tenant information
+- Delete tenants
+- View tenant details
+
+**Form Controls**:
+- Button: "Add Tenant" (opens AddTenantDialog)
+- Edit buttons on tenant cards
+- Delete buttons (with confirmation)
+
+**Data Sources**:
+- Tenants table (all tenants, no filtering)
+
+**Access Control**: System admin only
+
+### 12. Users Page (/users) - Admin Only
+
+**Purpose**: Manage system users (system-wide admin only)
+
+**Layout**: Header with controls, list of user cards
+
+**Components**:
+- **Header Section**: Title, AddUserDialog
+- **UserCard**: Individual user cards with system role information
+- **Loading State**: Spinner while fetching data
+
+**User Actions**:
+- Create new users
+- Edit user information
+- Update system roles
+- Reset user passwords
+- Delete users
+
+**Form Controls**:
+- Button: "Add User" (opens AddUserDialog)
+- Edit buttons on user cards
+- Password reset buttons
+- Delete buttons (with confirmation)
+
+**Data Sources**:
+- Auth users (all users, no filtering)
+- System roles table
+
+**Access Control**: System admin only
+
+### 13. Documentation Page (/docs)
+
+**Purpose**: Display application documentation
+
+**Layout**: Sidebar navigation, main content area
+
+**Components**:
+- **Sidebar**: Documentation navigation
+- **Content Area**: Markdown content display
+- **Quick Links**: Navigation to specific documentation sections
+
+**User Actions**:
+- Navigate between documentation sections
+- View markdown content
+- Return to application
+
+**Form Controls**:
+- Documentation navigation buttons
+- Back to app button
+
+**Data Sources**:
+- Static markdown files in public/docs/
+
+---
+
+## Component Specifications
+
+### Dialog Components
+
+#### CreateReleaseDialog
+**Purpose**: Create or edit releases
+
+**Form Fields**:
+- **Name** (text input, required): Release name
+- **Target Date** (date input, required): Target deployment date
+- **Platform Update** (checkbox): Indicates platform updates
+- **Config Update** (checkbox): Indicates configuration changes
+- **Teams** (multi-select): Assigned teams
+- **Summary** (textarea): Release summary
+
+**Validation**:
+- Name is required
+- Target date must be in the future
+- At least one team must be selected
+
+**Actions**:
+- Create/Update release
+- Cancel operation
+- Log activity on changes
+
+#### AddTeamDialog
+**Purpose**: Create new teams
+
+**Form Fields**:
+- **Name** (text input, required): Team name
+- **Description** (textarea): Team description
+
+**Validation**:
+- Name is required
+- Name must be unique within tenant
+
+**Actions**:
+- Create team
+- Cancel operation
+
+#### EditTeamDialog
+**Purpose**: Edit existing teams and manage members
+
+**Form Fields**:
+- **Name** (text input, required): Team name
+- **Description** (textarea): Team description
+- **Members** (multi-select): Team members
+
+**Validation**:
+- Name is required
+- Name must be unique within tenant
+
+**Actions**:
+- Update team
+- Add/remove members
+- Cancel operation
+- Delete team (with confirmation)
+
+#### AddMemberDialog
+**Purpose**: Add new members to organization
+
+**Form Fields**:
+- **User Search** (search input): Search for existing auth users
+- **Nickname** (text input): Optional nickname
+- **Member Role** (select): Role within organization
+
+**Validation**:
+- User must be selected from search results
+- Role must be valid
+
+**Actions**:
+- Create member
+- Cancel operation
+
+#### EditMemberDialog
+**Purpose**: Edit member information
+
+**Form Fields**:
+- **Email** (text input, read-only): Member email
+- **Full Name** (text input, read-only): Member full name
+- **Nickname** (text input): Optional nickname
+- **Member Role** (select): Role within organization
+
+**Validation**:
+- Role must be valid
+
+**Actions**:
+- Update member
+- Cancel operation
+
+#### AddTargetDialog
+**Purpose**: Create new deployment targets
+
+**Form Fields**:
+- **Short Name** (text input, required): Brief identifier
+- **Name** (text input, required): Full target name
+- **Is Live** (checkbox): Indicates live/production environment
+
+**Validation**:
+- Short name is required
+- Name is required
+
+**Actions**:
+- Create target
+- Cancel operation
+
+#### EditTargetDialog
+**Purpose**: Edit existing targets
+
+**Form Fields**:
+- **Short Name** (text input, required): Brief identifier
+- **Name** (text input, required): Full target name
+- **Is Live** (checkbox): Indicates live/production environment
+
+**Validation**:
+- Short name is required
+- Name is required
+
+**Actions**:
+- Update target
+- Cancel operation
+- Delete target (with confirmation)
+
+#### AddFeatureDialog
+**Purpose**: Add features to releases
+
+**Form Fields**:
+- **Name** (text input, required): Feature name
+- **JIRA Ticket** (text input): Associated JIRA ticket
+- **Description** (textarea): Feature description
+- **DRI** (select): Directly Responsible Individual
+- **Platform Feature** (checkbox): Indicates platform-level feature
+- **Config Feature** (checkbox): Indicates configuration feature
+- **Comments** (textarea): Additional notes
+
+**Validation**:
+- Name is required
+- DRI must be selected
+
+**Actions**:
+- Create feature
+- Cancel operation
+
+#### EditFeatureDialog
+**Purpose**: Edit existing features
+
+**Form Fields**:
+- **Name** (text input, required): Feature name
+- **JIRA Ticket** (text input): Associated JIRA ticket
+- **Description** (textarea): Feature description
+- **DRI** (select): Directly Responsible Individual
+- **Platform Feature** (checkbox): Indicates platform-level feature
+- **Config Feature** (checkbox): Indicates configuration feature
+- **Comments** (textarea): Additional notes
+
+**Validation**:
+- Name is required
+- DRI must be selected
+
+**Actions**:
+- Update feature
+- Cancel operation
+- Delete feature (with confirmation)
+
+#### FeatureReadyDialog
+**Purpose**: Mark features as ready
+
+**Form Fields**:
+- **Feature Name** (text, read-only): Feature name
+- **Ready Status** (checkbox): Feature readiness
+
+**Actions**:
+- Toggle readiness status
+- Cancel operation
+
+#### AddTenantDialog
+**Purpose**: Create new organizations (admin only)
+
+**Form Fields**:
+- **Name** (text input, required): Organization name
+
+**Validation**:
+- Name is required
+
+**Actions**:
+- Create tenant
+- Cancel operation
+
+#### EditTenantDialog
+**Purpose**: Edit organizations (admin only)
+
+**Form Fields**:
+- **Name** (text input, required): Organization name
+
+**Validation**:
+- Name is required
+
+**Actions**:
+- Update tenant
+- Cancel operation
+- Delete tenant (with confirmation)
+
+#### AddUserDialog
+**Purpose**: Create new system users (admin only)
+
+**Form Fields**:
+- **Email** (text input, required): User email
+- **Full Name** (text input, required): User full name
+- **System Role** (select): System-wide role
+
+**Validation**:
+- Email is required and must be valid
+- Full name is required
+- System role must be valid
+
+**Actions**:
+- Create user
+- Cancel operation
+
+#### EditUserDialog
+**Purpose**: Edit system users (admin only)
+
+**Form Fields**:
+- **Email** (text input, read-only): User email
+- **Full Name** (text input, required): User full name
+- **System Role** (select): System-wide role
+
+**Validation**:
+- Full name is required
+- System role must be valid
+
+**Actions**:
+- Update user
+- Cancel operation
+
+#### UpdatePasswordDialog
+**Purpose**: Reset user passwords (admin only)
+
+**Form Fields**:
+- **New Password** (password input, required): New password
+- **Confirm Password** (password input, required): Password confirmation
+
+**Validation**:
+- Passwords must match
+- Password must meet complexity requirements
+
+**Actions**:
+- Update password
+- Cancel operation
+
+### Card Components
+
+#### ReleaseSummaryCard
+**Purpose**: Display release summary information
+
+**Display Elements**:
+- Release name and status indicator
+- Target date
+- Team count and feature count
+- Platform/Config update indicators
+- Action buttons (edit, view details)
+
+**User Actions**:
+- Click to view details
+- Edit release
+- Cancel release
+- Mark complete
+
+#### ReleaseDetailCard
+**Purpose**: Display detailed release information
+
+**Display Elements**:
+- Release name and status
+- Target date and days remaining
+- Team assignments
+- Feature list with readiness status
+- Team readiness tracking
+- Action buttons
+
+**User Actions**:
+- Edit release details
+- Add/edit features
+- Mark features ready
+- Mark personal readiness
+- Cancel or complete release
+
+#### TeamCard
+**Purpose**: Display team information
+
+**Display Elements**:
+- Team name and description
+- Member count
+- Active release count
+- Action buttons
+
+**User Actions**:
+- Edit team
+- Delete team
+- Manage members
+
+#### MemberCard
+**Purpose**: Display member information
+
+**Display Elements**:
+- Member name and email
+- Role within organization
+- Action buttons
+
+**User Actions**:
+- Edit member
+- Reset password
+- Delete member
+
+#### TargetCard
+**Purpose**: Display target information
+
+**Display Elements**:
+- Target name and short name
+- Live/production indicator
+- Action buttons
+
+**User Actions**:
+- Edit target
+- Delete target
+
+#### TenantCard
+**Purpose**: Display tenant information (admin only)
+
+**Display Elements**:
+- Tenant name
+- Action buttons
+
+**User Actions**:
+- Edit tenant
+- Delete tenant
+
+#### UserCard
+**Purpose**: Display user information (admin only)
+
+**Display Elements**:
+- User name and email
+- System role
+- Action buttons
+
+**User Actions**:
+- Edit user
+- Reset password
+- Delete user
+
+#### FeatureCard
+**Purpose**: Display feature information
+
+**Display Elements**:
+- Feature name and description
+- DRI assignment
+- JIRA ticket link
+- Platform/Config indicators
+- Readiness status
+- Action buttons
+
+**User Actions**:
+- Edit feature
+- Mark ready/not ready
+- Delete feature
+
+### Dashboard Components
+
+#### TotalReleasesCard
+**Purpose**: Display total release count
+
+**Display Elements**:
+- Count of active releases
+- Icon and title
+- Trend indicator
+
+#### ReadyReleasesCard
+**Purpose**: Display ready release count
+
+**Display Elements**:
+- Count of ready releases
+- Icon and title
+- Trend indicator
+
+#### PastDueCard
+**Purpose**: Display past due release count
+
+**Display Elements**:
+- Count of past due releases
+- Icon and title
+- Trend indicator
+
+#### ActiveTeamsCard
+**Purpose**: Display active team count
+
+**Display Elements**:
+- Count of active teams
+- Icon and title
+- Trend indicator
+
+#### UpcomingReleasesCard
+**Purpose**: Display upcoming releases
+
+**Display Elements**:
+- List of next 3 releases
+- Release name and date
+- Status indicators
+- Quick action buttons
+
+**User Actions**:
+- View release details
+- Mark personal readiness
+
+#### MyUpcomingMilestonesCard
+**Purpose**: Display user's personal milestones
+
+**Display Elements**:
+- List of releases where user is involved
+- Personal readiness status
+- Quick action buttons
+
+**User Actions**:
+- Mark personal readiness
+- View release details
+
+#### RecentActivityCard
+**Purpose**: Display recent system activities
+
+**Display Elements**:
+- List of recent activities
+- Activity type and details
+- Timestamp
+- User who performed action
+
+**User Actions**:
+- View activity details
+
+### Layout Components
+
+#### Header
+**Purpose**: Application header with navigation and user controls
+
+**Display Elements**:
+- Application logo and title
+- User profile information
+- Sign out button
+
+**User Actions**:
+- Sign out
+- Access profile settings
+
+#### Sidebar
+**Purpose**: Main navigation sidebar
+
+**Display Elements**:
+- Navigation links to all pages
+- Role-based visibility (admin features)
+- Active page indicator
+
+**User Actions**:
+- Navigate between pages
+- Access role-specific features
+
+#### Footer
+**Purpose**: Application footer
+
+**Display Elements**:
+- Copyright information
+- Version number
+- Help links
+
+---
+
+## Form Specifications
+
+### Input Types
+
+#### Text Input
+- **Validation**: Required fields, length limits, format validation
+- **States**: Default, focus, error, disabled
+- **Accessibility**: Proper labels, ARIA attributes
+
+#### Textarea
+- **Validation**: Required fields, length limits
+- **States**: Default, focus, error, disabled
+- **Features**: Auto-resize, character count
+
+#### Date Input
+- **Validation**: Required fields, future date validation
+- **Format**: YYYY-MM-DD
+- **Features**: Date picker, min/max date constraints
+
+#### Checkbox
+- **Validation**: Required for critical options
+- **States**: Unchecked, checked, indeterminate, disabled
+- **Accessibility**: Proper labels, ARIA attributes
+
+#### Select
+- **Validation**: Required fields, valid option validation
+- **States**: Default, open, selected, disabled
+- **Features**: Search functionality, multi-select where appropriate
+
+#### Search Input
+- **Validation**: Minimum character length for search
+- **Features**: Debounced search, loading states
+- **Results**: Dropdown with search results
+
+### Form Validation
+
+#### Client-Side Validation
+- **Real-time**: Validation on input change
+- **Visual Feedback**: Error messages, field highlighting
+- **Prevention**: Prevent submission with invalid data
+
+#### Server-Side Validation
+- **Security**: All data validated on server
+- **Error Handling**: Clear error messages returned to client
+- **Data Integrity**: Database constraints enforced
+
+### Form States
+
+#### Loading States
+- **Indicators**: Spinners, disabled inputs
+- **Feedback**: "Saving..." messages
+- **Prevention**: Prevent multiple submissions
+
+#### Error States
+- **Display**: Error messages below fields
+- **Styling**: Red borders, error icons
+- **Recovery**: Clear error on valid input
+
+#### Success States
+- **Feedback**: Success messages
+- **Actions**: Close dialogs, refresh data
+- **Navigation**: Redirect where appropriate
+
+---
+
+## User Interactions
+
+### Authentication Flow
+
+1. **Unauthenticated User**
+   - Redirected to login page
+   - Presented with login options (email/password, GitHub)
+   - After successful login, redirected to dashboard
+
+2. **Authenticated User**
+   - Automatically redirected to dashboard
+   - Session maintained with JWT tokens
+   - Automatic token refresh
+
+### Navigation Flow
+
+1. **Page Navigation**
+   - Sidebar navigation between main pages
+   - Breadcrumb navigation for deep pages
+   - Back button functionality
+
+2. **Modal/Dialog Navigation**
+   - Escape key to close
+   - Click outside to close
+   - Tab navigation within forms
+
+### Data Entry Flow
+
+1. **Create Operations**
+   - Click "Add" button
+   - Fill required form fields
+   - Submit form
+   - Success feedback and data refresh
+
+2. **Edit Operations**
+   - Click "Edit" button
+   - Pre-populated form with current data
+   - Make changes
+   - Submit form
+   - Success feedback and data refresh
+
+3. **Delete Operations**
+   - Click "Delete" button
+   - Confirmation dialog
+   - Confirm deletion
+   - Success feedback and data refresh
+
+### Readiness Tracking Flow
+
+1. **Feature Readiness**
+   - DRI clicks feature checkbox
+   - Toggle ready/not ready status
+   - Automatic release readiness calculation
+   - Real-time UI updates
+
+2. **Personal Readiness**
+   - User clicks personal readiness checkbox
+   - Toggle ready/not ready status
+   - Automatic team and release readiness calculation
+   - Real-time UI updates
+
+### Calendar Interaction Flow
+
+1. **View Calendar**
+   - Navigate to calendar page
+   - View two-month calendar
+   - See releases on their target dates
+   - Color-coded by status
+
+2. **Drag and Drop**
+   - Click and hold release item
+   - Drag to new date
+   - Visual feedback for valid/invalid drop zones
+   - Drop to update release date
+   - Automatic database update
+
+### Search and Filter Flow
+
+1. **User Search**
+   - Type in search field
+   - Debounced search request
+   - Display matching users
+   - Select user from results
+
+2. **Data Filtering**
+   - Toggle filters (e.g., "Show archived")
+   - Automatic data refresh
+   - Clear visual indication of active filters
+
+### Error Handling Flow
+
+1. **Validation Errors**
+   - Display error messages below fields
+   - Highlight invalid fields
+   - Prevent form submission
+   - Clear errors on valid input
+
+2. **Network Errors**
+   - Display error toast messages
+   - Retry functionality where appropriate
+   - Graceful degradation
+
+3. **Permission Errors**
+   - Redirect to appropriate page
+   - Display permission denied message
+   - Log unauthorized access attempts
 
 ---
 
@@ -195,376 +1093,316 @@ The Release Management Checklist App helps engineering teams plan, track, and co
 
 | State | Definition | Color Code | Action Required |
 |-------|------------|------------|-----------------|
-| **pending** | Earliest release with target_date ≥ today AND not ready/complete/cancelled | Yellow (bg-yellow-300) | Teams need to complete tasks |
+| **pending** | Release with target_date ≥ today AND not ready/complete/cancelled | Yellow (bg-yellow-300) | Teams need to complete tasks |
 | **ready** | Pending release AND all readiness criteria met | Green (bg-green-500) | Ready for deployment |
 | **past_due** | Pending release AND target_date < today AND not ready | Red (bg-red-500) | Immediate attention required |
 | **complete** | Manually set by release manager when deployed | Blue (bg-blue-500) | None (archived) |
-| **cancelled** | Manually set by release manager | Gray (bg-gray-200) | None (archived) |
-
-### State Transition Rules
-
-#### Automatic Transitions
-1. **Pending → Ready**: When all readiness criteria are met
-2. **Pending → Past Due**: When target_date < today and not ready
-3. **Ready → Past Due**: When target_date < today (if readiness criteria become unmet)
-
-#### Manual Transitions
-1. **Any State → Complete**: Release manager action (deployment)
-2. **Any State → Cancelled**: Release manager action
-3. **Complete/Cancelled → Any State**: Not allowed (archived)
-
-### "Next Release" Logic
-
-**Definition**: `MIN(target_date)` where `target_date ≥ today` AND state ≠ `cancelled`
-
-**Display Priority**:
-1. Past Due releases (highest priority)
-2. Pending releases (by target_date ascending)
-3. Ready releases (by target_date ascending)
+| **cancelled** | Manually set by release manager | Gray (bg-gray-500) | None (archived) |
 
 ### Readiness Calculation Rules
 
-#### Team Readiness
-- **Definition**: All team members marked as ready
-- **Calculation**: `COUNT(ready_members) = COUNT(total_members)` for each team
-
 #### Feature Readiness
-- **Definition**: All features marked as ready by their DRIs
-- **Calculation**: `COUNT(ready_features) = COUNT(total_features)`
+- **Criteria**: Feature marked as ready by DRI
+- **Impact**: Contributes to overall release readiness
+- **Validation**: Only DRI can change feature readiness
+
+#### Team Readiness
+- **Criteria**: All team members marked as ready
+- **Calculation**: Automatic based on member_release_state table
+- **Impact**: Contributes to overall release readiness
 
 #### Release Readiness
-- **Definition**: All teams ready AND all features ready
-- **Formula**: `ALL(teams_ready) AND ALL(features_ready)`
+- **Criteria**: ALL conditions must be met:
+  - Every assigned team has all members marked as ready
+  - Every feature is marked as ready
+- **Automatic**: System calculates and updates release state
+- **Real-time**: Changes immediately reflected in UI
 
----
+### Permission Rules
 
-## Non-Functional Requirements
+#### System Admin
+- **Access**: All tenants and users
+- **Actions**: Create/edit/delete tenants and users
+- **Scope**: System-wide management
 
-### Performance Requirements
+#### Tenant Admin
+- **Access**: Own tenant only
+- **Actions**: Full management of tenant data
+- **Scope**: Organization-level management
 
-#### NFR-001: Response Time
-- **TTFB**: <200ms for authenticated pages
-- **Page Load**: <2 seconds for full page load
-- **API Response**: <500ms for CRUD operations
-- **Real-time Updates**: <1 second for status changes
+#### Release Manager
+- **Access**: Own tenant only
+- **Actions**: Create/edit/cancel releases, manage teams
+- **Scope**: Release lifecycle management
 
-#### NFR-002: Scalability
-- **Users**: Support 10,000 concurrent users
-- **Teams**: Support 100 teams
-- **Releases**: Support 1,000 releases per year
-- **Features**: Support 5,000 features per year
+#### Member
+- **Access**: Own tenant, assigned teams only
+- **Actions**: Mark personal readiness, view assigned work
+- **Scope**: Individual contribution tracking
 
-### Security Requirements
+### Data Validation Rules
 
-#### NFR-003: Authentication Security
-- **JWT Expiry**: 1 hour maximum
-- **Password Policy**: Minimum 8 characters, complexity requirements
-- **Session Management**: Secure session handling with CSRF protection
-- **OAuth**: Secure GitHub OAuth integration
+#### Release Validation
+- **Name**: Required, unique within tenant
+- **Target Date**: Required, must be in the future for new releases
+- **Teams**: At least one team must be assigned
+- **State**: Must be one of valid states
 
-#### NFR-004: Data Security
-- **HTTPS**: Enforced for all communications
-- **RLS**: Row-Level Security on all tables
-- **Input Validation**: All user inputs validated and sanitized
-- **OWASP Compliance**: Top 10 security vulnerabilities mitigated
+#### Feature Validation
+- **Name**: Required
+- **DRI**: Required, must be valid member
+- **Release**: Must belong to valid release
 
-### Reliability Requirements
+#### Team Validation
+- **Name**: Required, unique within tenant
+- **Members**: Optional, must be valid members
 
-#### NFR-005: Availability
-- **Uptime**: 99.5% availability
-- **Backup**: Daily automated backups
-- **Recovery**: RTO <4 hours, RPO <1 hour
+#### Member Validation
+- **Email**: Required, must be valid auth user
+- **Role**: Must be valid role within tenant
 
-#### NFR-006: Data Integrity
-- **Constraints**: Database constraints for data validation
-- **Audit Trail**: All changes logged with timestamp and user
-- **Consistency**: ACID compliance for all transactions
+### Activity Logging Rules
 
-### Usability Requirements
+#### Automatic Logging
+- **Release Changes**: Create, update, cancel, complete
+- **Feature Changes**: Create, update, delete, ready status
+- **Team Changes**: Create, update, delete, member changes
+- **Member Changes**: Create, update, delete, role changes
 
-#### NFR-007: Accessibility
-- **WCAG Compliance**: 2.1 AA level
-- **Color Contrast**: Minimum 4.5:1 ratio
-- **Keyboard Navigation**: Full keyboard accessibility
-- **Screen Reader**: Compatible with screen readers
-
-#### NFR-008: User Experience
-- **Onboarding**: New user setup in <5 minutes
-- **Intuitive Design**: Self-explanatory interface
-- **Error Handling**: Clear error messages and recovery paths
-- **Mobile Responsive**: Functional on mobile devices
-
----
-
-## UI/UX Specifications
-
-### Design System
-
-#### Color Palette
-- **Primary**: Blue (#3B82F6)
-- **Success**: Green (#10B981)
-- **Warning**: Yellow (#F59E0B)
-- **Error**: Red (#EF4444)
-- **Neutral**: Gray (#6B7280)
-
-#### Typography
-- **Font Family**: Inter (Google Fonts)
-- **Headings**: Font weight 600-700
-- **Body**: Font weight 400
-- **Small Text**: Font weight 500
-
-#### Component Library
-- **Framework**: shadcn/ui components
-- **Icons**: Lucide React icons
-- **Layout**: CSS Grid and Flexbox
-- **Responsive**: Tailwind CSS breakpoints
-
-### Page Specifications
-
-#### Dashboard (/)
-- **Layout**: Grid of metric cards + two-column content
-- **Components**: Stats cards, next release card, activity feed
-- **Actions**: Quick access to releases and teams
-
-#### Teams (/teams)
-- **Layout**: Grid of team cards
-- **Components**: Team cards with member counts, action buttons
-- **Actions**: Add team, edit team, delete team, manage members
-
-#### Releases (/releases)
-- **Layout**: List of release cards
-- **Components**: Release cards with status indicators
-- **Actions**: Create release, edit release, view details
-
-#### Release Detail (/releases/[id])
-- **Layout**: Header + tabbed content
-- **Tabs**: Overview, Features, Team Readiness
-- **Components**: Release info, feature table, readiness checklist
-
-### Component Specifications
-
-#### Cards
-- **Style**: Rounded corners, subtle shadow, hover effects
-- **Content**: Title, description, metrics, action buttons
-- **States**: Default, hover, active, disabled
-
-#### Buttons
-- **Variants**: Primary, secondary, outline, ghost
-- **Sizes**: Small, medium, large
-- **States**: Default, hover, active, disabled, loading
-
-#### Forms
-- **Validation**: Real-time validation with error messages
-- **Layout**: Consistent spacing and alignment
-- **Accessibility**: Proper labels and ARIA attributes
+#### Log Content
+- **Action Type**: Categorization of the action
+- **Details**: JSON object with change details
+- **User**: Member who performed the action
+- **Timestamp**: When the action occurred
+- **Related Entities**: Release, feature, team, member IDs
 
 ---
 
 ## API Specifications
 
-### REST API Endpoints
+### Authentication Endpoints
 
-#### Authentication
-```
-POST /api/auth/signin
-POST /api/auth/signout
-POST /api/auth/refresh
-```
+#### GET /api/auth-users/search
+**Purpose**: Search for auth users by email
 
-#### Users
-```
-GET    /api/users              # List users (admin only)
-POST   /api/users              # Create user (admin only)
-GET    /api/users/:id          # Get user profile
-PATCH  /api/users/:id          # Update user profile
-DELETE /api/users/:id          # Delete user (admin only)
-```
+**Parameters**:
+- `email` (query): Email substring to search for
 
-#### Teams
-```
-GET    /api/teams              # List teams user belongs to
-POST   /api/teams              # Create team (admin/manager)
-GET    /api/teams/:id          # Get team details
-PATCH  /api/teams/:id          # Update team
-DELETE /api/teams/:id          # Delete team (admin only)
-POST   /api/teams/:id/members  # Add member to team
-DELETE /api/teams/:id/members/:userId  # Remove member from team
-```
-
-#### Releases
-```
-GET    /api/releases           # List releases visible to user
-POST   /api/releases           # Create release (manager)
-GET    /api/releases/:id       # Get release details
-PATCH  /api/releases/:id       # Update release (manager)
-DELETE /api/releases/:id       # Cancel/delete release (manager)
-PATCH  /api/releases/:id/complete  # Mark release complete (manager)
-```
-
-#### Features
-```
-GET    /api/releases/:id/features  # List features for release
-POST   /api/releases/:id/features  # Add feature to release
-PATCH  /api/features/:id       # Update feature
-DELETE /api/features/:id       # Delete feature
-PATCH  /api/features/:id/ready # Toggle feature ready (DRI only)
-```
-
-#### Readiness
-```
-GET    /api/releases/:id/readiness  # Get readiness status
-PATCH  /api/user-release/:releaseId/ready  # Toggle user ready
-```
-
-### Response Formats
-
-#### Standard Response
+**Response**:
 ```json
-{
-  "success": true,
-  "data": { ... },
-  "message": "Operation completed successfully"
-}
-```
-
-#### Error Response
-```json
-{
-  "success": false,
-  "error": {
-    "code": "VALIDATION_ERROR",
-    "message": "Invalid input data",
-    "details": { ... }
+[
+  {
+    "id": "uuid",
+    "email": "string",
+    "full_name": "string"
   }
-}
+]
 ```
 
-### Authentication
+**Access Control**: Authenticated users only
 
-#### JWT Token Format
+#### POST /api/bootstrap-user-roles
+**Purpose**: Bootstrap user roles for new users
+
+**Request Body**:
 ```json
 {
-  "sub": "user_id",
-  "email": "user@example.com",
-  "role": "release_manager",
-  "iat": 1640995200,
-  "exp": 1640998800
+  "user_id": "uuid",
+  "role": "admin|user"
 }
 ```
 
-#### Authorization Headers
-```
-Authorization: Bearer <jwt_token>
-```
+**Response**: Success/error message
 
----
+**Access Control**: System admin only
 
-## Data Model
+### User Management Endpoints
 
-### Database Schema
+#### GET /api/users
+**Purpose**: List all system users
 
-#### Users Table
-```sql
-users (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  email text NOT NULL UNIQUE,
-  full_name text NOT NULL,
-  nickname text,
-  created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now()
-)
+**Response**:
+```json
+[
+  {
+    "id": "uuid",
+    "email": "string",
+    "full_name": "string",
+    "role": "admin|user"
+  }
+]
 ```
 
-#### Teams Table
-```sql
-teams (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  name text NOT NULL UNIQUE,
-  description text,
-  created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now()
-)
+**Access Control**: System admin only
+
+#### POST /api/users
+**Purpose**: Create new system user
+
+**Request Body**:
+```json
+{
+  "email": "string",
+  "full_name": "string",
+  "role": "admin|user"
+}
 ```
 
-#### Team Users (Many-to-Many)
-```sql
-team_users (
-  team_id uuid NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
-  user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now(),
-  PRIMARY KEY (team_id, user_id)
-)
+**Response**: Created user object
+
+**Access Control**: System admin only
+
+#### PUT /api/users/[id]
+**Purpose**: Update system user
+
+**Request Body**:
+```json
+{
+  "full_name": "string",
+  "role": "admin|user"
+}
 ```
 
-#### Releases Table
-```sql
-releases (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  name text NOT NULL,
-  target_date date NOT NULL,
-  platform_update boolean NOT NULL DEFAULT false,
-  config_update boolean NOT NULL DEFAULT false,
-  state text NOT NULL CHECK (state IN ('pending','ready','past_due','complete','cancelled')),
-  created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now()
-)
+**Response**: Updated user object
+
+**Access Control**: System admin only
+
+#### DELETE /api/users/[id]
+**Purpose**: Delete system user
+
+**Response**: Success/error message
+
+**Access Control**: System admin only
+
+#### POST /api/users/[id]/password
+**Purpose**: Reset user password
+
+**Request Body**:
+```json
+{
+  "password": "string"
+}
 ```
 
-#### Release Teams (Many-to-Many)
-```sql
-release_teams (
-  release_id uuid NOT NULL REFERENCES releases(id) ON DELETE CASCADE,
-  team_id uuid NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
-  created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now(),
-  PRIMARY KEY (release_id, team_id)
-)
+**Response**: Success/error message
+
+**Access Control**: System admin only
+
+### Member Management Endpoints
+
+#### GET /api/members
+**Purpose**: List members in current tenant
+
+**Response**:
+```json
+[
+  {
+    "id": "uuid",
+    "email": "string",
+    "full_name": "string",
+    "nickname": "string",
+    "member_role": "member|release_manager|admin"
+  }
+]
 ```
 
-#### Features Table
-```sql
-features (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  release_id uuid NOT NULL REFERENCES releases(id) ON DELETE CASCADE,
-  name text NOT NULL,
-  jira_ticket text,
-  description text,
-  dri_user_id uuid NOT NULL REFERENCES users(id) ON DELETE SET NULL,
-  is_platform boolean NOT NULL DEFAULT false,
-  is_ready boolean NOT NULL DEFAULT false,
-  created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now()
-)
+**Access Control**: Tenant members only
+
+#### POST /api/members
+**Purpose**: Create new member
+
+**Request Body**:
+```json
+{
+  "auth_user_id": "uuid",
+  "nickname": "string",
+  "member_role": "member|release_manager|admin"
+}
 ```
 
-#### User Release State
-```sql
-user_release_state (
-  release_id uuid NOT NULL REFERENCES releases(id) ON DELETE CASCADE,
-  user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  is_ready boolean NOT NULL DEFAULT false,
-  created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now(),
-  PRIMARY KEY (release_id, user_id)
-)
+**Response**: Created member object
+
+**Access Control**: Tenant admin only
+
+#### PUT /api/members/[id]
+**Purpose**: Update member
+
+**Request Body**:
+```json
+{
+  "nickname": "string",
+  "member_role": "member|release_manager|admin"
+}
 ```
 
-### Relationships
+**Response**: Updated member object
 
-#### One-to-Many
-- User → Features (as DRI)
-- Release → Features
-- Team → Team Users
+**Access Control**: Tenant admin only
 
-#### Many-to-Many
-- Users ↔ Teams (via team_users)
-- Releases ↔ Teams (via release_teams)
+#### DELETE /api/members/[id]
+**Purpose**: Delete member
 
-#### Composite Keys
-- team_users: (team_id, user_id)
-- release_teams: (release_id, team_id)
-- user_release_state: (release_id, user_id)
+**Response**: Success/error message
+
+**Access Control**: Tenant admin only
+
+#### POST /api/members/[id]/password
+**Purpose**: Reset member password
+
+**Request Body**:
+```json
+{
+  "password": "string"
+}
+```
+
+**Response**: Success/error message
+
+**Access Control**: Tenant admin only
+
+### Database Functions
+
+#### create_member_from_auth_user(auth_user_id, nickname, member_role)
+**Purpose**: Create member from auth user
+
+**Parameters**:
+- `auth_user_id`: UUID of auth user
+- `nickname`: Optional nickname
+- `member_role`: Role within tenant
+
+**Returns**: UUID of created member
+
+#### get_auth_users_by_email(email_substring)
+**Purpose**: Search auth users by email
+
+**Parameters**:
+- `email_substring`: Email substring to search
+
+**Returns**: Table with user ID, email, full name
+
+#### get_user_role(user_uuid)
+**Purpose**: Get system role of user
+
+**Parameters**:
+- `user_uuid`: UUID of user
+
+**Returns**: Text role ('admin' or 'user')
+
+#### is_admin(user_id)
+**Purpose**: Check if user has admin role
+
+**Parameters**:
+- `user_id`: UUID of user
+
+**Returns**: Boolean
+
+#### set_user_role(user_uuid, new_role)
+**Purpose**: Set or update user's system role
+
+**Parameters**:
+- `user_uuid`: UUID of user
+- `new_role`: New role to assign
+
+**Returns**: Void
 
 ---
 
@@ -572,219 +1410,200 @@ user_release_state (
 
 ### Authentication Security
 
-#### Password Requirements
-- **Minimum Length**: 8 characters
-- **Complexity**: At least one uppercase, one lowercase, one number
-- **History**: Prevent reuse of last 3 passwords
-- **Expiration**: 90 days (configurable)
+#### Multi-Factor Authentication
+- **GitHub OAuth**: Secure OAuth 2.0 flow
+- **Email/Password**: Secure password requirements
+- **Session Management**: JWT tokens with automatic refresh
 
 #### Session Security
-- **JWT Expiry**: 1 hour maximum
-- **Refresh Tokens**: 7 days with rotation
-- **Secure Storage**: HTTP-only cookies for refresh tokens
-- **CSRF Protection**: CSRF tokens for state-changing operations
+- **Token Expiry**: 1-hour JWT expiry
+- **Automatic Refresh**: Seamless token renewal
+- **Secure Storage**: HTTP-only cookies for session persistence
 
 ### Authorization Security
 
 #### Row-Level Security (RLS)
-```sql
--- Users can only see teams they belong to
-CREATE POLICY select_teams ON teams
-FOR SELECT USING (
-  EXISTS (
-    SELECT 1 FROM team_users tu
-    WHERE tu.team_id = id AND tu.user_id = auth.uid()
-  )
-);
+- **Tenant Isolation**: Complete data separation between organizations
+- **User Scoping**: Users can only access their assigned data
+- **Role-Based Access**: Different permissions for different roles
 
--- Users can only see releases involving their teams
-CREATE POLICY select_releases ON releases
-FOR SELECT USING (
-  EXISTS (
-    SELECT 1 FROM release_teams rt
-    JOIN team_users tu ON tu.team_id = rt.team_id
-    WHERE rt.release_id = id AND tu.user_id = auth.uid()
-  )
-);
-```
-
-#### Role-Based Permissions
-- **Administrator**: Full access to all data and operations
-- **Release Manager**: Can manage releases and teams
-- **Developer**: Can update assigned features and personal readiness
-- **Team Member**: Can view assigned work and mark personal readiness
+#### API Security
+- **Authentication Required**: All endpoints require valid authentication
+- **Role Validation**: Server-side role checking
+- **Input Validation**: All inputs validated and sanitized
 
 ### Data Security
 
-#### Input Validation
-- **SQL Injection**: Parameterized queries only
-- **XSS Prevention**: Input sanitization and output encoding
-- **CSRF Protection**: Token-based CSRF protection
-- **Rate Limiting**: API rate limiting for abuse prevention
+#### Database Security
+- **Encryption**: All data encrypted at rest and in transit
+- **Backup Security**: Encrypted backups with point-in-time recovery
+- **Access Control**: Database-level security policies
 
-#### Data Encryption
-- **At Rest**: Database encryption enabled
-- **In Transit**: TLS 1.3 for all communications
-- **Sensitive Data**: PII encrypted in database
+#### Application Security
+- **Input Sanitization**: All user inputs sanitized
+- **SQL Injection Prevention**: Parameterized queries only
+- **XSS Prevention**: Content Security Policy headers
 
----
+### Audit and Monitoring
 
-## Testing Requirements
+#### Activity Logging
+- **Comprehensive Logging**: All user actions logged
+- **Audit Trail**: Complete history of changes
+- **Security Events**: Failed login attempts, permission violations
 
-### Unit Testing
-
-#### Test Coverage
-- **Minimum Coverage**: 80% code coverage
-- **Framework**: Vitest for unit tests
-- **Components**: All React components tested
-- **Utilities**: All utility functions tested
-
-#### Test Categories
-- **Component Tests**: Render, props, events, state changes
-- **Utility Tests**: Data transformation, validation, calculations
-- **API Tests**: Request/response handling, error cases
-
-### Integration Testing
-
-#### API Testing
-- **Framework**: Playwright for API testing
-- **Endpoints**: All API endpoints tested
-- **Scenarios**: Happy path, error cases, edge cases
-- **Authentication**: All protected endpoints tested
-
-#### Database Testing
-- **Schema**: Database schema validation
-- **Constraints**: Foreign key and check constraints
-- **Triggers**: Updated_at trigger functionality
-- **RLS**: Row-level security policies
-
-### End-to-End Testing
-
-#### User Flows
-- **Authentication**: Sign in, sign out, password reset
-- **Release Management**: Create, edit, complete releases
-- **Team Management**: Create teams, add/remove members
-- **Feature Tracking**: Add features, mark ready
-
-#### Cross-Browser Testing
-- **Browsers**: Chrome, Firefox, Safari, Edge
-- **Devices**: Desktop, tablet, mobile
-- **Responsive**: All breakpoints tested
-
-### Performance Testing
-
-#### Load Testing
-- **Concurrent Users**: 1000 concurrent users
-- **Response Time**: <200ms TTFB under load
-- **Throughput**: 1000 requests per second
-
-#### Stress Testing
-- **Peak Load**: 2000 concurrent users
-- **Recovery**: System recovery after peak load
-- **Memory**: Memory usage under load
+#### Monitoring
+- **Error Tracking**: Application error monitoring
+- **Performance Monitoring**: Response time and throughput
+- **Security Monitoring**: Unusual access patterns
 
 ---
 
-## Deployment Requirements
+## Non-Functional Requirements
 
-### Infrastructure
+### Performance Requirements
 
-#### Frontend Deployment
-- **Platform**: Vercel
-- **Framework**: Next.js 14 with App Router
-- **Build**: Automated builds on git push
-- **Environment**: Production, staging, development
+#### Response Time
+- **Page Load**: < 2 seconds for authenticated pages
+- **API Response**: < 500ms for database queries
+- **Real-time Updates**: < 100ms for UI updates
 
-#### Backend Services
-- **Database**: Supabase PostgreSQL
-- **Authentication**: Supabase Auth
-- **Storage**: Supabase Storage (if needed)
-- **Edge Functions**: Supabase Edge Functions
+#### Scalability
+- **User Capacity**: Support 10,000+ users
+- **Release Volume**: Handle 1,000+ releases per year
+- **Concurrent Users**: Support 1,000+ concurrent users
 
-### Environment Configuration
+### Reliability Requirements
 
-#### Environment Variables
-```bash
-# Supabase Configuration
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+#### Uptime
+- **Target**: 99.5% uptime
+- **Monitoring**: 24/7 uptime monitoring
+- **Recovery**: < 5 minutes recovery time
 
-# Application Configuration
-NEXT_PUBLIC_APP_URL=https://your-app.vercel.app
-NODE_ENV=production
-```
+#### Data Integrity
+- **Backup**: Daily automated backups
+- **Recovery**: Point-in-time recovery capability
+- **Consistency**: ACID compliance for all transactions
 
-#### Feature Flags
-- **Authentication**: Email/Password, GitHub OAuth
-- **Notifications**: Email alerts (future)
-- **Integrations**: JIRA, GitHub (future)
+### Usability Requirements
 
-### CI/CD Pipeline
+#### Accessibility
+- **WCAG 2.1**: AA compliance
+- **Keyboard Navigation**: Full keyboard accessibility
+- **Screen Reader**: Compatible with screen readers
 
-#### GitHub Actions
-```yaml
-name: Deploy
-on:
-  push:
-    branches: [main]
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-      - run: npm ci
-      - run: npm run build
-      - run: npm run test
-      - uses: amondnet/vercel-action@v20
-```
+#### Responsive Design
+- **Desktop**: Primary design target
+- **Tablet**: Responsive adaptation
+- **Mobile**: Functional mobile experience
 
-#### Deployment Stages
-1. **Development**: Automatic deployment on feature branches
-2. **Staging**: Manual deployment from main branch
-3. **Production**: Manual deployment after staging approval
+### Maintainability Requirements
 
-### Monitoring & Logging
+#### Code Quality
+- **TypeScript**: Strict type checking
+- **Linting**: ESLint configuration
+- **Testing**: Unit and integration tests
 
-#### Application Monitoring
-- **Error Tracking**: Sentry integration
-- **Performance**: Vercel Analytics
-- **Uptime**: External uptime monitoring
-
-#### Database Monitoring
-- **Performance**: Supabase dashboard
-- **Queries**: Query performance monitoring
-- **Backups**: Automated backup verification
+#### Documentation
+- **Code Documentation**: Inline code comments
+- **API Documentation**: Complete API specifications
+- **User Documentation**: Comprehensive user guides
 
 ---
 
-## Future Enhancements
+## Data Model
 
-### Phase 1.1 (Q2 2024)
-- **Notifications**: Email and Slack alerts for past due releases
-- **Search & Filter**: Advanced search and filtering capabilities
-- **Pagination**: Pagination for large datasets
-- **Export**: CSV export of release data
+### Core Entities
 
-### Phase 1.2 (Q3 2024)
-- **CI/CD Integration**: GitHub Actions and GitLab CI integration
-- **API Keys**: External API access for integrations
-- **Advanced Reporting**: Custom reports and analytics
-- **Mobile App**: React Native mobile application
+#### Tenants
+- **Purpose**: Organization isolation
+- **Key Fields**: id, name, created_at, updated_at
+- **Relationships**: One-to-many with all other entities
 
-### Phase 2.0 (Q4 2024)
-- **Custom Workflows**: Configurable release workflows
-- **Advanced Permissions**: Granular permission system
-- **Audit Logs**: Comprehensive audit trail
-- **Multi-tenancy**: Support for multiple organizations
+#### Members
+- **Purpose**: Users within organizations
+- **Key Fields**: id, user_id, email, full_name, nickname, member_role, tenant_id
+- **Relationships**: Many-to-many with teams, one-to-many with features
 
-### Long-term Roadmap
-- **AI Integration**: Predictive analytics for release readiness
-- **Advanced Integrations**: Jira, Slack, Microsoft Teams
-- **Workflow Automation**: Automated release processes
-- **Advanced Analytics**: Machine learning insights
+#### Teams
+- **Purpose**: Group organization within tenants
+- **Key Fields**: id, name, description, tenant_id
+- **Relationships**: Many-to-many with members and releases
+
+#### Releases
+- **Purpose**: Software release tracking
+- **Key Fields**: id, name, target_date, state, platform_update, config_update, tenant_id
+- **Relationships**: Many-to-many with teams, one-to-many with features
+
+#### Features
+- **Purpose**: Individual features within releases
+- **Key Fields**: id, release_id, name, description, dri_member_id, is_ready, tenant_id
+- **Relationships**: Many-to-one with releases and members
+
+#### Targets
+- **Purpose**: Deployment environments
+- **Key Fields**: id, short_name, name, is_live, tenant_id
+- **Relationships**: Referenced by releases
+
+### Junction Tables
+
+#### Team Members
+- **Purpose**: Many-to-many relationship between teams and members
+- **Key Fields**: team_id, member_id, tenant_id
+
+#### Release Teams
+- **Purpose**: Many-to-many relationship between releases and teams
+- **Key Fields**: release_id, team_id, tenant_id
+
+#### Member Release State
+- **Purpose**: Individual readiness tracking
+- **Key Fields**: release_id, member_id, is_ready, tenant_id
+
+### Audit Tables
+
+#### Activity Log
+- **Purpose**: Comprehensive audit trail
+- **Key Fields**: id, release_id, feature_id, team_id, member_id, activity_type, activity_details, tenant_id, created_at
+
+### System Tables
+
+#### System Roles
+- **Purpose**: System-wide user roles
+- **Key Fields**: id, user_id, sys_role, created_at, updated_at
+
+#### Tenant User Map
+- **Purpose**: User assignment to tenants
+- **Key Fields**: id, tenant_id, user_id, created_at, updated_at
+
+### Data Relationships
+
+#### Primary Relationships
+- **Tenants** → **Members** (1:N)
+- **Tenants** → **Teams** (1:N)
+- **Tenants** → **Releases** (1:N)
+- **Tenants** → **Targets** (1:N)
+- **Releases** → **Features** (1:N)
+- **Teams** ↔ **Members** (M:N via Team Members)
+- **Releases** ↔ **Teams** (M:N via Release Teams)
+
+#### Audit Relationships
+- **Activity Log** → **Releases** (N:1)
+- **Activity Log** → **Features** (N:1)
+- **Activity Log** → **Teams** (N:1)
+- **Activity Log** → **Members** (N:1)
+
+### Data Constraints
+
+#### Business Rules
+- **Tenant Isolation**: All data scoped to tenant_id
+- **Unique Constraints**: Names unique within tenant scope
+- **Referential Integrity**: Foreign key constraints with cascade rules
+- **State Validation**: Enum constraints for status fields
+
+#### Security Constraints
+- **Row-Level Security**: All tables have RLS policies
+- **User Access**: Users can only access their assigned tenant data
+- **Role Validation**: Role fields constrained to valid values
 
 ---
 
-*This requirements document serves as the foundation for the Release Management Checklist App. All development should align with these specifications, and any deviations must be documented and approved through the change management process.*
+*This requirements document serves as the comprehensive specification for the Release Management Checklist App. All development should align with these specifications, and any deviations must be documented and approved through the change management process.*

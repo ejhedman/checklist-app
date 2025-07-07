@@ -2,15 +2,49 @@
 
 ## Table of Contents
 
-1. [Getting Started](#getting-started)
-2. [Authentication & User Management](#authentication--user-management)
-3. [Dashboard Overview](#dashboard-overview)
-4. [Team Management](#team-management)
-5. [Release Management](#release-management)
-6. [Feature Tracking](#feature-tracking)
-7. [Readiness Monitoring](#readiness-monitoring)
-8. [Best Practices](#best-practices)
-9. [Troubleshooting](#troubleshooting)
+1. [App Purpose & Overview](#app-purpose--overview)
+2. [Getting Started](#getting-started)
+3. [Authentication & User Management](#authentication--user-management)
+4. [Dashboard Overview](#dashboard-overview)
+5. [Multi-Tenancy](#multi-tenancy)
+6. [Team Management](#team-management)
+7. [Release Management](#release-management)
+8. [Feature Tracking](#feature-tracking)
+9. [Readiness Monitoring](#readiness-monitoring)
+10. [Calendar View](#calendar-view)
+11. [Target Management](#target-management)
+12. [Member Management](#member-management)
+13. [Release Notes](#release-notes)
+14. [Best Practices](#best-practices)
+15. [Troubleshooting](#troubleshooting)
+
+---
+
+## App Purpose & Overview
+
+### What is the Release Management Checklist App?
+
+The Release Management Checklist App is a comprehensive web application designed to help engineering teams plan, track, and complete software releases efficiently. It maintains a structured checklist that captures **who** must do **what** by **when**, providing a continuous timeline of past and future releases while always surfacing the *next* scheduled release that requires attention.
+
+### Key Benefits
+
+- **Clear Accountability**: Every feature has a Directly Responsible Individual (DRI)
+- **Real-Time Status**: Automatic calculation of release readiness based on team and feature completion
+- **Visual Planning**: Calendar view for release scheduling and drag-and-drop date management
+- **Multi-Tenant**: Support for multiple organizations with complete data isolation
+- **Comprehensive Tracking**: From initial planning through deployment completion
+- **Audit Trail**: Complete history of all changes and activities
+
+### Core Features
+
+- **Release Management**: Create, track, and manage software releases with automatic state transitions
+- **Team Collaboration**: Organize teams and assign members to releases
+- **Feature Tracking**: Attach key features to releases with designated DRIs
+- **Readiness Monitoring**: Track individual and team readiness with automatic release state calculation
+- **Calendar Planning**: Visual calendar interface with drag-and-drop release scheduling
+- **Target Management**: Manage deployment targets and environments
+- **Release Notes**: Generate and manage release documentation
+- **Activity Logging**: Comprehensive audit trail of all system activities
 
 ---
 
@@ -36,11 +70,16 @@
 
 ### Navigation
 
-The app features a clean, intuitive interface with three main sections:
+The app features a clean, intuitive interface with the following main sections:
 
-- **Dashboard** (`/`): Overview of all activities and next release
+- **Dashboard** (`/`): Overview of all activities and upcoming releases
 - **Teams** (`/teams`): Manage teams and team members
 - **Releases** (`/releases`): View and manage all releases
+- **Calendar** (`/calendar`): Visual calendar view with drag-and-drop scheduling
+- **Targets** (`/targets`): Manage deployment targets and environments
+- **Members** (`/members`): Manage team members and user accounts
+- **Release Notes** (`/releasenotes`): Generate and manage release documentation
+- **Tenants** (`/tenants`): Manage organization settings (Admin only)
 
 ---
 
@@ -48,34 +87,16 @@ The app features a clean, intuitive interface with three main sections:
 
 ### User Roles
 
-The app supports four distinct user roles, each with specific permissions:
+The app supports multiple user roles with different permission levels:
 
-#### Administrator
-- **Full system access**
-- Can create, edit, and delete users
-- Can manage all teams and releases
-- Can configure system settings
-- Can view audit logs
+#### System Roles (Global)
+- **Admin**: Full system access across all tenants
+- **User**: Standard user access within assigned tenants
 
-#### Release Manager
-- **Release lifecycle management**
-- Can create, edit, and cancel releases
-- Can assign teams to releases
-- Can manage team memberships
-- Can mark releases as complete
-
-#### Developer/Specs Engineer
-- **Feature implementation**
-- Can mark assigned features as ready
-- Can update feature descriptions and JIRA tickets
-- Can view release progress
-- Can mark personal readiness
-
-#### Team Member
-- **Individual readiness tracking**
-- Can mark personal readiness for releases
-- Can view assigned releases and features
-- Can update profile information
+#### Tenant Roles (Per Organization)
+- **Admin**: Full access within the tenant organization
+- **Release Manager**: Release lifecycle management within the tenant
+- **Member**: Standard team member access within the tenant
 
 ### Profile Management
 
@@ -95,32 +116,60 @@ The app supports four distinct user roles, each with specific permissions:
 
 ## Dashboard Overview
 
-The Dashboard provides a comprehensive overview of your release management activities.
+The Dashboard provides a comprehensive overview of your release management activities within your organization.
 
-### Key Metrics
+### Key Metrics Cards
 
-The dashboard displays four main metric cards:
+The dashboard displays several metric cards:
 
-1. **Total Releases**: Count of all releases in the system
+1. **Total Releases**: Count of all active releases in your organization
 2. **Active Teams**: Number of teams with active releases
 3. **Ready Releases**: Releases that meet all readiness criteria
 4. **Past Due**: Releases that are overdue and require attention
 
-### Next Release Section
+### Upcoming Releases
 
-This section highlights the upcoming release that needs attention:
+This section highlights the next few releases that need attention:
 - Release name and target date
 - Days remaining until target
 - Current status (Pending, Ready, etc.)
 - Quick access to release details
 
+### My Upcoming Milestones
+
+Shows releases where you are personally involved:
+- Releases where you're a team member
+- Your personal readiness status
+- Quick access to mark yourself as ready
+
 ### Recent Activity
 
-Shows the latest updates across all releases:
+Shows the latest updates across all releases in your organization:
 - Feature status changes
 - Release completions
 - Team additions
 - User readiness updates
+- Release note publications
+
+---
+
+## Multi-Tenancy
+
+### Organization Isolation
+
+The app supports multiple organizations (tenants) with complete data isolation:
+
+- **Separate Data**: Each organization's data is completely isolated
+- **User Assignment**: Users can belong to multiple organizations with different roles
+- **Security**: Row-Level Security ensures users can only access their assigned organizations
+- **Independent Management**: Each organization manages its own teams, releases, and members
+
+### Switching Organizations
+
+If you belong to multiple organizations:
+- Your current organization is displayed in the header
+- Contact your administrator to switch between organizations
+- All data and permissions are scoped to your current organization
 
 ---
 
@@ -142,8 +191,8 @@ Shows the latest updates across all releases:
 1. **Add Members**
    - Open the team card
    - Click "Add Member"
-   - Search for users by name or email
-   - Select users to add to the team
+   - Search for members by name or email
+   - Select members to add to the team
 
 2. **Remove Members**
    - Open the team card
@@ -173,8 +222,10 @@ Each team card displays:
    - **Name**: Descriptive release name (e.g., "v2.1.0 - Feature Release")
    - **Target Date**: When the release should be deployed
    - **Platform Update**: Check if this release includes platform updates
-   - **Specs Update**: Check if this release includes configuration changes
+   - **Config Update**: Check if this release includes configuration changes
    - **Assigned Teams**: Select teams responsible for this release
+   - **Release Notes**: Optional initial release notes
+   - **Release Summary**: Brief summary of the release
 
 3. **Save Release**
    - Review all information
@@ -185,7 +236,7 @@ Each team card displays:
 Releases automatically transition through states based on criteria:
 
 #### Pending
-- **Definition**: Earliest release with target date ≥ today AND not ready/complete/cancelled
+- **Definition**: Release with target date ≥ today AND not ready/complete/cancelled
 - **Color**: Yellow
 - **Action Required**: Teams need to complete their tasks
 
@@ -224,6 +275,92 @@ Releases automatically transition through states based on criteria:
 3. **Mark Complete**
    - Click "Mark Complete" when release is deployed
    - Release will be archived
+
+4. **Archive/Unarchive**
+   - Toggle the "Show archived" checkbox to view archived releases
+   - Archived releases can be unarchived if needed
+
+---
+
+## Feature Tracking
+
+### Adding Features to Releases
+
+1. **Access Release Details**
+   - Click on a release card to open details
+   - Navigate to the "Features" tab
+
+2. **Add Feature**
+   - Click "Add Feature"
+   - Fill in feature details:
+     - **Name**: Feature name
+     - **JIRA Ticket**: Associated JIRA ticket number
+     - **Description**: Detailed description
+     - **DRI**: Directly Responsible Individual
+     - **Platform Feature**: Check if this is a platform-level feature
+     - **Config Feature**: Check if this is a configuration feature
+     - **Comments**: Additional notes or context
+
+3. **Save Feature**
+   - Review information
+   - Click "Add Feature"
+
+### Managing Features
+
+1. **Mark Feature Ready**
+   - Find the feature in the list
+   - Click the checkbox to mark as ready
+   - Only the DRI can mark features as ready
+
+2. **Edit Feature**
+   - Click the edit icon on a feature
+   - Update details
+   - Save changes
+
+3. **Remove Feature**
+   - Click the delete icon on a feature
+   - Confirm deletion
+
+### Feature Status
+
+Features have two states:
+- **Not Ready** (default): Feature is still in development
+- **Ready**: Feature is complete and ready for release
+
+---
+
+## Readiness Monitoring
+
+### Individual Readiness
+
+1. **Mark Personal Readiness**
+   - Navigate to a release's "Team Readiness" tab
+   - Find your name in the team list
+   - Click the checkbox to mark yourself as ready
+
+2. **Update Readiness Status**
+   - You can toggle your readiness status at any time
+   - Changes are immediately reflected in release calculations
+
+### Team Readiness
+
+The app automatically calculates team readiness based on:
+- All team members marked as ready
+- All assigned features marked as ready
+
+### Release Readiness
+
+A release becomes "Ready" when:
+- All assigned teams have all members marked as ready
+- All features are marked as ready
+
+### Readiness Dashboard
+
+The readiness tab shows:
+- List of all team members
+- Individual readiness status
+- Team readiness percentage
+- Overall release readiness
 
 ---
 
@@ -291,83 +428,123 @@ The Calendar provides a visual overview of all releases and their target dates a
 
 ---
 
-## Feature Tracking
+## Target Management
 
-### Adding Features to Releases
+### What are Targets?
 
-1. **Access Release Details**
-   - Click on a release card to open details
-   - Navigate to the "Features" tab
+Targets represent deployment environments or destinations for your releases (e.g., Production, Staging, Development).
 
-2. **Add Feature**
-   - Click "Add Feature"
-   - Fill in feature details:
-     - **Name**: Feature name
-     - **JIRA Ticket**: Associated JIRA ticket number
-     - **Description**: Detailed description
-     - **DRI**: Directly Responsible Individual
-     - **Platform Feature**: Check if this is a platform-level feature
+### Creating a Target
 
-3. **Save Feature**
-   - Review information
-   - Click "Add Feature"
+1. **Navigate to Targets**
+   - Click "Targets" in the sidebar
+   - Click "Add Target"
 
-### Managing Features
+2. **Fill Target Information**
+   - **Short Name**: Brief identifier (e.g., "prod", "staging")
+   - **Name**: Full target name (e.g., "Production Environment")
+   - **Is Live**: Check if this is a live/production environment
+   - Click "Create Target"
 
-1. **Mark Feature Ready**
-   - Find the feature in the list
-   - Click the checkbox to mark as ready
-   - Only the DRI can mark features as ready
+### Managing Targets
 
-2. **Edit Feature**
-   - Click the edit icon on a feature
-   - Update details
+1. **Edit Target**
+   - Click the edit icon on a target card
+   - Modify target details
    - Save changes
 
-3. **Remove Feature**
-   - Click the delete icon on a feature
+2. **Delete Target**
+   - Click the delete icon on a target card
    - Confirm deletion
 
-### Feature Status
+### Target Assignment
 
-Features have two states:
-- **Not Ready** (default): Feature is still in development
-- **Ready**: Feature is complete and ready for release
+When creating or editing releases, you can assign multiple targets:
+- Select from available targets in your organization
+- Targets help track which environments the release will be deployed to
+- This information is stored in the release's targets array
 
 ---
 
-## Readiness Monitoring
+## Member Management
 
-### Individual Readiness
+### What are Members?
 
-1. **Mark Personal Readiness**
-   - Navigate to a release's "Team Readiness" tab
-   - Find your name in the team list
-   - Click the checkbox to mark yourself as ready
+Members are users within your organization who can participate in releases and teams.
 
-2. **Update Readiness Status**
-   - You can toggle your readiness status at any time
-   - Changes are immediately reflected in release calculations
+### Managing Members
 
-### Team Readiness
+1. **Navigate to Members**
+   - Click "Members" in the sidebar
+   - View all members in your organization
 
-The app automatically calculates team readiness based on:
-- All team members marked as ready
-- All assigned features marked as ready
+2. **Add Member**
+   - Click "Add Member"
+   - Search for users by email
+   - Assign appropriate role and tenant
+   - Click "Add Member"
 
-### Release Readiness
+3. **Edit Member**
+   - Click the edit icon on a member card
+   - Update member information
+   - Save changes
 
-A release becomes "Ready" when:
-- All assigned teams have all members marked as ready
-- All features are marked as ready
+4. **Update Password**
+   - Click the password icon on a member card
+   - Enter new password
+   - Confirm the change
 
-### Readiness Dashboard
+### Member Roles
 
-The readiness tab shows:
-- List of all team members
-- Individual readiness status
-- Team readiness percentage
-- Overall release readiness
+Within your organization, members can have different roles:
+- **Admin**: Full access within the organization
+- **Release Manager**: Can manage releases and teams
+- **Member**: Standard team member access
+
+---
+
+## Release Notes
+
+### What are Release Notes?
+
+Release Notes provide documentation for each release, including features, changes, and deployment information.
+
+### Creating Release Notes
+
+1. **Navigate to Release Notes**
+   - Click "Release Notes" in the sidebar
+   - Click "Create Release Note"
+
+2. **Fill Release Note Details**
+   - **Title**: Release note title
+   - **Release**: Select the associated release
+   - **Content**: Detailed release notes content
+   - **Summary**: Brief summary of the release
+   - Click "Create Release Note"
+
+### Managing Release Notes
+
+1. **Edit Release Notes**
+   - Click the edit icon on a release note
+   - Update content and details
+   - Save changes
+
+2. **View Release Notes**
+   - Click on a release note to view full details
+   - Release notes are publicly accessible
+
+### Release Notes Best Practices
+
+1. **Clear Structure**
+   - Use consistent formatting
+   - Include feature descriptions
+   - List breaking changes
+   - Provide migration instructions if needed
+
+2. **Timely Publication**
+   - Publish release notes before deployment
+   - Update notes after deployment if needed
+   - Keep notes current with release changes
 
 ---
 
@@ -414,6 +591,18 @@ The readiness tab shows:
    - Communicate with release managers about blockers
    - Update feature status when issues arise
 
+### Calendar Management
+
+1. **Regular Review**
+   - Check the calendar weekly to review upcoming releases
+   - Identify potential conflicts or scheduling issues
+   - Plan team capacity based on release dates
+
+2. **Date Management**
+   - Use drag-and-drop to quickly adjust release schedules
+   - Consider team availability when moving releases
+   - Communicate date changes to affected teams
+
 ---
 
 ## Troubleshooting
@@ -436,6 +625,10 @@ The readiness tab shows:
 - **Cause**: Session may have expired or credentials are incorrect
 - **Solution**: Sign out and sign back in, or reset your password
 
+#### Can't See Your Organization's Data
+- **Cause**: You may not be properly assigned to the organization
+- **Solution**: Contact your administrator to verify your tenant assignment
+
 ### Getting Help
 
 1. **Check the Activity Feed**
@@ -446,6 +639,7 @@ The readiness tab shows:
    - For permission issues
    - For team assignment problems
    - For system configuration questions
+   - For organization/tenant issues
 
 3. **Review Release Details**
    - Check all tabs in release details
@@ -471,19 +665,28 @@ The app provides real-time updates for:
 - Team member status changes
 - New activity notifications
 
-### Export and Reporting
+### Activity Logging
 
-- Export release data to CSV
-- Generate readiness reports
-- Track historical release performance
-- Monitor team productivity metrics
+All system activities are automatically logged:
+- Release creation and updates
+- Feature status changes
+- Team member changes
+- User readiness updates
+- Release note publications
+
+### Multi-Tenant Security
+
+- **Complete Data Isolation**: Each organization's data is completely separate
+- **Role-Based Access**: Different permissions for different user roles
+- **Row-Level Security**: Database-level security ensures data protection
+- **Audit Trail**: Complete history of all changes and activities
 
 ### Integration Features
 
-- JIRA ticket linking
-- GitHub integration (planned)
-- Slack notifications (planned)
-- Email alerts (planned)
+- **JIRA Integration**: Link features to JIRA tickets
+- **GitHub Integration**: Planned for future releases
+- **Slack Notifications**: Planned for future releases
+- **Email Alerts**: Planned for future releases
 
 ---
 
