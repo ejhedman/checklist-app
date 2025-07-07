@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Home, Users, Calendar, User, CalendarDays, Pencil, Building2, Shield, Building, Book } from "lucide-react";
+import { Home, Users, Calendar, User, CalendarDays, Pencil, Briefcase, Shield, Building, Book, Target } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -81,7 +81,7 @@ export function Sidebar() {
           </Link>
           <Link href="/targets">
             <Button variant="ghost" className="w-full justify-start" disabled={!selectedTenant}>
-              <Building2 className="h-4 w-4 mr-2" />
+              <Target className="h-4 w-4 mr-2" />
               Targets
             </Button>
           </Link>
@@ -97,7 +97,7 @@ export function Sidebar() {
               <div className="border-t border-border my-2"></div>
               <Link href="/tenants">
                 <Button variant="ghost" className="w-full justify-start">
-                  <Building className="h-4 w-4 mr-2" />
+                  <Briefcase className="h-4 w-4 mr-2" />
                   Projects
                 </Button>
               </Link>

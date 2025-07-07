@@ -50,6 +50,7 @@ export default function ReleaseDetailPage({ params }: { params: Promise<{ name: 
         platform_update,
         config_update,
         is_archived,
+        targets,
         created_at,
         tenant_id,
         tenants (
@@ -219,7 +220,7 @@ export default function ReleaseDetailPage({ params }: { params: Promise<{ name: 
 
   if (loading) {
     return (
-      <div className="container mx-auto p-6">
+      <div className="space-y-6">
         <div className="flex items-center justify-center py-8">
           <div className="text-muted-foreground">Loading release...</div>
         </div>
@@ -229,7 +230,7 @@ export default function ReleaseDetailPage({ params }: { params: Promise<{ name: 
 
   if (error || !release) {
     return (
-      <div className="container mx-auto p-6">
+      <div className="space-y-6">
         <h1 className="text-2xl font-bold mb-4">Release Not Found</h1>
         <p className="text-muted-foreground">No release found with the name &quot;{decodedName}&quot;.</p>
         {error && <p className="text-muted-foreground">Error: {error}</p>}
@@ -238,16 +239,12 @@ export default function ReleaseDetailPage({ params }: { params: Promise<{ name: 
   }
 
   return (
-    <div className="container mx-auto p-6">
-
-      <div className="mt-6">
-
-        <ReleaseDetailCard 
-          release={release} 
-          onMemberReadyChange={handleMemberReadyChange}
-          onReleaseUpdated={fetchRelease}
-        />
-      </div>
+    <div className="space-y-6">
+      <ReleaseDetailCard 
+        release={release} 
+        onMemberReadyChange={handleMemberReadyChange}
+        onReleaseUpdated={fetchRelease}
+      />
     </div>
   );
 } 

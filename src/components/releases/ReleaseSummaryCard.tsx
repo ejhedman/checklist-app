@@ -7,6 +7,8 @@ import Link from "next/link";
 import React from "react";
 import { createClient } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
+import { StateBadge, getStateBackgroundColor } from "@/components/ui/state-icons";
+import { useRouter } from "next/navigation";
 
 export interface ReleaseSummaryCardProps {
   release: {
@@ -23,6 +25,7 @@ export interface ReleaseSummaryCardProps {
     total_members: number;
     ready_members: number;
     is_archived?: boolean;
+    targets?: string[];
     tenant?: {
       id: string;
       name: string;
@@ -74,23 +77,6 @@ function getDaysUntil(dateString: string) {
   return diffDays;
 }
 
-// Map release state to a pale background color for the header
-function getPaleBgForState(state: string, is_archived?: boolean) {
-  if (is_archived) return "bg-gray-200";
-  switch (state) {
-    case "ready":
-      return "bg-green-50";
-    case "pending":
-      return "bg-amber-50";
-    case "past_due":
-      return "bg-red-50";
-    case "complete":
-      return "bg-blue-50";
-    default:
-      return "bg-gray-50";
-  }
-}
-
 export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
   release,
   getStateIcon,
@@ -100,6 +86,7 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
   const [isArchived, setIsArchived] = useState(release.is_archived);
   const [archiving, setArchiving] = useState(false);
   const { user, memberId } = useAuth();
+  const router = useRouter();
 
   // Debug: Log features and user
   // console.log('ReleaseSummaryCard:', {
@@ -171,44 +158,51 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
 
   return (
     <Card className="hover:shadow-md transition-shadow rounded-lg">
-      <CardHeader className={`border-b border-border flex flex-row items-center justify-between px-4 py-3 rounded-t-lg ${getPaleBgForState(release.state, release.is_archived)}`}>
+      <CardHeader className={`border-b border-border flex flex-row items-center justify-between px-4 py-3 rounded-t-lg ${getStateBackgroundColor(release.state as any, release.is_archived)}`}>
         <div className="flex items-center justify-between w-full">
-          <div className="flex items-center space-x-3">
-            <CardTitle className="flex items-center m-0">
+          <div
+            className="flex items-center flex-1 min-w-0 cursor-pointer hover:bg-gray-50 rounded px-1 py-0.5 transition-colors"
+            onClick={() => router.push(`/releases/${encodeURIComponent(release.name)}`)}
+            tabIndex={0}
+            role="button"
+            aria-label={`View details for ${release.name}`}
+          >
+            <div className="flex items-center space-x-3 min-w-0">
               {getStateIcon(release.state)}
-              <Link
-                href={`/releases/${encodeURIComponent(release.name)}`}
-                className="ml-2 flex items-center hover:underline cursor-pointer group"
-              >
-                <span>
+              <div className="flex items-center gap-3 min-w-0">
+                <span className="font-semibold truncate">
                   {release.tenant?.name ? `${release.tenant.name}: ` : ''}{release.name}
                 </span>
-                <ExternalLink className="h-4 w-4 ml-1 text-muted-foreground group-hover:text-foreground transition-colors" />
-              </Link>
-              <Link
-                href={`/releases/${encodeURIComponent(release.name)}/releasenotes`}
-                className="ml-2 p-1 hover:bg-gray-100 rounded transition-colors"
-                title="View Release Notes"
-              >
-                <FileText className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
-              </Link>
-            </CardTitle>
+                <StateBadge state={release.state as any} />
+                <button
+                  type="button"
+                  aria-label="View Release Notes"
+                  className="bg-white p-2 rounded hover:bg-gray-100 transition-colors shadow-sm ml-1"
+                  onClick={e => {
+                    e.stopPropagation();
+                    router.push(`/releases/${encodeURIComponent(release.name)}/releasenotes`);
+                  }}
+                >
+                  <FileText className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
+                </button>
+              </div>
+            </div>
+            <div className="flex-1 flex justify-center">
+              <CardDescription className="m-0">
+                {(() => {
+                  const label = isPast ? "Release Date" : "Target Date";
+                  const [year, month, day] = release.target_date.split('-');
+                  const dateStr = `${Number(month)}/${Number(day)}/${year}`;
+                  return isPast
+                    ? `${label}: ${dateStr}`
+                    : `${label}: ${dateStr} (${days} days)`;
+                })()}
+              </CardDescription>
+            </div>
           </div>
-          <div className="flex-1 flex justify-center">
-            <CardDescription className="m-0">
-              {(() => {
-                const label = isPast ? "Release Date" : "Target Date";
-                const [year, month, day] = release.target_date.split('-');
-                const dateStr = `${Number(month)}/${Number(day)}/${year}`;
-                return isPast
-                  ? `${label}: ${dateStr}`
-                  : `${label}: ${dateStr} (${days} days)`;
-              })()}
-            </CardDescription>
-          </div>
-          <div className="flex items-center space-x-2 justify-end">
+          <div className="flex items-center space-x-2 justify-end ml-2">
             {isPast && (
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2" onClick={e => e.stopPropagation()}>
                 <Checkbox
                   checked={!!isArchived}
                   onCheckedChange={checked => handleArchiveChange(!!checked)}
@@ -220,35 +214,22 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
                 </label>
               </div>
             )}
-            {release.state === "ready" ? (
-              <Badge className="bg-green-600 text-white" variant="default">
-                {release.state.replace("_", " ")}
-              </Badge>
-            ) : release.state === "pending" ? (
-              <Badge className="bg-amber-400 text-black" variant="default">
-                {release.state.replace("_", " ")}
-              </Badge>
-            ) : (
-              <Badge variant="secondary">
-                {release.state.replace("_", " ")}
-              </Badge>
-            )}
           </div>
         </div>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-4 pb-2">
           <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">Teams</p>
+            <p className="text-sm text-muted-foreground">Targets</p>
             <div className="flex flex-wrap gap-1 mt-1">
-              {teamNames.length > 0 ? (
-                teamNames.map((team) => (
-                  <Badge key={team} variant="secondary" className="text-xs">
-                    {team}
+              {release.targets && release.targets.length > 0 ? (
+                release.targets.map((target: string, index: number) => (
+                  <Badge key={index} variant="outline" className="text-xs">
+                    {target}
                   </Badge>
                 ))
               ) : (
-                <span className="text-muted-foreground text-sm">No teams</span>
+                <span className="text-muted-foreground text-sm">No targets</span>
               )}
             </div>
           </div>
@@ -265,16 +246,30 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
             </p>
           </div>
           <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">Platform Update</p>
+            <p className="text-sm text-muted-foreground">Platform</p>
             <Badge variant={release.platform_update ? "default" : "secondary"}>
               {release.platform_update ? "Yes" : "No"}
             </Badge>
           </div>
           <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">Specs Update</p>
+            <p className="text-sm text-muted-foreground">Specs</p>
             <Badge variant={release.config_update ? "default" : "secondary"}>
               {release.config_update ? "Yes" : "No"}
             </Badge>
+          </div>
+          <div className="space-y-1">
+            <p className="text-sm text-muted-foreground">Teams</p>
+            <div className="flex flex-wrap gap-1 mt-1">
+              {teamNames.length > 0 ? (
+                teamNames.map((team) => (
+                  <Badge key={team} variant="secondary" className="text-xs">
+                    {team}
+                  </Badge>
+                ))
+              ) : (
+                <span className="text-muted-foreground text-sm">No teams</span>
+              )}
+            </div>
           </div>
         </div>
       </CardContent>

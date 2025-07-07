@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Trash2 } from "lucide-react";
+import { Target, Trash2 } from "lucide-react";
 import { EditTargetDialog } from "./EditTargetDialog";
 import { Button } from "@/components/ui/button";
 
@@ -22,10 +22,10 @@ export function TargetCard({ target, onTargetUpdated }: TargetCardProps) {
     <Card className={target.is_live ? "bg-green-50 border-green-200" : ""}>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center">
-            <Building2 className="h-5 w-5 mr-2" />
-            {target.name}
-          </CardTitle>
+                  <CardTitle className="flex items-center">
+          <Target className="h-5 w-5 mr-2" />
+          {target.name}
+        </CardTitle>
           <div className="flex items-center space-x-1">
             <EditTargetDialog target={target} onTargetUpdated={onTargetUpdated} />
             <Button variant="ghost" size="sm">

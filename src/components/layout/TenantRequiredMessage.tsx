@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/contexts/AuthContext";
-import { AlertCircle, Building2 } from "lucide-react";
+import { AlertCircle, Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -24,7 +24,7 @@ export function TenantRequiredMessage({ children }: TenantRequiredMessageProps) 
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-              <Building2 className="h-6 w-6" />
+              <Briefcase className="h-6 w-6" />
             </div>
             <CardTitle>Select a Project</CardTitle>
             <CardDescription>

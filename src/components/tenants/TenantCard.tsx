@@ -1,5 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building2, Trash2 } from "lucide-react";
+import { Briefcase, Trash2 } from "lucide-react";
 import { EditTenantDialog } from "./EditTenantDialog";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -58,7 +58,7 @@ export function TenantCard({ tenant, onTenantUpdated }: TenantCardProps) {
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center">
-            <Building2 className="h-5 w-5 mr-2" />
+            <Briefcase className="h-5 w-5 mr-2" />
             {tenant.name}
           </CardTitle>
           <div className="flex items-center space-x-1">
