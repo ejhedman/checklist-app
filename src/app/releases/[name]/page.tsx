@@ -34,6 +34,11 @@ export default function ReleaseDetailPage({ params }: { params: Promise<{ name: 
         config_update,
         is_archived,
         created_at,
+        tenant_id,
+        tenants (
+          id,
+          name
+        ),
         release_teams (
           team:teams (
             id,
@@ -43,7 +48,9 @@ export default function ReleaseDetailPage({ params }: { params: Promise<{ name: 
               member:members (
                 id,
                 full_name,
-                email
+                email,
+                nickname,
+                tenant_id
               )
             )
           )
@@ -65,11 +72,13 @@ export default function ReleaseDetailPage({ params }: { params: Promise<{ name: 
           dri_member:members!dri_member_id (
             id,
             full_name,
-            email
+            email,
+            nickname
           )
         )
       `)
       .eq("name", decodedName)
+      .order("created_at", { foreignTable: "features", ascending: true })
       .single();
 
     if (supabaseError || !data) {
@@ -124,12 +133,15 @@ export default function ReleaseDetailPage({ params }: { params: Promise<{ name: 
             id: tm.member.id,
             full_name: tm.member.full_name,
             email: tm.member.email,
+            nickname: tm.member.nickname,
+            tenant_id: tm.member.tenant_id,
             is_ready: memberReadyState?.is_ready || false,
           };
         }) || [],
       })) || [],
       total_members,
       ready_members,
+      tenant: data.tenants,
     };
 
     setRelease(transformedRelease);
@@ -139,11 +151,29 @@ export default function ReleaseDetailPage({ params }: { params: Promise<{ name: 
   const handleMemberReadyChange = async (releaseId: string, memberId: string, isReady: boolean) => {
     const supabase = createClient();
     
+    // Find the member to get their tenant_id
+    let memberTenantId = null;
+    if (release && release.teams) {
+      for (const team of release.teams) {
+        const member = team.members?.find((m: any) => m.id === memberId);
+        if (member) {
+          memberTenantId = member.tenant_id;
+          break;
+        }
+      }
+    }
+    
+    // If we can't find the member's tenant_id, use the release's tenant_id as fallback
+    if (!memberTenantId && release?.tenant?.id) {
+      memberTenantId = release.tenant.id;
+    }
+    
     const { error: updateError } = await supabase
       .from("member_release_state")
       .upsert({
         release_id: releaseId,
         member_id: memberId,
+        tenant_id: memberTenantId,
         is_ready: isReady,
       });
 
@@ -181,9 +211,7 @@ export default function ReleaseDetailPage({ params }: { params: Promise<{ name: 
 
   return (
     <div className="container mx-auto p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">Release: {release.name}</h1>
-      </div>
+
       <div className="mt-6">
 
         <ReleaseDetailCard 

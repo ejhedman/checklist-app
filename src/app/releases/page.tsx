@@ -25,6 +25,11 @@ export default function ReleasesPage() {
         config_update,
         is_archived,
         created_at,
+        tenant_id,
+        tenants (
+          id,
+          name
+        ),
         release_teams (
           team:teams (
             id,
@@ -95,6 +100,7 @@ export default function ReleasesPage() {
         total_members,
         ready_members,
         features: release.features || [],
+        tenant: release.tenants,
       };
     });
     setReleases(transformedData);

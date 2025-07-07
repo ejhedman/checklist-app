@@ -48,8 +48,12 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
       .from("teams")
       .select("id, name")
       .order("name");
+    
     if (!error && data) {
       setTeams(data);
+    } else if (error) {
+      console.error("Error fetching teams:", error);
+      setError("Failed to load teams: " + error.message);
     }
   };
 

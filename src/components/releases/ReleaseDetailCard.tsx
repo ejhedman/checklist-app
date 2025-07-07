@@ -83,10 +83,48 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onRele
   const [isArchived, setIsArchived] = useState(release.is_archived);
   const [archiving, setArchiving] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [features, setFeatures] = useState(release.features);
+
+  // Add local state for summary counts
+  const [readyMembers, setReadyMembers] = useState(release.ready_members);
+  const [totalMembers, setTotalMembers] = useState(release.total_members);
+  const [readyFeatures, setReadyFeatures] = useState(release.ready_features);
+  const [featureCount, setFeatureCount] = useState(release.feature_count);
+
+  // Collect all unique members from all teams (move this to state)
+  const getAllMembers = () => {
+    const memberMap = new Map();
+    release.teams.forEach((team: any) => {
+      team.members.forEach((member: any) => {
+        if (!memberMap.has(member.id)) {
+          memberMap.set(member.id, member);
+        }
+      });
+    });
+    return Array.from(memberMap.values());
+  };
+  const [allMembers, setAllMembers] = useState(getAllMembers());
+  useEffect(() => {
+    setAllMembers(getAllMembers());
+  }, [release.teams]);
 
   useEffect(() => {
     setIsArchived(release.is_archived);
   }, [release.is_archived]);
+
+  useEffect(() => {
+    setFeatures(release.features);
+  }, [release.features]);
+
+  // Keep counts in sync with allMembers and features
+  useEffect(() => {
+    setReadyMembers(allMembers.filter((m: any) => m.is_ready).length);
+    setTotalMembers(allMembers.length);
+  }, [allMembers]);
+  useEffect(() => {
+    setReadyFeatures(features.filter((f: any) => f.is_ready).length);
+    setFeatureCount(features.length);
+  }, [features]);
 
   const handleArchiveChange = async (checked: boolean) => {
     setArchiving(true);
@@ -118,20 +156,22 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onRele
   const updateFeatureReady = async (featureId: string, isReady: boolean, comments: string) => {
     setUpdatingFeature(true);
     const supabase = createClient();
-    console.log('Attempting to update feature:', { featureId, isReady, comments });
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from("features")
       .update({
         is_ready: isReady,
         comments: comments || null,
       })
       .eq("id", featureId);
-    console.log('Supabase update response:', { data, error });
     if (error) {
       console.error('Error updating feature ready state:', error);
+    } else {
+      setFeatures((prev: any[]) =>
+        prev.map((f: any) =>
+          f.id === featureId ? { ...f, is_ready: isReady, comments } : f
+        )
+      );
     }
-    // Trigger a page refresh to update the data
-    window.location.reload();
     setUpdatingFeature(false);
   };
 
@@ -162,23 +202,42 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onRele
     setSelectedFeature(null);
   };
 
-  // Instrument member ready change
-  const handleMemberReadyChange = async (releaseId: string, memberId: string, isReady: boolean) => {
-    // Log activity: member signals ready
+  const updateMemberReady = async (releaseId: string, memberId: string, isReady: boolean) => {
     const supabase = createClient();
-    const { error: activityError } = await supabase.from("activity_log").insert({
-      release_id: releaseId,
-      member_id: memberId,
-      activity_type: "member_ready",
-      activity_details: { isReady },
-    });
-    if (activityError) {
-      console.error("Failed to log member ready activity:", activityError);
-    } else {
-      // console.log("Successfully logged member ready activity");
+    
+    // Find the member to get their tenant_id
+    let memberTenantId = null;
+    if (release && release.teams) {
+      for (const team of release.teams) {
+        const member = team.members?.find((m: any) => m.id === memberId);
+        if (member) {
+          memberTenantId = member.tenant_id;
+          break;
+        }
+      }
     }
-    if (onMemberReadyChange) {
-      onMemberReadyChange(releaseId, memberId, isReady);
+    
+    // If we can't find the member's tenant_id, use the release's tenant_id as fallback
+    if (!memberTenantId && release?.tenant?.id) {
+      memberTenantId = release.tenant.id;
+    }
+    
+    const { error } = await supabase
+      .from("member_release_state")
+      .upsert({
+        release_id: releaseId,
+        member_id: memberId,
+        tenant_id: memberTenantId,
+        is_ready: isReady,
+      });
+    if (error) {
+      console.error("Error updating member ready state:", error);
+    } else {
+      setAllMembers((prev: any[]) =>
+        prev.map((m: any) =>
+          m.id === memberId ? { ...m, is_ready: isReady } : m
+        )
+      );
     }
   };
 
@@ -227,7 +286,9 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onRele
           <div className="relative w-full flex items-center" style={{ minHeight: '48px' }}>
             <div className="flex items-center gap-3">
               {getStateIcon(release.state)}
-              <CardTitle className="truncate text-lg">{release.name}</CardTitle>
+              <CardTitle className="truncate text-lg">
+                {release.tenant?.name ? `${release.tenant.name}: ` : ''}{release.name}
+              </CardTitle>
               {release.state === "ready" ? (
                 <Badge className="bg-green-600 text-white ml-2" variant="default">
                   {release.state.replace("_", " ")}
@@ -294,11 +355,11 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onRele
             </div>
             <div className="space-y-1">
               <p className={`text-sm ${isUserMember() ? 'text-blue-600 font-bold' : 'text-muted-foreground'}`}>Members</p>
-              <p className={`text-lg font-semibold ${isUserMember() ? 'text-blue-600' : ''}`}>{release.ready_members}/{release.total_members}</p>
+              <p className={`text-lg font-semibold ${isUserMember() ? 'text-blue-600' : ''}`}>{readyMembers}/{totalMembers}</p>
             </div>
             <div className="space-y-1">
               <p className={`text-sm ${isUserDRI() ? 'text-blue-600 font-bold' : 'text-muted-foreground'}`}>Features</p>
-              <p className={`text-lg font-semibold ${isUserDRI() ? 'text-blue-600' : ''}`}>{release.ready_features}/{release.feature_count}</p>
+              <p className={`text-lg font-semibold ${isUserDRI() ? 'text-blue-600' : ''}`}>{readyFeatures}/{featureCount}</p>
             </div>
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">Platform Update</p>
@@ -328,10 +389,10 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onRele
           </CardHeader>
           <CardContent className="pb-4">
             <div className="space-y-2">
-              {release.features.length === 0 ? (
+              {features.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No features added yet.</p>
               ) : (
-                [...release.features]
+                [...features]
                   .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
                   .map((feature: any) => (
                     <FeatureCard
@@ -355,21 +416,10 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onRele
           <CardContent className="pb-4">
             <div className="space-y-2">
               {/* Flat list of unique members */}
-              {(() => {
-                // Collect all unique members from all teams
-                const memberMap = new Map();
-                release.teams.forEach((team: any) => {
-                  team.members.forEach((member: any) => {
-                    if (!memberMap.has(member.id)) {
-                      memberMap.set(member.id, member);
-                    }
-                  });
-                });
-                const allMembers = Array.from(memberMap.values());
-                if (allMembers.length === 0) {
-                  return <p className="text-sm text-muted-foreground">No members assigned to this release.</p>;
-                }
-                return allMembers.map((member: any) => {
+              {allMembers.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No members assigned to this release.</p>
+              ) : (
+                allMembers.map((member: any) => {
                   // Find all teams this member belongs to
                   const memberTeams = release.teams.filter((team: any) =>
                     team.members.some((m: any) => m.id === member.id)
@@ -381,8 +431,7 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onRele
                     >
                       <div className="flex items-center space-x-3">
                         <div>
-                          <p className="text-sm font-medium">{member.full_name}</p>
-                          <p className="text-xs text-muted-foreground">{member.email}</p>
+                          <p className="text-sm font-medium">{member.nickname || member.full_name}</p>
                         </div>
                       </div>
                       {/* Team badges (center) */}
@@ -395,18 +444,14 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onRele
                       </div>
                       <div className="flex items-center space-x-2">
                         {/* Show 'Ready' label to the left of the checkbox */}
-                        {onMemberReadyChange && (
-                          <>
-                            <label htmlFor={`member-ready-${member.id}`} className="text-xs text-muted-foreground cursor-pointer select-none">Ready</label>
-                            <Checkbox
-                              checked={member.is_ready}
-                              onCheckedChange={(checked) => 
-                                handleMemberReadyChange(release.id, member.id, checked as boolean)
-                              }
-                              id={`member-ready-${member.id}`}
-                            />
-                          </>
-                        )}
+                        <label htmlFor={`member-ready-${member.id}`} className="text-xs text-muted-foreground cursor-pointer select-none">Ready</label>
+                        <Checkbox
+                          checked={member.is_ready}
+                          onCheckedChange={(checked) =>
+                            updateMemberReady(release.id, member.id, checked as boolean)
+                          }
+                          id={`member-ready-${member.id}`}
+                        />
                         {/* Only show Not Ready/Ready badge if not the logged in user */}
                         {!(user && member.email === user.email) && (
                           <Badge variant={member.is_ready ? "default" : "secondary"} className="text-xs">
@@ -416,8 +461,8 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onRele
                       </div>
                     </div>
                   );
-                });
-              })()}
+                })
+              )}
             </div>
           </CardContent>
         </Card>

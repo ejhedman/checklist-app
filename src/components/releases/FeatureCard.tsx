@@ -36,7 +36,7 @@ export default function FeatureCard({ feature, user, memberId, updatingFeature, 
           {feature.dri_member ? (
             <span className="text-sm font-medium truncate flex items-center gap-1">
               <span className="text-xs font-semibold text-muted-foreground">DRI:</span>
-              {feature.dri_member.full_name}
+              {feature.dri_member.nickname || feature.dri_member.full_name}
             </span>
           ) : (
             <span className="text-sm text-muted-foreground">No DRI assigned</span>

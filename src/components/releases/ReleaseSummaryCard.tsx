@@ -23,6 +23,10 @@ export interface ReleaseSummaryCardProps {
     total_members: number;
     ready_members: number;
     is_archived?: boolean;
+    tenant?: {
+      id: string;
+      name: string;
+    };
     release_teams?: Array<{
       team: {
         id: string;
@@ -176,7 +180,9 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
                 href={`/releases/${encodeURIComponent(release.name)}`}
                 className="ml-2 flex items-center hover:underline cursor-pointer group"
               >
-                <span>{release.name}</span>
+                <span>
+                  {release.tenant?.name ? `${release.tenant.name}: ` : ''}{release.name}
+                </span>
                 <ExternalLink className="h-4 w-4 ml-1 text-muted-foreground group-hover:text-foreground transition-colors" />
               </Link>
               <Link

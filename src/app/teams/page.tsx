@@ -32,7 +32,7 @@ export default function TeamsPage() {
     setLoading(true);
     const supabase = createClient();
     
-    const { data, error } = await supabase
+        const { data, error } = await supabase
       .from("teams")
       .select(`
         id,
@@ -41,7 +41,7 @@ export default function TeamsPage() {
         created_at,
         team_members (
           member_id,
-          members (
+          members!inner (
             id,
             full_name,
             email,
@@ -65,7 +65,12 @@ export default function TeamsPage() {
         member_count: team.team_members?.length || 0,
         active_releases: team.release_teams?.length || 0,
         created_at: team.created_at,
-        members: (team.team_members?.map((tm) => tm.members).filter(Boolean) || []).flat(),
+        members: (team.team_members?.map((tm) => ({
+          id: tm.members[0]?.id,
+          full_name: tm.members[0]?.full_name,
+          email: tm.members[0]?.email,
+          nickname: tm.members[0]?.nickname
+        })).filter(Boolean) || []),
       })) || [];
       
       setTeams(transformedData);

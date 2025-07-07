@@ -1,6 +1,49 @@
 export interface Database {
   public: {
     Tables: {
+      tenants: {
+        Row: {
+          id: string
+          name: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      tenant_user_map: {
+        Row: {
+          id: string
+          tenant_id: string
+          user_id: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          tenant_id: string
+          user_id: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          tenant_id?: string
+          user_id?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
       members: {
         Row: {
           id: string
@@ -9,6 +52,7 @@ export interface Database {
           full_name: string
           nickname: string | null
           member_role: 'member' | 'release_manager' | 'admin'
+          tenant_id: string
           created_at: string
           updated_at: string
         }
@@ -19,6 +63,7 @@ export interface Database {
           full_name: string
           nickname?: string | null
           member_role?: 'member' | 'release_manager' | 'admin'
+          tenant_id: string
           created_at?: string
           updated_at?: string
         }
@@ -29,6 +74,7 @@ export interface Database {
           full_name?: string
           nickname?: string | null
           member_role?: 'member' | 'release_manager' | 'admin'
+          tenant_id?: string
           created_at?: string
           updated_at?: string
         }
@@ -61,6 +107,7 @@ export interface Database {
           id: string
           name: string
           description: string | null
+          tenant_id: string
           created_at: string
           updated_at: string
         }
@@ -68,6 +115,7 @@ export interface Database {
           id?: string
           name: string
           description?: string | null
+          tenant_id: string
           created_at?: string
           updated_at?: string
         }
@@ -75,6 +123,7 @@ export interface Database {
           id?: string
           name?: string
           description?: string | null
+          tenant_id?: string
           created_at?: string
           updated_at?: string
         }
@@ -83,18 +132,21 @@ export interface Database {
         Row: {
           team_id: string
           member_id: string
+          tenant_id: string
           created_at: string
           updated_at: string
         }
         Insert: {
           team_id: string
           member_id: string
+          tenant_id: string
           created_at?: string
           updated_at?: string
         }
         Update: {
           team_id?: string
           member_id?: string
+          tenant_id?: string
           created_at?: string
           updated_at?: string
         }
@@ -107,6 +159,7 @@ export interface Database {
           platform_update: boolean
           config_update: boolean
           state: 'pending' | 'ready' | 'past_due' | 'complete' | 'cancelled'
+          tenant_id: string
           created_at: string
           updated_at: string
           release_notes: string | null
@@ -121,6 +174,7 @@ export interface Database {
           platform_update?: boolean
           config_update?: boolean
           state?: 'pending' | 'ready' | 'past_due' | 'complete' | 'cancelled'
+          tenant_id: string
           created_at?: string
           updated_at?: string
           release_notes?: string | null
@@ -135,6 +189,7 @@ export interface Database {
           platform_update?: boolean
           config_update?: boolean
           state?: 'pending' | 'ready' | 'past_due' | 'complete' | 'cancelled'
+          tenant_id?: string
           created_at?: string
           updated_at?: string
           release_notes?: string | null
@@ -147,18 +202,21 @@ export interface Database {
         Row: {
           release_id: string
           team_id: string
+          tenant_id: string
           created_at: string
           updated_at: string
         }
         Insert: {
           release_id: string
           team_id: string
+          tenant_id: string
           created_at?: string
           updated_at?: string
         }
         Update: {
           release_id?: string
           team_id?: string
+          tenant_id?: string
           created_at?: string
           updated_at?: string
         }
@@ -173,6 +231,7 @@ export interface Database {
           dri_member_id: string | null
           is_platform: boolean
           is_ready: boolean
+          tenant_id: string
           created_at: string
           updated_at: string
         }
@@ -185,6 +244,7 @@ export interface Database {
           dri_member_id?: string | null
           is_platform?: boolean
           is_ready?: boolean
+          tenant_id: string
           created_at?: string
           updated_at?: string
         }
@@ -197,6 +257,7 @@ export interface Database {
           dri_member_id?: string | null
           is_platform?: boolean
           is_ready?: boolean
+          tenant_id?: string
           created_at?: string
           updated_at?: string
         }
@@ -206,6 +267,7 @@ export interface Database {
           release_id: string
           member_id: string
           is_ready: boolean
+          tenant_id: string
           created_at: string
           updated_at: string
         }
@@ -213,6 +275,7 @@ export interface Database {
           release_id: string
           member_id: string
           is_ready?: boolean
+          tenant_id: string
           created_at?: string
           updated_at?: string
         }
@@ -220,6 +283,7 @@ export interface Database {
           release_id?: string
           member_id?: string
           is_ready?: boolean
+          tenant_id?: string
           created_at?: string
           updated_at?: string
         }
@@ -230,6 +294,7 @@ export interface Database {
           short_name: string
           name: string
           is_live: boolean
+          tenant_id: string
           created_at: string
           updated_at: string
         }
@@ -238,6 +303,7 @@ export interface Database {
           short_name: string
           name: string
           is_live?: boolean
+          tenant_id: string
           created_at?: string
           updated_at?: string
         }
@@ -246,6 +312,7 @@ export interface Database {
           short_name?: string
           name?: string
           is_live?: boolean
+          tenant_id?: string
           created_at?: string
           updated_at?: string
         }
@@ -259,6 +326,7 @@ export interface Database {
           member_id: string | null
           activity_type: string
           activity_details: any | null
+          tenant_id: string
           created_at: string
         }
         Insert: {
@@ -269,6 +337,7 @@ export interface Database {
           member_id?: string | null
           activity_type: string
           activity_details?: any | null
+          tenant_id: string
           created_at?: string
         }
         Update: {
@@ -279,6 +348,7 @@ export interface Database {
           member_id?: string | null
           activity_type?: string
           activity_details?: any | null
+          tenant_id?: string
           created_at?: string
         }
       }
