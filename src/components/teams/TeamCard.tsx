@@ -36,8 +36,6 @@ export function TeamCard({ team, expanded, onToggleExpand, onTeamUpdated }: Team
   const isUserInTeam = user?.email && team.members.some(member => member.email === user.email);
   
   console.log("team.members for team", team.name, team.members);
-  const uniqueMembers = Array.from(new Map(team.members.map(m => [m.member_id, m])).values());
-  console.log("uniqueMembers for team", team.name, uniqueMembers.map(m => m.member_id));
   
   // TODO: Add delete dialog logic if needed
   return (
@@ -91,7 +89,7 @@ export function TeamCard({ team, expanded, onToggleExpand, onTeamUpdated }: Team
             <div className="border-t pt-4">
               <h4 className="text-sm font-medium mb-3">Team Members</h4>
               <div className="space-y-2">
-                {uniqueMembers.map((member) => (
+                {team.members.map((member) => (
                   <div key={member.member_id} className="flex items-center justify-between p-2 bg-muted/50 rounded-md">
                     <div>
                       <p className="text-sm font-medium">{member.full_name}</p>
