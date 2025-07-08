@@ -398,9 +398,22 @@ export default function CalendarPage() {
 
       // Log activity: release date changed via calendar
       if (oldDate !== newDate) {
+        // Fetch the member record for the current user
+        const { data: member, error: memberError } = await supabase
+          .from('members')
+          .select('id')
+          .eq('email', user.email)
+          .eq('tenant_id', selectedTenant.id)
+          .single();
+
+        if (memberError || !member) {
+          console.error("No member record found for user", memberError);
+          return;
+        }
+
         const { error: activityError } = await supabase.from("activity_log").insert({
           release_id: releaseId,
-          member_id: user.id,
+          member_id: member.id,
           tenant_id: selectedTenant.id,
           activity_type: "release_date_changed",
           activity_details: { 
@@ -411,7 +424,7 @@ export default function CalendarPage() {
           },
         });
         if (activityError) {
-          console.error("Failed to log release date change activity:", activityError);
+          console.error("Failed to log release date change activity:", activityError, JSON.stringify(activityError, null, 2));
         } else {
           // console.log("Successfully logged release date change activity");
         }
