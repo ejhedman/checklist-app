@@ -41,7 +41,7 @@ export function EditFeatureDialog({ feature, releaseName, onFeatureUpdated, onFe
   });
   const [error, setError] = useState("");
   const [members, setMembers] = useState<Array<{ id: string; full_name: string; email: string }>>([]);
-  const { user } = useAuth();
+  const { user, is_release_manager } = useAuth();
 
   // Helper function to get member info (id and tenant_id)
   const getMemberInfo = async (userId: string) => {
@@ -216,11 +216,13 @@ export function EditFeatureDialog({ feature, releaseName, onFeatureUpdated, onFe
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        <Button size="sm" variant="ghost" className="h-6 w-6 p-0">
-          <Edit className="h-3 w-3" />
-        </Button>
-      </DialogTrigger>
+      {is_release_manager && (
+        <DialogTrigger asChild>
+          <Button size="sm" variant="ghost" className="h-6 w-6 p-0">
+            <Edit className="h-3 w-3" />
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Edit Feature</DialogTitle>

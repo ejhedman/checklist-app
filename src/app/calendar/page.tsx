@@ -98,7 +98,8 @@ function CalendarGrid({
   dragState,
   onDragStart,
   onDragEnd,
-  addToast
+  addToast,
+  is_release_manager
 }: { 
   year: number; 
   month: number; 
@@ -110,6 +111,7 @@ function CalendarGrid({
   onDragStart: (releaseId: string, releaseName: string, originalDate: string) => void;
   onDragEnd: () => void;
   addToast: (message: string, type?: 'success' | 'error' | 'warning' | 'info', duration?: number) => void;
+  is_release_manager: boolean;
 }) {
   const days = generateCalendarDays(year, month, releases, userInvolvedReleaseIds);
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -226,7 +228,7 @@ function CalendarGrid({
                         ${dragState.isDragging && dragState.releaseId === release.id ? 'opacity-50' : ''}
                       `}
                       title={release.name}
-                      draggable={true}
+                      draggable={is_release_manager}
                       onDragStart={(e) => handleDragStart(e, release)}
                       onClick={(e) => {
                         if (!dragState.isDragging) {
@@ -253,7 +255,7 @@ export default function CalendarPage() {
   const [userInvolvedReleaseIds, setUserInvolvedReleaseIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const { addToast } = useToast();
-  const { user, selectedTenant } = useAuth();
+  const { user, selectedTenant, is_release_manager } = useAuth();
   const [dragState, setDragState] = useState<DragState>({
     isDragging: false,
     releaseId: null,
@@ -521,6 +523,7 @@ export default function CalendarPage() {
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
           addToast={addToast}
+          is_release_manager={is_release_manager}
         />
         <CalendarGrid 
           year={nextYear} 
@@ -533,6 +536,7 @@ export default function CalendarPage() {
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
           addToast={addToast}
+          is_release_manager={is_release_manager}
         />
       </div>
     </div>

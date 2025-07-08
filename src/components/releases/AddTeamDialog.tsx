@@ -31,7 +31,7 @@ export function AddTeamDialog({ releaseId, releaseName, onTeamsUpdated, currentT
   const [selectedTeams, setSelectedTeams] = useState<string[]>(currentTeams.map(t => t.id));
   const [error, setError] = useState("");
   const [teams, setTeams] = useState<Array<{ id: string; name: string }>>([]);
-  const { user, selectedTenant } = useAuth();
+  const { user, selectedTenant, is_release_manager } = useAuth();
 
   // Helper function to get member info (id and tenant_id)
   const getMemberInfo = async (userId: string) => {
@@ -194,12 +194,14 @@ export function AddTeamDialog({ releaseId, releaseName, onTeamsUpdated, currentT
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        <Button size="sm" variant="outline">
-          <Plus className="h-4 w-4 mr-2" />
-          Add Team
-        </Button>
-      </DialogTrigger>
+      {is_release_manager && (
+        <DialogTrigger asChild>
+          <Button size="sm" variant="outline">
+            <Plus className="h-4 w-4 mr-2" />
+            Add Team
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Manage Teams for {releaseName}</DialogTitle>

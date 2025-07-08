@@ -39,7 +39,7 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
   });
   const [error, setError] = useState("");
   const [targets, setTargets] = useState<Array<{ id: string; short_name: string; name: string }>>([]);
-  const { user, selectedTenant } = useAuth();
+  const { user, selectedTenant, is_release_manager } = useAuth();
 
   // Helper function to get member info (id and tenant_id)
   const getMemberInfo = async (userId: string) => {
@@ -278,7 +278,7 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      {!isEdit && (
+      {!isEdit && is_release_manager && (
         <DialogTrigger asChild>
           <Button>
             <Plus className="h-4 w-4 mr-2" />

@@ -94,7 +94,7 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
   const [teamNames, setTeamNames] = useState<string[]>([]);
   const [isArchived, setIsArchived] = useState(release.is_archived);
   const [archiving, setArchiving] = useState(false);
-  const { user, memberId, selectedTenant } = useAuth();
+  const { user, memberId, selectedTenant, is_release_manager } = useAuth();
   const router = useRouter();
   const [expanded, setExpanded] = useState(collapsible ? initialExpanded : true);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -579,17 +579,19 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
                     {release.tenant?.name ? `${release.tenant.name}: ` : ''}{release.name}
                   </span>
                   <StateBadge state={(expandedReleaseDetail ? expandedReleaseDetail.state : release.state) as any} />
-                  <button
-                    type="button"
-                    aria-label="View Release Detail"
-                    className="bg-white p-2 rounded hover:bg-gray-100 transition-colors shadow-sm ml-1"
-                    onClick={e => {
-                      e.stopPropagation();
-                      router.push(`/releases/${encodeURIComponent(release.name)}`);
-                    }}
-                  >
-                    <ExternalLink className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
-                  </button>
+                  {collapsible && (
+                    <button
+                      type="button"
+                      aria-label="View Release Detail"
+                      className="bg-white p-2 rounded hover:bg-gray-100 transition-colors shadow-sm ml-1"
+                      onClick={e => {
+                        e.stopPropagation();
+                        router.push(`/releases/${encodeURIComponent(release.name)}`);
+                      }}
+                    >
+                      <ExternalLink className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
+                    </button>
+                  )}
                   <button
                     type="button"
                     aria-label="View Release Notes"
@@ -630,7 +632,7 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
                   </label>
                 </div>
               )}
-              {expanded && (
+              {expanded && is_release_manager && (
                 <button
                   type="button"
                   aria-label="Edit Release"
@@ -688,20 +690,24 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
                 )}
               </div>
             </div>
-            <div className="space-y-1">
-              <p className={`text-sm ${isUserMember() ? 'text-blue-600 font-bold' : 'text-muted-foreground'}`}>Members</p>
-              <p className={`text-lg font-semibold ${isUserMember() ? 'text-blue-600' : ''}`}>
-                {expandedReleaseDetail ? expandedReleaseDetail.ready_members : release.ready_members}/
-                {expandedReleaseDetail ? expandedReleaseDetail.total_members : release.total_members}
-              </p>
-            </div>
-            <div className="space-y-1">
-              <p className={`text-sm ${isUserDRI() ? 'text-blue-600 font-bold' : 'text-muted-foreground'}`}>Key Features</p>
-              <p className={`text-lg font-semibold ${isUserDRI() ? 'text-blue-600' : ''}`}>
-                {expandedReleaseDetail ? expandedReleaseDetail.ready_features : release.ready_features}/
-                {expandedReleaseDetail ? expandedReleaseDetail.feature_count : release.feature_count}
-              </p>
-            </div>
+            {(!expanded) && (
+              <>
+                <div className="space-y-1">
+                  <p className={`text-sm ${isUserDRI() ? 'text-blue-600 font-bold' : 'text-muted-foreground'}`}>Key Feature Readiness</p>
+                  <p className={`text-lg font-semibold ${isUserDRI() ? 'text-blue-600' : ''}`}>
+                    {expandedReleaseDetail ? expandedReleaseDetail.ready_features : release.ready_features}/
+                    {expandedReleaseDetail ? expandedReleaseDetail.feature_count : release.feature_count}
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <p className={`text-sm ${isUserMember() ? 'text-blue-600 font-bold' : 'text-muted-foreground'}`}>Team Readiness</p>
+                  <p className={`text-lg font-semibold ${isUserMember() ? 'text-blue-600' : ''}`}> 
+                    {expandedReleaseDetail ? expandedReleaseDetail.ready_members : release.ready_members}/
+                    {expandedReleaseDetail ? expandedReleaseDetail.total_members : release.total_members}
+                  </p>
+                </div>
+              </>
+            )}
           </div>
         </CardContent>
       </Card>

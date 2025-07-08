@@ -17,6 +17,7 @@ interface AuthContextType {
   userRole: 'admin' | 'user' | null;
   memberId: string | null;
   memberRole: string | null;
+  is_release_manager: boolean;
   availableTenants: Tenant[];
   selectedTenant: Tenant | null;
   setSelectedTenant: (tenant: Tenant | null) => void;
@@ -34,6 +35,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [userRole, setUserRole] = useState<'admin' | 'user' | null>(null);
   const [memberId, setMemberId] = useState<string | null>(null);
   const [memberRole, setMemberRole] = useState<string | null>(null);
+  const [is_release_manager, setIsReleaseManager] = useState<boolean>(false);
   const [availableTenants, setAvailableTenants] = useState<Tenant[]>([]);
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
   
@@ -148,6 +150,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!tenantId) {
       setMemberId(null);
       setMemberRole(null);
+      setIsReleaseManager(false);
       return;
     }
 
@@ -162,16 +165,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!error && data) {
         setMemberId(data.id);
         setMemberRole(data.member_role);
+        setIsReleaseManager(data.member_role === 'release_manager');
         // console.log('AuthContext: memberId set to', data.id, 'memberRole:', data.member_role);
       } else {
         setMemberId(null);
         setMemberRole(null);
+        setIsReleaseManager(false);
         // console.log('AuthContext: memberId set to null');
       }
     } catch (error) {
       console.error('Error fetching member info:', error);
       setMemberId(null);
       setMemberRole(null);
+      setIsReleaseManager(false);
     }
   };
 
@@ -183,6 +189,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUserRole(null);
       setMemberId(null);
       setMemberRole(null);
+      setIsReleaseManager(false);
       setAvailableTenants([]);
       setSelectedTenant(null);
       // Clear the fetch promise and user ID
@@ -301,6 +308,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUserRole(null);
           setMemberId(null);
           setMemberRole(null);
+          setIsReleaseManager(false);
           setAvailableTenants([]);
           setSelectedTenant(null);
           // Clear the fetch promise and user ID
@@ -334,6 +342,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setSelectedTenant(null);
           setMemberId(null);
           setMemberRole(null);
+          setIsReleaseManager(false);
         }
         // If user has multiple tenants, don't auto-select - let them choose
         setTenantLoading(false);
@@ -345,6 +354,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSelectedTenant(null);
       setMemberId(null);
       setMemberRole(null);
+      setIsReleaseManager(false);
       setTenantLoading(false);
     }
   }, [user]);
@@ -357,6 +367,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     userRole,
     memberId,
     memberRole,
+    is_release_manager,
     availableTenants,
     selectedTenant,
     setSelectedTenant: handleTenantSelection,

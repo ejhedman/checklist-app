@@ -40,7 +40,7 @@ export function AddFeatureDialog({ releaseId, releaseName, onFeatureAdded, onFea
   });
   const [error, setError] = useState("");
   const [members, setMembers] = useState<Array<{ id: string; full_name: string; email: string }>>([]);
-  const { user } = useAuth();
+  const { user, is_release_manager } = useAuth();
 
   // Helper function to get member info (id and tenant_id)
   const getMemberInfo = async (userId: string) => {
@@ -187,12 +187,14 @@ export function AddFeatureDialog({ releaseId, releaseName, onFeatureAdded, onFea
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        <Button size="sm" variant="outline">
-          <Plus className="h-4 w-4 mr-2" />
-          Add Feature
-        </Button>
-      </DialogTrigger>
+      {is_release_manager && (
+        <DialogTrigger asChild>
+          <Button size="sm" variant="outline">
+            <Plus className="h-4 w-4 mr-2" />
+            Add Feature
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Add Feature to {releaseName}</DialogTitle>
