@@ -10,12 +10,18 @@ interface FeatureCardProps {
   handleFeatureReadyChange: (feature: any, isReady: boolean) => void;
   onFeatureUpdated?: () => void;
   releaseName?: string;
+  daysUntilRelease?: number;
+  onFeatureEdited?: (updatedFeature: any) => void;
 }
 
-export default function FeatureCard({ feature, user, memberId, updatingFeature, handleFeatureReadyChange, onFeatureUpdated, releaseName }: FeatureCardProps) {
+export default function FeatureCard({ feature, user, memberId, updatingFeature, handleFeatureReadyChange, onFeatureUpdated, releaseName, daysUntilRelease, onFeatureEdited }: FeatureCardProps) {
   const isDri = memberId && feature.dri_member && memberId === feature.dri_member.id;
   // Only the logged-in user who is the DRI can check the box (by memberId)
   const canMarkReady = memberId && feature.dri_member && memberId === feature.dri_member.id;
+  // Determine badge color for not ready
+  const notReadyClass = daysUntilRelease !== undefined && daysUntilRelease < 3
+    ? 'bg-red-100 text-red-800 border-red-200'
+    : 'bg-amber-100 text-amber-800 border-amber-200';
   return (
     <div className={`p-3 border rounded-lg relative ${isDri ? 'bg-blue-50 border-blue-200' : ''}`}>
       {/* Edit button in top right corner */}
@@ -24,6 +30,7 @@ export default function FeatureCard({ feature, user, memberId, updatingFeature, 
           feature={feature} 
           releaseName={releaseName || "this release"} 
           onFeatureUpdated={onFeatureUpdated || (() => {})} 
+          onFeatureChanged={onFeatureEdited}
         />
       </div>
       
@@ -65,7 +72,7 @@ export default function FeatureCard({ feature, user, memberId, updatingFeature, 
         </div>
         {/* Ready checkbox/state (right) */}
         <div className="flex items-center min-w-[110px] md:w-1/4 justify-end">
-          {canMarkReady ? (
+          {canMarkReady && (
             <>
               <label htmlFor={`feature-ready-${feature.id}`} className="text-xs text-muted-foreground cursor-pointer select-none mr-2">Ready</label>
               <Checkbox
@@ -77,11 +84,12 @@ export default function FeatureCard({ feature, user, memberId, updatingFeature, 
                 id={`feature-ready-${feature.id}`}
               />
             </>
-          ) : (
-            <span className={feature.is_ready ? "text-xs mb-1 px-2 py-1 rounded bg-green-600 text-white" : "text-xs mb-1 px-2 py-1 rounded bg-amber-400 text-black"}>
-              {feature.is_ready ? "Ready" : "Not Ready"}
-            </span>
           )}
+          <Badge
+            className={`text-xs ml-2 ${feature.is_ready ? 'bg-green-100 text-green-800 border-green-200' : notReadyClass}`}
+          >
+            {feature.is_ready ? "Ready" : "Not Ready"}
+          </Badge>
         </div>
       </div>
     </div>

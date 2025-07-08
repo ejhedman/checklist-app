@@ -29,7 +29,7 @@ interface TransformedTeam {
   active_releases: number;
   created_at: string;
   members: Array<{
-    id: string;
+    member_id: string;
     full_name: string;
     email: string;
     nickname?: string;
@@ -52,6 +52,7 @@ export function useTeams() {
       created_at: team.created_at,
       members: (team.team_members?.map((tm) => ({
         id: tm.members[0]?.id,
+        member_id: tm.members[0]?.id,
         full_name: tm.members[0]?.full_name,
         email: tm.members[0]?.email,
         nickname: tm.members[0]?.nickname

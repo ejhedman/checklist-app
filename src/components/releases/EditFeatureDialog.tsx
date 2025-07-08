@@ -24,9 +24,10 @@ interface EditFeatureDialogProps {
   feature: any;
   releaseName: string;
   onFeatureUpdated: () => void;
+  onFeatureChanged?: (updatedFeature: any) => void;
 }
 
-export function EditFeatureDialog({ feature, releaseName, onFeatureUpdated }: EditFeatureDialogProps) {
+export function EditFeatureDialog({ feature, releaseName, onFeatureUpdated, onFeatureChanged }: EditFeatureDialogProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -191,7 +192,20 @@ export function EditFeatureDialog({ feature, releaseName, onFeatureUpdated }: Ed
       }
 
       setOpen(false);
-      onFeatureUpdated();
+      if (onFeatureChanged) {
+        onFeatureChanged({
+          ...feature,
+          name: formData.name,
+          description: formData.description,
+          jira_ticket: formData.jiraTicket,
+          dri_member_id: formData.driMemberId,
+          is_platform: formData.isPlatform,
+          is_config: formData.isConfig,
+          comments: formData.comments,
+        });
+      } else {
+        onFeatureUpdated();
+      }
     } catch (error) {
       console.error("Error:", error);
       setError("An unexpected error occurred");

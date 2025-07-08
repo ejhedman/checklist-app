@@ -10,7 +10,12 @@ interface TenantRequiredMessageProps {
 }
 
 export function TenantRequiredMessage({ children }: TenantRequiredMessageProps) {
-  const { selectedTenant, availableTenants, user } = useAuth();
+  const { selectedTenant, availableTenants, user, tenantLoading } = useAuth();
+
+  // If still loading tenants, render nothing (or a spinner)
+  if (tenantLoading) {
+    return null; // or <LoadingSpinner />
+  }
 
   // If user is not logged in, show children (let auth handle it)
   if (!user) {
@@ -59,7 +64,7 @@ export function TenantRequiredMessage({ children }: TenantRequiredMessageProps) 
             </div>
             <CardTitle>No Projects Available</CardTitle>
             <CardDescription>
-              You don't have access to any projects. Please contact your administrator.
+              You don&apos;t have access to any projects. Please contact your administrator.
             </CardDescription>
           </CardHeader>
         </Card>

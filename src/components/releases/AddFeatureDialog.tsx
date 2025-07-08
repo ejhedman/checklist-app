@@ -24,9 +24,10 @@ interface AddFeatureDialogProps {
   releaseId: string;
   releaseName: string;
   onFeatureAdded: () => void;
+  onFeatureChanged?: (newFeature: any) => void;
 }
 
-export function AddFeatureDialog({ releaseId, releaseName, onFeatureAdded }: AddFeatureDialogProps) {
+export function AddFeatureDialog({ releaseId, releaseName, onFeatureAdded, onFeatureChanged }: AddFeatureDialogProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -161,7 +162,21 @@ export function AddFeatureDialog({ releaseId, releaseName, onFeatureAdded }: Add
       }
 
       setOpen(false);
-      onFeatureAdded();
+      if (onFeatureChanged && featureData) {
+        // Get the DRI member info for the new feature
+        const driMember = formData.driMemberId ? members.find(m => m.id === formData.driMemberId) : null;
+        const newFeature = {
+          ...featureData,
+          dri_member: driMember ? {
+            id: driMember.id,
+            full_name: driMember.full_name,
+            email: driMember.email
+          } : null
+        };
+        onFeatureChanged(newFeature);
+      } else {
+        onFeatureAdded();
+      }
     } catch (error) {
       console.error("Error:", error);
       setError("An unexpected error occurred");

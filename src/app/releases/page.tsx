@@ -39,16 +39,20 @@ export default function ReleasesPage() {
           <LoadingSpinner text="Loading releases..." />
         </div>
       ) : (
-        <div className="space-y-4">
+        <>
           {releases.map((release) => (
-            <ReleaseSummaryCard
-              key={release.id}
-              release={release}
-              getStateIcon={getStateIcon}
-              onReleaseUpdated={refetch}
-            />
+            <div className="space-y-4" key={release.id}>
+              <ReleaseSummaryCard
+                key={release.id}
+                release={release}
+                getStateIcon={getStateIcon}
+                onReleaseUpdated={refetch}
+                collapsible={true}
+                initialExpanded={false}
+              />
+            </div>
           ))}
-        </div>
+        </>
       )}
     </div>
   );

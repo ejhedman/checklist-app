@@ -35,10 +35,12 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
     platformUpdate: initialRelease?.platform_update || false,
     configUpdate: initialRelease?.config_update || false,
     selectedTeams: initialRelease?.teams?.map((t: any) => t.id) || [],
+    selectedTargets: initialRelease?.targets || [],
     summary: initialRelease?.release_summary || "",
   });
   const [error, setError] = useState("");
   const [teams, setTeams] = useState<Array<{ id: string; name: string }>>([]);
+  const [targets, setTargets] = useState<Array<{ id: string; short_name: string; name: string }>>([]);
   const { user, selectedTenant } = useAuth();
 
   // Helper function to get member info (id and tenant_id)
@@ -100,6 +102,31 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
     }
   };
 
+  // Fetch targets when dialog opens
+  const fetchTargets = async () => {
+    const supabase = createClient();
+    let tenantId = null;
+    if (isEdit && initialRelease?.tenant?.id) {
+      tenantId = initialRelease.tenant.id;
+    } else if (selectedTenant) {
+      tenantId = selectedTenant.id;
+    }
+    if (!tenantId) {
+      setTargets([]);
+      return;
+    }
+    const { data, error } = await supabase
+      .from("targets")
+      .select("id, short_name, name")
+      .eq("tenant_id", tenantId)
+      .order("name");
+    if (!error && data) {
+      setTargets(data);
+    } else {
+      setTargets([]);
+    }
+  };
+
   useEffect(() => {
     if (controlledOpen !== undefined) setOpen(controlledOpen);
   }, [controlledOpen]);
@@ -109,6 +136,7 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
     if (open) {
       console.log("Dialog opened, fetching teams...");
       fetchTeams();
+      fetchTargets();
     }
   }, [open]);
 
@@ -122,6 +150,7 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
         platformUpdate: false,
         configUpdate: false,
         selectedTeams: [],
+        selectedTargets: [],
         summary: "",
       });
       setError("");
@@ -136,6 +165,7 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
         platformUpdate: initialRelease.platform_update || false,
         configUpdate: initialRelease.config_update || false,
         selectedTeams: initialRelease.teams?.map((t: any) => t.id) || [],
+        selectedTargets: initialRelease.targets || [],
         summary: initialRelease.release_summary || "",
       });
     }
@@ -170,6 +200,7 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
             platform_update: formData.platformUpdate,
             config_update: formData.configUpdate,
             release_summary: formData.summary,
+            targets: formData.selectedTargets,
           })
           .eq("id", initialRelease.id)
           .select()
@@ -282,6 +313,7 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
             release_notes: templateText,
             release_summary: formData.summary,
             tenant_id: selectedTenant.id,
+            targets: formData.selectedTargets,
           })
           .select()
           .single();
@@ -362,6 +394,15 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
       selectedTeams: prev.selectedTeams.includes(teamId)
         ? prev.selectedTeams.filter((id: string) => id !== teamId)
         : [...prev.selectedTeams, teamId]
+    }));
+  };
+
+  const handleTargetToggle = (shortName: string) => {
+    setFormData(prev => ({
+      ...prev,
+      selectedTargets: prev.selectedTargets.includes(shortName)
+        ? prev.selectedTargets.filter((sn: string) => sn !== shortName)
+        : [...prev.selectedTargets, shortName],
     }));
   };
 
@@ -462,6 +503,29 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
               ) : (
                 <p className="text-sm text-muted-foreground">
                   No teams available. Create teams first to assign them to releases.
+                </p>
+              )}
+            </div>
+            {/* Targets */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Assign Targets</h3>
+              {targets.length > 0 ? (
+                <div className="space-y-2">
+                  {targets.map((target) => (
+                    <div key={target.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`target-${target.id}`}
+                        checked={formData.selectedTargets.includes(target.short_name)}
+                        onCheckedChange={() => handleTargetToggle(target.short_name)}
+                        disabled={loading}
+                      />
+                      <Label htmlFor={`target-${target.id}`}>{target.name}</Label>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  No targets available. Create targets first to assign them to releases.
                 </p>
               )}
             </div>

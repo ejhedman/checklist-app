@@ -13,6 +13,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  tenantLoading: boolean;
   userRole: 'admin' | 'user' | null;
   memberId: string | null;
   memberRole: string | null;
@@ -29,6 +30,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [tenantLoading, setTenantLoading] = useState(true);
   const [userRole, setUserRole] = useState<'admin' | 'user' | null>(null);
   const [memberId, setMemberId] = useState<string | null>(null);
   const [memberRole, setMemberRole] = useState<string | null>(null);
@@ -200,7 +202,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(currentUser);
       setSession(currentSession);
 
-      // Only fetch role if user exists and we haven't fetched it yet for this user
+      // Only fetch role if user exists and we haven't fetched it yet
       if (currentUser && lastFetchedUserId.current !== currentUser.id) {
         // console.log('🔄 FETCHING ROLE DURING REFRESH...');
         try {
@@ -320,6 +322,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (user) {
       // Fetch available tenants for the user
       const fetchTenants = async () => {
+        setTenantLoading(true);
         const tenants = await fetchUserTenants(user.id);
         setAvailableTenants(tenants);
         
@@ -333,6 +336,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setMemberRole(null);
         }
         // If user has multiple tenants, don't auto-select - let them choose
+        setTenantLoading(false);
       };
       
       fetchTenants();
@@ -341,6 +345,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSelectedTenant(null);
       setMemberId(null);
       setMemberRole(null);
+      setTenantLoading(false);
     }
   }, [user]);
 
@@ -348,6 +353,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user,
     session,
     loading,
+    tenantLoading,
     userRole,
     memberId,
     memberRole,

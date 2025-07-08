@@ -142,7 +142,7 @@ export default function DocsPage() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <h4 className="font-medium text-sm">Core Features</h4>
+                  <h4 className="font-medium text-sm">Key Features</h4>
                   <div className="space-y-1">
                     <Button
                       variant="ghost"

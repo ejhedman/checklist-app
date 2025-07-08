@@ -5,14 +5,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Users, CheckCircle, AlertTriangle, Clock, Calendar, Pencil, FileText } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { FeatureReadyDialog } from "@/components/releases/FeatureReadyDialog";
+// import { FeatureReadyDialog } from "@/components/releases/FeatureReadyDialog";
 import { createClient } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import FeatureCard from "./FeatureCard";
 import { CreateReleaseDialog } from "./CreateReleaseDialog";
 import { AddFeatureDialog } from "./AddFeatureDialog";
-import { ReleaseSummaryCard2 } from "./ReleaseSummaryCard2";
-import { ReleaseDetailBottomCard } from "./ReleaseDetailBottomCard";
+import { ReleaseSummaryCard } from "./ReleaseSummaryCard";
+import { ReleaseDetailBottomContent } from "./ReleaseDetailBottomContent";
 
 export function getStateColor(state: string) {
   switch (state) {
@@ -76,7 +76,7 @@ function getPaleBgForState(state: string, is_archived?: boolean) {
 export default function ReleaseDetailCard({ release, onMemberReadyChange, onReleaseUpdated } : {
   release: any,
   onMemberReadyChange?: (releaseId: string, userId: string, isReady: boolean) => void,
-  onReleaseUpdated: (updatedRelease: any) => void,
+  onReleaseUpdated: () => void,
 }) {
   const { user, memberId } = useAuth();
   const [readyDialogOpen, setReadyDialogOpen] = useState(false);
@@ -86,23 +86,7 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onRele
   const [archiving, setArchiving] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [features, setFeatures] = useState(release.features);
-
-  // Helper function to get member info (id and tenant_id)
-  const getMemberInfo = async (userId: string) => {
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from("members")
-      .select("id, tenant_id")
-      .eq("user_id", userId)
-      .single();
-    
-    if (error) {
-      console.error("Error fetching member info:", error);
-      return null;
-    }
-    
-    return data;
-  };
+  const [expanded, setExpanded] = useState(true); // Always expanded for detail page
 
   // Add local state for summary counts
   const [readyMembers, setReadyMembers] = useState(release.ready_members);
@@ -164,11 +148,9 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onRele
   };
 
   const handleFeatureReadyChange = async (feature: any, isReady: boolean) => {
-    // Check if current user is the DRI for this feature
     if (!user || !feature.dri_member || memberId !== feature.dri_member.id) {
       return;
     }
-    // Immediately update without dialog
     await updateFeatureReady(feature.id, isReady, "");
   };
 
@@ -199,22 +181,19 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onRele
       await updateFeatureReady(selectedFeature.id, true, comments);
       // Log activity: DRI marked feature ready
       if (user?.id) {
-        const memberInfo = await getMemberInfo(user.id);
-        if (memberInfo) {
-          const supabase = createClient();
-          const { error: activityError } = await supabase.from("activity_log").insert({
-            release_id: release.id,
-            feature_id: selectedFeature.id,
-            member_id: memberInfo.id,
-            tenant_id: memberInfo.tenant_id,
-            activity_type: "feature_ready",
-            activity_details: { comments },
-          });
-          if (activityError) {
-            console.error("Failed to log feature ready activity:", activityError);
-          } else {
-            // console.log("Successfully logged feature ready activity");
-          }
+        const supabase = createClient();
+        const { error: activityError } = await supabase.from("activity_log").insert({
+          release_id: release.id,
+          feature_id: selectedFeature.id,
+          member_id: memberId,
+          tenant_id: release.tenant?.id || "",
+          activity_type: "feature_ready",
+          activity_details: { comments },
+        });
+        if (activityError) {
+          console.error("Failed to log feature ready activity:", activityError);
+        } else {
+          // console.log("Successfully logged feature ready activity");
         }
       }
       setReadyDialogOpen(false);
@@ -229,8 +208,6 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onRele
 
   const updateMemberReady = async (releaseId: string, memberId: string, isReady: boolean) => {
     const supabase = createClient();
-    
-    // Find the member to get their tenant_id
     let memberTenantId = null;
     if (release && release.teams) {
       for (const team of release.teams) {
@@ -241,12 +218,9 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onRele
         }
       }
     }
-    
-    // If we can't find the member's tenant_id, use the release's tenant_id as fallback
     if (!memberTenantId && release?.tenant?.id) {
       memberTenantId = release.tenant.id;
     }
-    
     const { error } = await supabase
       .from("member_release_state")
       .upsert({
@@ -276,24 +250,22 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onRele
     if (!error) {
       // Log activity: release state change
       if (user?.id) {
-        const memberInfo = await getMemberInfo(user.id);
-        if (memberInfo) {
-          const { error: activityError } = await supabase.from("activity_log").insert({
-            release_id: release.id,
-            member_id: memberInfo.id,
-            tenant_id: memberInfo.tenant_id,
-            activity_type: "release_state_change",
-            activity_details: { oldState: release.state, newState },
-          });
-          if (activityError) {
-            console.error("Failed to log release state change activity:", activityError);
-          } else {
-            // console.log("Successfully logged release state change activity");
-          }
+        const supabase = createClient();
+        const { error: activityError } = await supabase.from("activity_log").insert({
+          release_id: release.id,
+          member_id: memberId,
+          tenant_id: release.tenant?.id || "",
+          activity_type: "release_state_change",
+          activity_details: { oldState: release.state, newState },
+        });
+        if (activityError) {
+          console.error("Failed to log release state change activity:", activityError);
+        } else {
+          // console.log("Successfully logged release state change activity");
         }
       }
       // Optionally refresh or notify parent
-      onReleaseUpdated?.(undefined);
+      onReleaseUpdated?.();
     }
   };
 
@@ -312,112 +284,31 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onRele
 
   return (
     <div className="flex flex-col gap-6">
-      <ReleaseSummaryCard2 
+      <ReleaseSummaryCard
         release={release}
-        onEditClick={() => setEditOpen(true)}
+        getStateIcon={getStateIcon}
+        onReleaseUpdated={() => onReleaseUpdated?.()}
+        collapsible={false}
+        initialExpanded={true}
       />
-      <ReleaseDetailBottomCard>
-        <div className="flex flex-col md:flex-row gap-6 w-full">
-          {/* Features Card */}
-          <Card className="w-full md:w-1/2">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-base flex items-center"><FileText className="h-4 w-4 mr-2" />Features</CardTitle>
-              <AddFeatureDialog 
-                releaseId={release.id} 
-                releaseName={release.name} 
-                onFeatureAdded={() => onReleaseUpdated(undefined)} 
-              />
-            </CardHeader>
-            <CardContent className="pb-4">
-              <div className="space-y-2">
-                {features.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No features added yet.</p>
-                ) : (
-                  [...features]
-                    .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-                    .map((feature: any) => (
-                      <FeatureCard
-                        key={feature.id}
-                        feature={feature}
-                        user={user}
-                        memberId={memberId}
-                        updatingFeature={updatingFeature}
-                        handleFeatureReadyChange={handleFeatureReadyChange}
-                        onFeatureUpdated={() => onReleaseUpdated(undefined)}
-                        releaseName={release.name}
-                      />
-                    ))
-                )}
-              </div>
-            </CardContent>
-          </Card>
-          {/* Teams Card */}
-          <Card className="w-full md:w-1/2">
-            <CardHeader>
-              <CardTitle className="text-base flex items-center"><Users className="h-4 w-4 mr-2" />Team Members</CardTitle>
-            </CardHeader>
-            <CardContent className="pb-4">
-              <div className="space-y-2">
-                {/* Flat list of unique members */}
-                {allMembers.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No members assigned to this release.</p>
-                ) : (
-                  allMembers.map((member: any) => {
-                    // Find all teams this member belongs to
-                    const memberTeams = release.teams.filter((team: any) =>
-                      team.members.some((m: any) => m.id === member.id)
-                    );
-                    return (
-                      <div
-                        key={member.id}
-                        className={`flex items-center justify-between p-2 rounded border ${user && member.email === user.email ? 'bg-blue-50 border-blue-200' : 'bg-gray-50'}`}
-                      >
-                        <div className="flex items-center space-x-3">
-                          <div>
-                            <p className="text-sm font-medium">{member.nickname || member.full_name}</p>
-                          </div>
-                        </div>
-                        {/* Team badges (center) */}
-                        <div className="flex flex-row flex-wrap gap-1 justify-center items-center">
-                          {memberTeams.map((team: any) => (
-                            <Badge key={team.id} variant="secondary" className="text-xs">
-                              {team.name}
-                            </Badge>
-                          ))}
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          {/* Show 'Ready' label to the left of the checkbox */}
-                          <label htmlFor={`member-ready-${member.id}`} className="text-xs text-muted-foreground cursor-pointer select-none">Ready</label>
-                          <Checkbox
-                            checked={member.is_ready}
-                            onCheckedChange={(checked) =>
-                              updateMemberReady(release.id, member.id, checked as boolean)
-                            }
-                            id={`member-ready-${member.id}`}
-                          />
-                          {/* Only show Not Ready/Ready badge if not the logged in user */}
-                          {!(user && member.email === user.email) && (
-                            <Badge variant={member.is_ready ? "default" : "secondary"} className="text-xs">
-                              {member.is_ready ? "Ready" : "Not Ready"}
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </ReleaseDetailBottomCard>
-      <FeatureReadyDialog
+      {/* <ReleaseDetailBottomContent
+        release={release}
+        user={user}
+        memberId={memberId ?? ""}
+        features={features}
+        allMembers={allMembers}
+        updatingFeature={updatingFeature}
+        handleFeatureReadyChange={handleFeatureReadyChange}
+        updateMemberReady={updateMemberReady}
+        onFeatureUpdated={() => onReleaseUpdated?.(undefined)}
+      /> */}
+      {/* <FeatureReadyDialog
         open={readyDialogOpen}
         onOpenChange={handleReadyDialogCancel}
-        featureName={selectedFeature?.name || ""}
+        featureName={(selectedFeature?.name ?? '') as string}
         onConfirm={handleReadyDialogConfirm}
         loading={updatingFeature}
-      />
+      /> */}
       <CreateReleaseDialog
         open={editOpen}
         onOpenChange={setEditOpen}
