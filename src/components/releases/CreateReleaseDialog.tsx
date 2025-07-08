@@ -34,12 +34,10 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
     targetDate: initialRelease?.target_date || "",
     platformUpdate: initialRelease?.platform_update || false,
     configUpdate: initialRelease?.config_update || false,
-    selectedTeams: initialRelease?.teams?.map((t: any) => t.id) || [],
     selectedTargets: initialRelease?.targets || [],
     summary: initialRelease?.release_summary || "",
   });
   const [error, setError] = useState("");
-  const [teams, setTeams] = useState<Array<{ id: string; name: string }>>([]);
   const [targets, setTargets] = useState<Array<{ id: string; short_name: string; name: string }>>([]);
   const { user, selectedTenant } = useAuth();
 
@@ -62,44 +60,6 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
     
     console.log("Found member info:", data);
     return data;
-  };
-
-  // Fetch teams when dialog opens
-  const fetchTeams = async () => {
-    const supabase = createClient();
-    
-    // Get tenant_id from the release being edited or selected tenant
-    let tenantId = null;
-    if (isEdit && initialRelease?.tenant?.id) {
-      tenantId = initialRelease.tenant.id;
-    } else if (selectedTenant) {
-      tenantId = selectedTenant.id;
-    }
-    
-    console.log("Fetching teams for tenant_id:", tenantId);
-    console.log("Initial release:", initialRelease);
-    
-    if (!tenantId) {
-      console.error("No tenant ID available for fetching teams");
-      setError("Please select a project first");
-      return;
-    }
-    
-    const { data, error } = await supabase
-      .from("teams")
-      .select("id, name")
-      .eq("tenant_id", tenantId)
-      .order("name");
-    
-    console.log("Teams query result:", { data, error, tenantId });
-    
-    if (!error && data) {
-      setTeams(data);
-      console.log("Teams set:", data);
-    } else if (error) {
-      console.error("Error fetching teams:", error);
-      setError("Failed to load teams: " + error.message);
-    }
   };
 
   // Fetch targets when dialog opens
@@ -131,11 +91,10 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
     if (controlledOpen !== undefined) setOpen(controlledOpen);
   }, [controlledOpen]);
 
-  // Ensure fetchTeams is called when dialog opens
+  // Ensure fetchTargets is called when dialog opens
   useEffect(() => {
     if (open) {
-      console.log("Dialog opened, fetching teams...");
-      fetchTeams();
+      console.log("Dialog opened, fetching targets...");
       fetchTargets();
     }
   }, [open]);
@@ -149,7 +108,6 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
         targetDate: "",
         platformUpdate: false,
         configUpdate: false,
-        selectedTeams: [],
         selectedTargets: [],
         summary: "",
       });
@@ -164,7 +122,6 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
         targetDate: initialRelease.target_date || "",
         platformUpdate: initialRelease.platform_update || false,
         configUpdate: initialRelease.config_update || false,
-        selectedTeams: initialRelease.teams?.map((t: any) => t.id) || [],
         selectedTargets: initialRelease.targets || [],
         summary: initialRelease.release_summary || "",
       });
@@ -251,46 +208,6 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
             }
           }
         }
-        // Update team assignments
-        await supabase.from("release_teams").delete().eq("release_id", initialRelease.id);
-        if (formData.selectedTeams.length > 0) {
-          // Get member info for the user performing the action
-          let memberInfo = null;
-          if (user?.id) {
-            memberInfo = await getMemberInfo(user.id);
-          }
-          
-          const teamAssignments = formData.selectedTeams.map((teamId: string) => ({
-            release_id: initialRelease.id,
-            team_id: teamId,
-            tenant_id: selectedTenant.id,
-          }));
-          console.log("Inserting team assignments:", teamAssignments);
-          const { error: teamInsertError } = await supabase.from("release_teams").insert(teamAssignments);
-          if (teamInsertError) {
-            console.error("Error inserting team assignments:", teamInsertError);
-            setError("Failed to update team assignments: " + teamInsertError.message);
-            return;
-          }
-          // Log activity: team added to release
-          if (user?.id && memberInfo) {
-            for (const teamId of formData.selectedTeams) {
-              const { error: teamActivityError } = await supabase.from("activity_log").insert({
-                release_id: initialRelease.id,
-                team_id: teamId,
-                member_id: memberInfo.id,
-                tenant_id: selectedTenant.id,
-                activity_type: "team_added",
-                activity_details: {},
-              });
-              if (teamActivityError) {
-                console.error("Failed to log team added activity:", teamActivityError);
-              } else {
-                // console.log("Successfully logged team added activity");
-              }
-            }
-          }
-        }
       } else {
         // Create new release
         const templateRes = await fetch('/docs/release-notes-template.md');
@@ -340,44 +257,6 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
             }
           }
         }
-        if (formData.selectedTeams.length > 0) {
-          // Get member info for the user performing the action
-          let memberInfo = null;
-          if (user?.id) {
-            memberInfo = await getMemberInfo(user.id);
-          }
-          
-          const teamAssignments = formData.selectedTeams.map((teamId: string) => ({
-            release_id: release.id,
-            team_id: teamId,
-            tenant_id: selectedTenant.id,
-          }));
-          // console.log("Inserting team assignments for new release:", teamAssignments);
-          const { error: teamInsertError } = await supabase.from("release_teams").insert(teamAssignments);
-          if (teamInsertError) {
-            console.error("Error inserting team assignments for new release:", teamInsertError);
-            setError("Failed to assign teams to release: " + teamInsertError.message);
-            return;
-          }
-          // Log activity: team added to release
-          if (user?.id && memberInfo) {
-            for (const teamId of formData.selectedTeams) {
-                          const { error: teamActivityError } = await supabase.from("activity_log").insert({
-              release_id: release.id,
-              team_id: teamId,
-              member_id: memberInfo.id,
-              tenant_id: selectedTenant.id,
-              activity_type: "team_added",
-              activity_details: {},
-            });
-              if (teamActivityError) {
-                console.error("Failed to log team added activity:", teamActivityError);
-              } else {
-                // console.log("Successfully logged team added activity");
-              }
-            }
-          }
-        }
       }
       setOpen(false);
       onReleaseSaved(release);
@@ -386,15 +265,6 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleTeamToggle = (teamId: string) => {
-    setFormData(prev => ({
-      ...prev,
-      selectedTeams: prev.selectedTeams.includes(teamId)
-        ? prev.selectedTeams.filter((id: string) => id !== teamId)
-        : [...prev.selectedTeams, teamId]
-    }));
   };
 
   const handleTargetToggle = (shortName: string) => {
@@ -420,7 +290,7 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
         <DialogHeader>
           <DialogTitle>{isEdit ? "Edit Release" : "Create New Release"}</DialogTitle>
           <DialogDescription>
-            {isEdit ? "Edit the release details and assignments." : "Set up a new software release with target date and team assignments."}
+            {isEdit ? "Edit the release details." : "Set up a new software release with target date."}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
@@ -482,29 +352,6 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
                 />
                 <Label htmlFor="configUpdate">Specs Update Required</Label>
               </div>
-            </div>
-            {/* Team Assignments */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Assign Teams</h3>
-              {teams.length > 0 ? (
-                <div className="space-y-2">
-                  {teams.map((team) => (
-                    <div key={team.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`team-${team.id}`}
-                        checked={formData.selectedTeams.includes(team.id)}
-                        onCheckedChange={() => handleTeamToggle(team.id)}
-                        disabled={loading}
-                      />
-                      <Label htmlFor={`team-${team.id}`}>{team.name}</Label>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  No teams available. Create teams first to assign them to releases.
-                </p>
-              )}
             </div>
             {/* Targets */}
             <div className="space-y-4">

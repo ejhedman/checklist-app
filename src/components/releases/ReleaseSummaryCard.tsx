@@ -102,7 +102,7 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
   const [detailError, setDetailError] = useState<string | null>(null);
   const [updatingFeature, setUpdatingFeature] = useState(false);
   const [features, setFeatures] = useState(release.features || []);
-  const [allMembers, setAllMembers] = useState<any[]>([]);
+  const [uniqueMembers, setUniqueMembers] = useState<any[]>([]);
   const [editOpen, setEditOpen] = useState(false);
 
   // Debug: Log features and user
@@ -264,7 +264,7 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
         };
         setExpandedReleaseDetail(transformedRelease);
         setFeatures(transformedRelease.features || []);
-        setAllMembers(transformedRelease.teams?.flatMap((team: any) => team.members || []) || []);
+        setUniqueMembers(uniqueMembers);
         setDetailLoading(false);
       };
       fetchDetail();
@@ -351,7 +351,7 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
         setExpandedReleaseDetail(updatedDetail);
         
         // Check if release state should automatically change
-        await checkAndUpdateReleaseState(updatedDetail, allMembers);
+        await checkAndUpdateReleaseState(updatedDetail, uniqueMembers);
       }
     }
     setUpdatingFeature(false);
@@ -383,15 +383,15 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
     if (error) {
       console.error("Error updating member ready state:", error);
     } else {
-      setAllMembers((prev: any[]) =>
-        prev.map((m: any) =>
-          m.id === memberId ? { ...m, is_ready: isReady } : m
-        )
+      // Update the uniqueMembers state
+      const updatedUniqueMembers = uniqueMembers.map((m: any) =>
+        m.id === memberId ? { ...m, is_ready: isReady } : m
       );
+      setUniqueMembers(updatedUniqueMembers);
       
       // Update the release summary counts
       if (expandedReleaseDetail) {
-        const oldMember = allMembers.find((m: any) => m.id === memberId);
+        const oldMember = uniqueMembers.find((m: any) => m.id === memberId);
         const readyMembersChange = oldMember && oldMember.is_ready !== isReady ? (isReady ? 1 : -1) : 0;
         
         const updatedDetail = {
@@ -400,8 +400,8 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
         };
         setExpandedReleaseDetail(updatedDetail);
         
-        // Check if release state should automatically change
-        await checkAndUpdateReleaseState(updatedDetail, allMembers);
+        // Check if release state should automatically change using the updated members array
+        await checkAndUpdateReleaseState(updatedDetail, updatedUniqueMembers);
       }
     }
   };
@@ -503,8 +503,8 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
       };
       setExpandedReleaseDetail(updatedDetail);
       
-      // Check if release state should automatically change
-      checkAndUpdateReleaseState(updatedDetail, allMembers);
+              // Check if release state should automatically change
+        checkAndUpdateReleaseState(updatedDetail, uniqueMembers);
     }
   };
 
@@ -529,7 +529,7 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
         setExpandedReleaseDetail(updatedDetail);
         
         // Check if release state should automatically change
-        checkAndUpdateReleaseState(updatedDetail, allMembers);
+        checkAndUpdateReleaseState(updatedDetail, uniqueMembers);
       }
     }
   };
@@ -727,7 +727,7 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
                   user={user}
                   memberId={memberId ?? ""}
                   features={features}
-                  allMembers={allMembers}
+                  uniqueMembers={uniqueMembers}
                   updatingFeature={updatingFeature}
                   handleFeatureReadyChange={handleFeatureReadyChange}
                   updateMemberReady={updateMemberReady}

@@ -25,7 +25,7 @@ export function ReleaseDetailBottomContent({
   user,
   memberId,
   features,
-  allMembers,
+  uniqueMembers,
   updatingFeature,
   handleFeatureReadyChange,
   updateMemberReady,
@@ -38,7 +38,7 @@ export function ReleaseDetailBottomContent({
   user: any,
   memberId: string,
   features: any[],
-  allMembers: any[],
+  uniqueMembers: any[],
   updatingFeature: boolean,
   handleFeatureReadyChange: (feature: any, isReady: boolean) => void,
   updateMemberReady: (releaseId: string, memberId: string, isReady: boolean) => void,
@@ -47,8 +47,6 @@ export function ReleaseDetailBottomContent({
   onFeatureChanged?: (newFeature: any) => void,
   onFeatureEdited?: (updatedFeature: any) => void
 }) {
-  // Deduplicate allMembers by member.id
-  const uniqueMembers = Array.from(new Map(allMembers.map(m => [m.id, m])).values());
   const daysUntilRelease = getDaysUntilRelease(release.target_date);
 
   return (
