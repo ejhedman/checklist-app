@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase";
 import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Pencil, Save, X } from "lucide-react";
+import { Pencil, Save, X, Copy, ClipboardPaste } from "lucide-react";
 import dynamic from "next/dynamic";
 import "@uiw/react-md-editor/markdown-editor.css";
 import "@uiw/react-markdown-preview/markdown.css";
@@ -188,6 +188,24 @@ export default function ReleaseNotesPage() {
     setSavingSummary(false);
   };
 
+  // Clipboard handlers
+  const handleCopySummary = async () => {
+    await navigator.clipboard.writeText(releaseSummary || "");
+  };
+  const handlePasteSummary = async () => {
+    const text = await navigator.clipboard.readText();
+    setReleaseSummary(text);
+    if (!editingSummary) setEditingSummary(true);
+  };
+  const handleCopyNotes = async () => {
+    await navigator.clipboard.writeText(releaseNotes || "");
+  };
+  const handlePasteNotes = async () => {
+    const text = await navigator.clipboard.readText();
+    setReleaseNotes(text);
+    if (!editing) setEditing(true);
+  };
+
   if (loading) {
     return <div className="p-8 text-center text-muted-foreground">Loading release notes...</div>;
   }
@@ -202,11 +220,19 @@ export default function ReleaseNotesPage() {
         <CardHeader className="border-b bg-muted/30">
           <div className="flex items-center justify-between">
             <CardTitle className="text-xl">Release Summary</CardTitle>
-            {!editingSummary && (
-              <Button size="sm" variant="outline" onClick={() => setEditingSummary(true)}>
-                <Pencil className="h-4 w-4 mr-1" /> Edit Summary
+            <div className="flex gap-2">
+              <Button size="icon" variant="ghost" onClick={handleCopySummary} title="Copy summary to clipboard">
+                <Copy className="h-4 w-4" />
               </Button>
-            )}
+              <Button size="icon" variant="ghost" onClick={handlePasteSummary} title="Paste from clipboard">
+                <ClipboardPaste className="h-4 w-4" />
+              </Button>
+              {!editingSummary && (
+                <Button size="sm" variant="outline" onClick={() => setEditingSummary(true)}>
+                  <Pencil className="h-4 w-4 mr-1" /> Edit Summary
+                </Button>
+              )}
+            </div>
           </div>
         </CardHeader>
         <CardContent className="pt-4">
@@ -303,10 +329,18 @@ export default function ReleaseNotesPage() {
                 <CardTitle className="text-2xl">Release Notes</CardTitle>
                 <p className="text-muted-foreground text-sm mt-1">Release notes for {name}</p>
               </div>
-              <Button onClick={() => setEditing(true)} disabled={saving} variant="outline">
-                <Pencil className="h-4 w-4 mr-2" />
-                Edit
-              </Button>
+              <div className="flex gap-2">
+                <Button size="icon" variant="ghost" onClick={handleCopyNotes} title="Copy release notes to clipboard">
+                  <Copy className="h-4 w-4" />
+                </Button>
+                <Button size="icon" variant="ghost" onClick={handlePasteNotes} title="Paste from clipboard">
+                  <ClipboardPaste className="h-4 w-4" />
+                </Button>
+                <Button onClick={() => setEditing(true)} disabled={saving} variant="outline">
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Edit
+                </Button>
+              </div>
             </div>
           </CardHeader>
           <CardContent className="pt-4">
