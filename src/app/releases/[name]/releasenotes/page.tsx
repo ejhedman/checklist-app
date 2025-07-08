@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Pencil, Save, X } from "lucide-react";
 import dynamic from "next/dynamic";
 import "@uiw/react-md-editor/markdown-editor.css";
@@ -196,43 +197,48 @@ export default function ReleaseNotesPage() {
 
   return (
     <div className="space-y-6">
-      {/* Release Summary Section */}
-      <div className="border border-border bg-background p-4 rounded-md mb-2">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-xl font-semibold">Release Summary</h2>
-          {!editingSummary && (
-            <Button size="sm" variant="outline" onClick={() => setEditingSummary(true)}>
-              <Pencil className="h-4 w-4 mr-1" /> Edit Summary
-            </Button>
-          )}
-        </div>
-        {editingSummary ? (
-          <div className="space-y-2">
-            <MDEditor
-              value={releaseSummary}
-              onChange={v => setReleaseSummary(v ?? "")}
-              preview="edit"
-              height={120}
-              textareaProps={{
-                placeholder: "Write a short summary for this release (markdown supported)...",
-                style: { fontSize: 16 },
-              }}
-            />
-            <div className="flex gap-2 mt-2">
-              <Button size="sm" variant="outline" onClick={() => setEditingSummary(false)} disabled={savingSummary}>Cancel</Button>
-              <Button size="sm" variant="default" onClick={handleSaveSummary} disabled={savingSummary}>Save</Button>
-            </div>
-          </div>
-        ) : (
-          <div className="prose prose-sm max-w-none">
-            {releaseSummary ? (
-              <ReactMarkdown>{releaseSummary}</ReactMarkdown>
-            ) : (
-              <span className="text-muted-foreground">No summary provided.</span>
+      {/* Release Summary Card */}
+      <Card>
+        <CardHeader className="border-b bg-muted/30">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-xl">Release Summary</CardTitle>
+            {!editingSummary && (
+              <Button size="sm" variant="outline" onClick={() => setEditingSummary(true)}>
+                <Pencil className="h-4 w-4 mr-1" /> Edit Summary
+              </Button>
             )}
           </div>
-        )}
-      </div>
+        </CardHeader>
+        <CardContent className="pt-4">
+          {editingSummary ? (
+            <div className="space-y-2">
+              <MDEditor
+                value={releaseSummary}
+                onChange={v => setReleaseSummary(v ?? "")}
+                preview="edit"
+                height={120}
+                textareaProps={{
+                  placeholder: "Write a short summary for this release (markdown supported)...",
+                  style: { fontSize: 16 },
+                }}
+              />
+              <div className="flex gap-2 mt-2">
+                <Button size="sm" variant="outline" onClick={() => setEditingSummary(false)} disabled={savingSummary}>Cancel</Button>
+                <Button size="sm" variant="default" onClick={handleSaveSummary} disabled={savingSummary}>Save</Button>
+              </div>
+            </div>
+          ) : (
+            <div className="prose prose-sm max-w-none">
+              {releaseSummary ? (
+                <ReactMarkdown>{releaseSummary}</ReactMarkdown>
+              ) : (
+                <span className="text-muted-foreground">No summary provided.</span>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {editing ? (
         <div className="border-l border-r border-b border-border bg-background p-6 flex flex-col min-h-[60vh]">
           <div className="flex items-center justify-between mb-4">
@@ -290,25 +296,29 @@ export default function ReleaseNotesPage() {
           </div>
         </div>
       ) : (
-        <>
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold">Release Notes</h1>
-              <p className="text-muted-foreground">Release notes for {name}</p>
+        <Card>
+          <CardHeader className="border-b bg-muted/30">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-2xl">Release Notes</CardTitle>
+                <p className="text-muted-foreground text-sm mt-1">Release notes for {name}</p>
+              </div>
+              <Button onClick={() => setEditing(true)} disabled={saving} variant="outline">
+                <Pencil className="h-4 w-4 mr-2" />
+                Edit
+              </Button>
             </div>
-            <Button onClick={() => setEditing(true)} disabled={saving}>
-              <Pencil className="h-4 w-4 mr-2" />
-              Edit
-            </Button>
-          </div>
-          <div className="prose prose-sm max-w-none">
-            {releaseNotes ? (
-              <ReactMarkdown>{releaseNotes}</ReactMarkdown>
-            ) : (
-              <p className="text-muted-foreground">No release notes available.</p>
-            )}
-          </div>
-        </>
+          </CardHeader>
+          <CardContent className="pt-4">
+            <div className="prose prose-sm max-w-none">
+              {releaseNotes ? (
+                <ReactMarkdown>{releaseNotes}</ReactMarkdown>
+              ) : (
+                <p className="text-muted-foreground">No release notes available.</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );
