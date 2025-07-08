@@ -104,6 +104,12 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
   const [features, setFeatures] = useState(release.features || []);
   const [uniqueMembers, setUniqueMembers] = useState<any[]>([]);
   const [editOpen, setEditOpen] = useState(false);
+  // Local state to persist the latest summary counts
+  const [summaryReadyMembers, setSummaryReadyMembers] = useState(release.ready_members);
+  const [summaryTotalMembers, setSummaryTotalMembers] = useState(release.total_members);
+  const [summaryReadyFeatures, setSummaryReadyFeatures] = useState(release.ready_features);
+  const [summaryFeatureCount, setSummaryFeatureCount] = useState(release.feature_count);
+  const [summaryState, setSummaryState] = useState(release.state);
 
   // Debug: Log features and user
   // console.log('ReleaseSummaryCard:', {
@@ -221,11 +227,16 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
         allMembers.forEach((member) => {
           uniqueMembersMap.set(member.id, member);
         });
-        const uniqueMembers = Array.from(uniqueMembersMap.values());
+        const uniqueMembers = Array.from(uniqueMembersMap.values()).map(member => {
+          const memberReadyState = data.member_release_state?.find((mrs: any) => mrs.member_id === member.id);
+          return {
+            ...member,
+            is_ready: memberReadyState?.is_ready || false,
+          };
+        });
         const total_members = uniqueMembers.length;
         const ready_members = uniqueMembers.filter((member) => {
-          const memberReadyState = data.member_release_state?.find((mrs: any) => mrs.member_id === member.id);
-          return memberReadyState?.is_ready;
+          return member.is_ready;
         }).length;
         // Transform the data to match the card props
         const transformedRelease = {
@@ -275,6 +286,17 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
       setDetailError(null);
     }
   }, [expanded, selectedTenant, user, release.id, expandedReleaseDetail]);
+
+  // Keep summary counts in sync with expandedReleaseDetail
+  useEffect(() => {
+    if (expandedReleaseDetail) {
+      setSummaryReadyMembers(expandedReleaseDetail.ready_members);
+      setSummaryTotalMembers(expandedReleaseDetail.total_members);
+      setSummaryReadyFeatures(expandedReleaseDetail.ready_features);
+      setSummaryFeatureCount(expandedReleaseDetail.feature_count);
+      setSummaryState(expandedReleaseDetail.state);
+    }
+  }, [expandedReleaseDetail]);
 
   const handleArchiveChange = async (checked: boolean) => {
     setArchiving(true);
@@ -391,12 +413,10 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
       
       // Update the release summary counts
       if (expandedReleaseDetail) {
-        const oldMember = uniqueMembers.find((m: any) => m.id === memberId);
-        const readyMembersChange = oldMember && oldMember.is_ready !== isReady ? (isReady ? 1 : -1) : 0;
-        
+        const updatedReadyMembers = updatedUniqueMembers.filter((m: any) => m.is_ready).length;
         const updatedDetail = {
           ...expandedReleaseDetail,
-          ready_members: expandedReleaseDetail.ready_members + readyMembersChange
+          ready_members: updatedReadyMembers
         };
         setExpandedReleaseDetail(updatedDetail);
         
@@ -554,7 +574,7 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
         }
         style={{ cursor: collapsible && !expanded ? 'pointer' : 'default' }}
       >
-        <CardHeader className={`flex flex-row items-center justify-between px-4 py-3 rounded-t-lg ${collapsible && expanded ? '' : collapsible ? 'border-b border-border' : ''} ${getStateBackgroundColor((expandedReleaseDetail ? expandedReleaseDetail.state : release.state) as any, release.is_archived)}`}>
+        <CardHeader className={`flex flex-row items-center justify-between px-4 py-3 rounded-t-lg ${collapsible && expanded ? '' : collapsible ? 'border-b border-border' : ''} ${getStateBackgroundColor(summaryState as any, release.is_archived)}`}>
           <div className="flex items-center justify-between w-full">
             <div
               className="flex items-center flex-1 min-w-0 rounded px-1 py-0.5 transition-colors"
@@ -573,12 +593,12 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
                     {expanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
                   </button>
                 )}
-                {getStateIcon(expandedReleaseDetail ? expandedReleaseDetail.state : release.state)}
+                {getStateIcon(summaryState)}
                 <div className="flex items-center gap-3 min-w-0">
                   <span className="font-semibold truncate">
                     {release.tenant?.name ? `${release.tenant.name}: ` : ''}{release.name}
                   </span>
-                  <StateBadge state={(expandedReleaseDetail ? expandedReleaseDetail.state : release.state) as any} />
+                  <StateBadge state={summaryState as any} />
                   {collapsible && (
                     <button
                       type="button"
@@ -692,20 +712,54 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
             </div>
             {(!expanded) && (
               <>
-                <div className="space-y-1">
-                  <p className={`text-sm ${isUserDRI() ? 'text-blue-600 font-bold' : 'text-muted-foreground'}`}>Key Feature Readiness</p>
-                  <p className={`text-lg font-semibold ${isUserDRI() ? 'text-blue-600' : ''}`}>
-                    {expandedReleaseDetail ? expandedReleaseDetail.ready_features : release.ready_features}/
-                    {expandedReleaseDetail ? expandedReleaseDetail.feature_count : release.feature_count}
-                  </p>
-                </div>
-                <div className="space-y-1">
-                  <p className={`text-sm ${isUserMember() ? 'text-blue-600 font-bold' : 'text-muted-foreground'}`}>Team Readiness</p>
-                  <p className={`text-lg font-semibold ${isUserMember() ? 'text-blue-600' : ''}`}> 
-                    {expandedReleaseDetail ? expandedReleaseDetail.ready_members : release.ready_members}/
-                    {expandedReleaseDetail ? expandedReleaseDetail.total_members : release.total_members}
-                  </p>
-                </div>
+                {/** Key Feature Readiness coloring logic */}
+                {(() => {
+                  const isFeatureComplete = summaryReadyFeatures === summaryFeatureCount && summaryFeatureCount > 0;
+                  return (
+                    <div className="space-y-1">
+                      <p className={`text-sm ${
+                        isFeatureComplete
+                          ? 'text-green-600 font-bold'
+                          : isUserDRI()
+                            ? 'text-blue-600 font-bold'
+                            : 'text-muted-foreground'
+                      }`}>Key Feature Readiness</p>
+                      <p className={`text-lg font-semibold ${
+                        isFeatureComplete
+                          ? 'text-green-600'
+                          : isUserDRI()
+                            ? 'text-blue-600'
+                            : ''
+                      }`}>
+                        {summaryReadyFeatures}/{summaryFeatureCount}
+                      </p>
+                    </div>
+                  );
+                })()}
+                {/** Team Readiness coloring logic */}
+                {(() => {
+                  const isTeamComplete = summaryReadyMembers === summaryTotalMembers && summaryTotalMembers > 0;
+                  return (
+                    <div className="space-y-1">
+                      <p className={`text-sm ${
+                        isTeamComplete
+                          ? 'text-green-600 font-bold'
+                          : isUserMember()
+                            ? 'text-blue-600 font-bold'
+                            : 'text-muted-foreground'
+                      }`}>Team Readiness</p>
+                      <p className={`text-lg font-semibold ${
+                        isTeamComplete
+                          ? 'text-green-600'
+                          : isUserMember()
+                            ? 'text-blue-600'
+                            : ''
+                      }`}>
+                        {summaryReadyMembers}/{summaryTotalMembers}
+                      </p>
+                    </div>
+                  );
+                })()}
               </>
             )}
           </div>
