@@ -182,13 +182,14 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onRele
       // Log activity: DRI marked feature ready
       if (user?.id) {
         const supabase = createClient();
+        console.log("Logging feature_ready activity for release_id:", release.id, "feature_id:", selectedFeature.id, "release name:", release.name, "feature name:", selectedFeature.name);
         const { error: activityError } = await supabase.from("activity_log").insert({
           release_id: release.id,
           feature_id: selectedFeature.id,
           member_id: memberId,
           tenant_id: release.tenant?.id || "",
           activity_type: "feature_ready",
-          activity_details: { comments },
+          activity_details: { comments, releaseName: release.name, featureName: selectedFeature.name },
         });
         if (activityError) {
           console.error("Failed to log feature ready activity:", activityError);
@@ -237,12 +238,29 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onRele
           m.id === memberId ? { ...m, is_ready: isReady } : m
         )
       );
+      // Log activity: member ready state change
+      if (user?.id) {
+        console.log("Logging member_ready activity for release_id:", releaseId, "member_id:", memberId, "release name:", release.name);
+        const { error: activityError } = await supabase.from("activity_log").insert({
+          release_id: releaseId,
+          member_id: memberId,
+          tenant_id: memberTenantId,
+          activity_type: "member_ready",
+          activity_details: { isReady, releaseName: release.name },
+        });
+        if (activityError) {
+          console.error("Failed to log member ready activity:", activityError);
+        } else {
+          // console.log("Successfully logged member ready activity");
+        }
+      }
     }
   };
 
   const handleStateChange = async (newState: string) => {
     if (release.state === newState) return;
     const supabase = createClient();
+    console.log("Logging activity for release_id:", release.id, "release name:", release.name);
     const { error } = await supabase
       .from("releases")
       .update({ state: newState })
@@ -256,7 +274,7 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onRele
           member_id: memberId,
           tenant_id: release.tenant?.id || "",
           activity_type: "release_state_change",
-          activity_details: { oldState: release.state, newState },
+          activity_details: { oldState: release.state, newState, releaseName: release.name },
         });
         if (activityError) {
           console.error("Failed to log release state change activity:", activityError);

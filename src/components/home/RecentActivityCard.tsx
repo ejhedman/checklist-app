@@ -34,7 +34,7 @@ export default function RecentActivityCard({ activity }: { activity: any[] }) {
                         case 'team_added':
                           return `${memberName} added team "${activity.teams?.name || ''}" to release: ${activity.releases?.name || ''}`;
                         case 'release_state_change':
-                          return `${memberName} changed release state to "${activity.activity_details?.newState || ''}"`;
+                          return `${memberName} changed release: "${activity.activity_details?.releaseName || ''}" state to "${activity.activity_details?.newState || ''}"`;
                         case 'release_updated':
                           const releaseChanges = activity.activity_details?.changes || [];
                           if (releaseChanges.length > 0) {

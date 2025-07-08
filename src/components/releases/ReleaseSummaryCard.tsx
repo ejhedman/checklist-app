@@ -477,7 +477,8 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
               readyFeatures,
               totalFeatures,
               readyMembers,
-              totalMembers
+              totalMembers,
+              releaseName: releaseDetail.name
             },
           });
           if (activityError) {
