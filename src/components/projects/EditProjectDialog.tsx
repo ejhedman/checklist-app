@@ -34,8 +34,12 @@ export function EditProjectDialog({ project, onProjectUpdated }: EditProjectDial
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: project.name,
+    is_manage_members: project.is_manage_members ?? true,
+    is_manage_features: project.is_manage_features ?? true,
   });
   const [error, setError] = useState("");
+  const [nameError, setNameError] = useState("");
+  const [isCheckingName, setIsCheckingName] = useState(false);
   const [availableUsers, setAvailableUsers] = useState<Array<{id: string, email: string, full_name: string}>>([]);
   const [selectedUserId, setSelectedUserId] = useState<string>("");
   const [projectUsers, setProjectUsers] = useState<Array<{id: string, email: string, full_name: string}>>(project.users || []);
@@ -46,12 +50,58 @@ export function EditProjectDialog({ project, onProjectUpdated }: EditProjectDial
       // Reset form to current values
       setFormData({
         name: project.name,
+        is_manage_members: project.is_manage_members ?? true,
+        is_manage_features: project.is_manage_features ?? true,
       });
       setProjectUsers(project.users || []);
       setError("");
+      setNameError("");
       fetchAvailableUsers();
     }
   };
+
+  // Check if project name is unique (excluding this project)
+  const checkNameUniqueness = async (name: string) => {
+    if (!name.trim()) {
+      setNameError("");
+      return;
+    }
+    setIsCheckingName(true);
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("projects")
+        .select("id, name")
+        .ilike("name", name.trim())
+        .neq("id", project.id)
+        .maybeSingle();
+      if (error && error.code !== 'PGRST116') {
+        console.error("Error checking name uniqueness:", error);
+        return;
+      }
+      if (data) {
+        setNameError("A project with this name already exists. Please choose a different name.");
+      } else {
+        setNameError("");
+      }
+    } catch (error) {
+      console.error("Error checking name uniqueness:", error);
+    } finally {
+      setIsCheckingName(false);
+    }
+  };
+
+  // Debounced name validation
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (formData.name.trim()) {
+        checkNameUniqueness(formData.name);
+      } else {
+        setNameError("");
+      }
+    }, 500);
+    return () => clearTimeout(timeoutId);
+  }, [formData.name, project.id]);
 
   const fetchAvailableUsers = async () => {
     const supabase = createClient();
@@ -158,6 +208,13 @@ export function EditProjectDialog({ project, onProjectUpdated }: EditProjectDial
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Check for name uniqueness before submitting
+    if (formData.name.trim()) {
+      await checkNameUniqueness(formData.name);
+      if (nameError) {
+        return;
+      }
+    }
     setLoading(true);
     setError("");
 
@@ -169,6 +226,8 @@ export function EditProjectDialog({ project, onProjectUpdated }: EditProjectDial
         .from("projects")
         .update({
           name: formData.name,
+          is_manage_members: formData.is_manage_members,
+          is_manage_features: formData.is_manage_features,
         })
         .eq("id", project.id)
         .select()
@@ -218,10 +277,37 @@ export function EditProjectDialog({ project, onProjectUpdated }: EditProjectDial
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="col-span-3"
+                className={`col-span-3 ${nameError ? 'border-red-500 focus:border-red-500' : ''}`}
                 required
                 disabled={loading}
                 placeholder="e.g., DWH, Production"
+              />
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="is_manage_members" className="text-right">
+                Manage Members
+              </Label>
+              <input
+                id="is_manage_members"
+                type="checkbox"
+                checked={formData.is_manage_members}
+                onChange={e => setFormData({ ...formData, is_manage_members: e.target.checked })}
+                className="col-span-3"
+                disabled={loading}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="is_manage_features" className="text-right">
+                Manage Features
+              </Label>
+              <input
+                id="is_manage_features"
+                type="checkbox"
+                checked={formData.is_manage_features}
+                onChange={e => setFormData({ ...formData, is_manage_features: e.target.checked })}
+                className="col-span-3"
+                disabled={loading}
               />
             </div>
             
@@ -282,12 +368,12 @@ export function EditProjectDialog({ project, onProjectUpdated }: EditProjectDial
               </div>
             </div>
             
-            {error && (
-              <div className="col-span-4 text-sm text-red-600 bg-red-50 p-3 rounded-md">
-                {error}
-              </div>
-            )}
           </div>
+          {(nameError || error) && (
+            <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md mb-2">
+              {nameError || error}
+            </div>
+          )}
           <DialogFooter>
             <Button
               type="button"
@@ -297,7 +383,7 @@ export function EditProjectDialog({ project, onProjectUpdated }: EditProjectDial
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading || !!nameError}>
               {loading ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />

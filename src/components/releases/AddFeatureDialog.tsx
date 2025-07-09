@@ -293,7 +293,7 @@ export function AddFeatureDialog({ releaseId, releaseName, onFeatureAdded, onFea
                   }
                   disabled={loading}
                 />
-                <Label htmlFor="isConfig">Specs Feature</Label>
+                <Label htmlFor="isConfig">Config Feature</Label>
               </div>
             </div>
 

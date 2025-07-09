@@ -34,14 +34,14 @@ export default function FeatureCard({ feature, user, memberId, updatingFeature, 
         />
       </div>
       
-      {/* Top row: Platform/Specs badges (left), Feature name: description (right) */}
+      {/* Top row: Platform/Config badges (left), Feature name: description (right) */}
       <div className="flex flex-row items-center w-full gap-2 pr-8">
         <div className="flex flex-row items-center space-x-2 min-w-[80px]">
           {feature.is_platform && (
             <Badge variant="outline" className="text-xs">Platform</Badge>
           )}
           {feature.is_config && (
-            <Badge variant="outline" className="text-xs">Specs</Badge>
+            <Badge variant="outline" className="text-xs">Config</Badge>
           )}
         </div>
         <p className="text-sm text-muted-foreground flex-1 min-w-0 truncate">

@@ -350,7 +350,7 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
                   }
                   disabled={loading}
                 />
-                <Label htmlFor="configUpdate">Specs Update Required</Label>
+                <Label htmlFor="configUpdate">Config Update Required</Label>
               </div>
             </div>
             {/* Targets */}

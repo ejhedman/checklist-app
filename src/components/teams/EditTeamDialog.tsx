@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -50,6 +50,8 @@ export function EditTeamDialog({ team, onTeamUpdated }: EditTeamDialogProps) {
     description: team.description || "",
   });
   const [error, setError] = useState("");
+  const [nameError, setNameError] = useState("");
+  const [isCheckingName, setIsCheckingName] = useState(false);
   
   const [allUsers, setAllUsers] = useState<TeamMember[]>([]);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
@@ -79,6 +81,48 @@ export function EditTeamDialog({ team, onTeamUpdated }: EditTeamDialogProps) {
     
     return formDataChanged || membersChanged || hasSelectedUser;
   };
+
+  // Check if team name is unique (excluding this team)
+  const checkNameUniqueness = async (name: string) => {
+    if (!name.trim()) {
+      setNameError("");
+      return;
+    }
+    setIsCheckingName(true);
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("teams")
+        .select("id, name")
+        .ilike("name", name.trim())
+        .neq("id", team.id)
+        .maybeSingle();
+      if (error && error.code !== 'PGRST116') {
+        console.error("Error checking name uniqueness:", error);
+        return;
+      }
+      if (data) {
+        setNameError("A team with this name already exists in this project. Please choose a different name.");
+      } else {
+        setNameError("");
+      }
+    } catch (error) {
+      console.error("Error checking name uniqueness:", error);
+    } finally {
+      setIsCheckingName(false);
+    }
+  };
+  // Debounced name validation
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (formData.name.trim()) {
+        checkNameUniqueness(formData.name);
+      } else {
+        setNameError("");
+      }
+    }, 500);
+    return () => clearTimeout(timeoutId);
+  }, [formData.name, team.id]);
 
   // Fetch all users and current team members when dialog opens
   const fetchData = async () => {
@@ -170,6 +214,13 @@ export function EditTeamDialog({ team, onTeamUpdated }: EditTeamDialogProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Check for name uniqueness before submitting
+    if (formData.name.trim()) {
+      await checkNameUniqueness(formData.name);
+      if (nameError) {
+        return;
+      }
+    }
     
     // Don't submit if no changes have been made
     if (!hasChanges()) {
@@ -308,7 +359,7 @@ export function EditTeamDialog({ team, onTeamUpdated }: EditTeamDialogProps) {
           </div>
         ) : (
           <form onSubmit={handleSubmit}>
-            <div className="grid gap-6 py-4">
+            <div className="grid gap-4 py-4">
               {/* Team Details Section */}
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Team Details</h3>
@@ -320,9 +371,10 @@ export function EditTeamDialog({ team, onTeamUpdated }: EditTeamDialogProps) {
                     id="name"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="col-span-3"
+                    className={`col-span-3 ${nameError ? 'border-red-500 focus:border-red-500' : ''}`}
                     required
-                    disabled={saving}
+                    disabled={loading}
+                    placeholder="e.g., Frontend Team"
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
@@ -420,9 +472,9 @@ export function EditTeamDialog({ team, onTeamUpdated }: EditTeamDialogProps) {
                 )}
               </div>
 
-              {error && (
-                <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
-                  {error}
+              {(nameError || error) && (
+                <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md mb-2">
+                  {nameError || error}
                 </div>
               )}
             </div>

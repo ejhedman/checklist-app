@@ -68,14 +68,33 @@ export default function TargetsPage() {
           <div className="text-muted-foreground">Loading targets...</div>
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {targets.map((target) => (
-            <TargetCard
-              key={target.id}
-              target={target}
-              onTargetUpdated={fetchTargets}
-            />
-          ))}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Not Live column */}
+          <div>
+            <h3 className="font-bold mb-2">Not Live</h3>
+            {targets.filter(t => !t.is_live).length === 0 ? (
+              <div className="text-muted-foreground">No non-live targets</div>
+            ) : (
+              targets.filter(t => !t.is_live).map((target) => (
+                <div key={target.id} className="mb-4">
+                  <TargetCard target={target} onTargetUpdated={fetchTargets} />
+                </div>
+              ))
+            )}
+          </div>
+          {/* Live column */}
+          <div>
+            <h3 className="font-bold mb-2">Live</h3>
+            {targets.filter(t => t.is_live).length === 0 ? (
+              <div className="text-muted-foreground">No live targets</div>
+            ) : (
+              targets.filter(t => t.is_live).map((target) => (
+                <div key={target.id} className="mb-4">
+                  <TargetCard target={target} onTargetUpdated={fetchTargets} />
+                </div>
+              ))
+            )}
+          </div>
         </div>
       )}
     </div>

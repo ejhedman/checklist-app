@@ -19,6 +19,8 @@ export default function ProjectsPage() {
         id,
         name,
         created_at,
+        is_manage_members,
+        is_manage_features,
         project_user_map(
           user_id,
           members(
@@ -38,6 +40,8 @@ export default function ProjectsPage() {
         id: project.id,
         name: project.name,
         created_at: project.created_at,
+        is_manage_members: project.is_manage_members,
+        is_manage_features: project.is_manage_features,
         users: project.project_user_map?.filter((mapping: any) => mapping.members)?.map((mapping: any) => ({
           id: mapping.members.user_id,
           email: mapping.members.email,

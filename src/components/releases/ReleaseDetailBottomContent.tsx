@@ -9,6 +9,7 @@ import React from "react";
 import { TeamMemberCard } from "./TeamMemberCard";
 import { FeaturesCard } from "./FeaturesCard";
 import { TeamMembersCard } from "./TeamMembersCard";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Helper to calculate days until release date
 function getDaysUntilRelease(targetDate: string) {
@@ -48,33 +49,38 @@ export function ReleaseDetailBottomContent({
   onFeatureEdited?: (updatedFeature: any) => void
 }) {
   const daysUntilRelease = getDaysUntilRelease(release.target_date);
+  const { selectedProject } = useAuth();
 
   return (
     <div className="flex flex-col md:flex-row gap-6 w-full pb-4">
       {/* Features Card */}
-      <FeaturesCard
-        features={features}
-        user={user}
-        memberId={memberId}
-        updatingFeature={updatingFeature}
-        handleFeatureReadyChange={handleFeatureReadyChange}
-        onFeatureUpdated={onFeatureUpdated}
-        releaseName={release.name}
-        daysUntilRelease={daysUntilRelease}
-        releaseId={release.id}
-        onFeatureChanged={onFeatureChanged}
-        onFeatureEdited={onFeatureEdited}
-      />
+      {selectedProject?.is_manage_features && (
+        <FeaturesCard
+          features={features}
+          user={user}
+          memberId={memberId}
+          updatingFeature={updatingFeature}
+          handleFeatureReadyChange={handleFeatureReadyChange}
+          onFeatureUpdated={onFeatureUpdated}
+          releaseName={release.name}
+          daysUntilRelease={daysUntilRelease}
+          releaseId={release.id}
+          onFeatureChanged={onFeatureChanged}
+          onFeatureEdited={onFeatureEdited}
+        />
+      )}
       {/* Teams Card */}
-      <TeamMembersCard
-        uniqueMembers={uniqueMembers}
-        user={user}
-        release={release}
-        daysUntilRelease={daysUntilRelease}
-        updateMemberReady={updateMemberReady}
-        onTeamsUpdated={onFeatureUpdated}
-        onTeamsChanged={onTeamsChanged}
-      />
+      {selectedProject?.is_manage_members && (
+        <TeamMembersCard
+          uniqueMembers={uniqueMembers}
+          user={user}
+          release={release}
+          daysUntilRelease={daysUntilRelease}
+          updateMemberReady={updateMemberReady}
+          onTeamsUpdated={onFeatureUpdated}
+          onTeamsChanged={onTeamsChanged}
+        />
+      )}
     </div>
   );
 } 

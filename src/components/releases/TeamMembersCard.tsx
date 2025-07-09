@@ -26,7 +26,7 @@ export function TeamMembersCard({
     <Card className="w-full md:w-1/2 border-1 shadow-none">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-base flex items-center">
-          <Users className="h-4 w-4 mr-2" />Team Members
+          <Users className="h-4 w-4 mr-2" />Team Member Readiness
         </CardTitle>
         <AddTeamDialog
           releaseId={release.id}

@@ -593,6 +593,21 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
                     {release.project?.name ? `${release.project.name}: ` : ''}{release.name}
                   </span>
                   <StateBadge state={summaryState as any} />
+                  {/* Release Readiness Badge */}
+                  {(() => {
+                    const isReleaseReady = expandedReleaseDetail?.is_ready || release.is_ready;
+                    const notReadyClass = days < 3
+                      ? 'bg-red-100 text-red-800 border-red-200'
+                      : 'bg-amber-100 text-amber-800 border-amber-200';
+                    return (
+                      <Badge
+                        variant={isReleaseReady ? "default" : "secondary"}
+                        className={`text-xs ${isReleaseReady ? 'bg-green-100 text-green-800 border-green-200' : notReadyClass}`}
+                      >
+                        {isReleaseReady ? "Ready" : "Not Ready"}
+                      </Badge>
+                    );
+                  })()}
                   {collapsible && (
                     <button
                       type="button"
@@ -671,7 +686,7 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
               </Badge>
             </div>
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Specs</p>
+              <p className="text-sm text-muted-foreground">Config</p>
               <Badge variant={release.config_update ? "default" : "secondary"}>
                 {release.config_update ? "Yes" : "No"}
               </Badge>
@@ -686,48 +701,30 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
                     </Badge>
                   ))
                 ) : (
-                  <span className="text-muted-foreground text-sm">No targets</span>
+                  <span className="text-muted-foreground text-sm">No specific targets</span>
                 )}
               </div>
             </div>
-            <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Teams</p>
-              <div className="flex flex-wrap gap-1 mt-1">
-                {teamNames.length > 0 ? (
-                  teamNames.map((team) => (
-                    <Badge key={team} variant="secondary" className="text-xs">
-                      {team}
-                    </Badge>
-                  ))
-                ) : (
-                  <span className="text-muted-foreground text-sm">No teams</span>
-                )}
+            {selectedProject?.is_manage_members && (
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Teams</p>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {teamNames.length > 0 ? (
+                    teamNames.map((team) => (
+                      <Badge key={team} variant="secondary" className="text-xs">
+                        {team}
+                      </Badge>
+                    ))
+                  ) : (
+                    <span className="text-muted-foreground text-sm">No teams</span>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
             {(!expanded) && (
               <>
-                {/** Overall Release Readiness */}
-                {(() => {
-                  const isReleaseReady = expandedReleaseDetail?.is_ready || release.is_ready;
-                  return (
-                    <div className="space-y-1">
-                      <p className={`text-sm ${
-                        isReleaseReady
-                          ? 'text-green-600 font-bold'
-                          : 'text-muted-foreground'
-                      }`}>Release Ready</p>
-                      <p className={`text-lg font-semibold ${
-                        isReleaseReady
-                          ? 'text-green-600'
-                          : ''
-                      }`}>
-                        {isReleaseReady ? "✓ Ready" : "⏳ Pending"}
-                      </p>
-                    </div>
-                  );
-                })()}
                 {/** Key Feature Readiness coloring logic */}
-                {(() => {
+                {selectedProject?.is_manage_features && (() => {
                   const isFeatureComplete = summaryReadyFeatures === summaryFeatureCount && summaryFeatureCount > 0;
                   return (
                     <div className="space-y-1">
@@ -751,7 +748,7 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
                   );
                 })()}
                 {/** Team Readiness coloring logic */}
-                {(() => {
+                {selectedProject?.is_manage_members && (() => {
                   const isTeamComplete = summaryReadyMembers === summaryTotalMembers && summaryTotalMembers > 0;
                   return (
                     <div className="space-y-1">

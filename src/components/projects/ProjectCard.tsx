@@ -1,9 +1,10 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Briefcase, Trash2 } from "lucide-react";
+import { Briefcase, Trash2, Users, Settings } from "lucide-react";
 import { EditProjectDialog } from "./EditProjectDialog";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase";
+import { Badge } from "@/components/ui/badge";
 
 export interface Project {
   id: string;
@@ -14,6 +15,8 @@ export interface Project {
     email: string;
     full_name: string;
   }>;
+  is_manage_members?: boolean;
+  is_manage_features?: boolean;
 }
 
 interface ProjectCardProps {
@@ -78,6 +81,18 @@ export function ProjectCard({ project, onProjectUpdated }: ProjectCardProps) {
         </CardDescription>
       </CardHeader>
       <CardContent className="pb-4">
+        {/* Management Flags */}
+        <div className="flex gap-2 mb-4">
+          <Badge variant={project.is_manage_members ? "default" : "secondary"} className="flex items-center gap-1">
+            <Users className="h-3 w-3" />
+            {project.is_manage_members ? "Manage Members" : "No Member Management"}
+          </Badge>
+          <Badge variant={project.is_manage_features ? "default" : "secondary"} className="flex items-center gap-1">
+            <Settings className="h-3 w-3" />
+            {project.is_manage_features ? "Manage Features" : "No Feature Management"}
+          </Badge>
+        </div>
+        
         {project.users && project.users.length > 0 ? (
           <div className="space-y-2">
             <h4 className="text-sm font-medium text-muted-foreground">Associated Users:</h4>

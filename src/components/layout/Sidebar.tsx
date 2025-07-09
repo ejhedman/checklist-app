@@ -67,24 +67,35 @@ export function Sidebar() {
         
         <div className="mt-auto space-y-2">
           <div className="border-t border-border my-2"></div>
-          <Link href="/members">
-            <Button variant="ghost" className="w-full justify-start" disabled={!selectedProject}>
-              <User className="h-4 w-4 mr-2" />
-              Project Members
-            </Button>
-          </Link>
-          <Link href="/teams">
-            <Button variant="ghost" className="w-full justify-start" disabled={!selectedProject}>
-              <Users className="h-4 w-4 mr-2" />
-              ProjectTeams
-            </Button>
-          </Link>
           <Link href="/targets">
             <Button variant="ghost" className="w-full justify-start" disabled={!selectedProject}>
               <Target className="h-4 w-4 mr-2" />
               Targets
             </Button>
-          </Link>
+          </Link>          
+          {selectedProject?.is_manage_members && (
+            <>
+              <Link href="/members">
+                <Button variant="ghost" className="w-full justify-start" disabled={!selectedProject}>
+                  <User className="h-4 w-4 mr-2" />
+                  Project Members
+                </Button>
+              </Link>
+              <Link href="/teams">
+                <Button variant="ghost" className="w-full justify-start" disabled={!selectedProject}>
+                  <Users className="h-4 w-4 mr-2" />
+                  Project Teams
+                </Button>
+              </Link>
+            </>
+          )}
+          <Link href="/projects">
+            <Button variant="ghost" className="w-full justify-start">
+              <Briefcase className="h-4 w-4 mr-2" />
+              Projects
+            </Button>
+          </Link>          
+
           <div className="border-t border-border my-2"></div>
           <Link href="/docs">
             <Button variant="ghost" className="w-full justify-start">
@@ -95,12 +106,7 @@ export function Sidebar() {
           {isAdmin && (
             <>
               <div className="border-t border-border my-2"></div>
-              <Link href="/projects">
-                <Button variant="ghost" className="w-full justify-start">
-                  <Briefcase className="h-4 w-4 mr-2" />
-                  Projects
-                </Button>
-              </Link>
+
               <Link href="/users">
                 <Button variant="ghost" className="w-full justify-start">
                   <Shield className="h-4 w-4 mr-2" />

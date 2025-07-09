@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -30,6 +30,8 @@ export function AddTeamDialog({ onTeamAdded }: AddTeamDialogProps) {
     description: "",
   });
   const [error, setError] = useState("");
+  const [nameError, setNameError] = useState("");
+  const [isCheckingName, setIsCheckingName] = useState(false);
   const { selectedProject } = useAuth();
 
   const handleOpenChange = (newOpen: boolean) => {
@@ -44,8 +46,57 @@ export function AddTeamDialog({ onTeamAdded }: AddTeamDialogProps) {
     }
   };
 
+  // Check if team name is unique within the project
+  const checkNameUniqueness = async (name: string) => {
+    if (!name.trim() || !selectedProject) {
+      setNameError("");
+      return;
+    }
+    setIsCheckingName(true);
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("teams")
+        .select("id, name")
+        .eq("project_id", selectedProject.id)
+        .ilike("name", name.trim())
+        .maybeSingle();
+      if (error && error.code !== 'PGRST116') {
+        console.error("Error checking name uniqueness:", error);
+        return;
+      }
+      if (data) {
+        setNameError("A team with this name already exists in this project. Please choose a different name.");
+      } else {
+        setNameError("");
+      }
+    } catch (error) {
+      console.error("Error checking name uniqueness:", error);
+    } finally {
+      setIsCheckingName(false);
+    }
+  };
+  // Debounced name validation
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (formData.name.trim()) {
+        checkNameUniqueness(formData.name);
+      } else {
+        setNameError("");
+      }
+    }, 500);
+    return () => clearTimeout(timeoutId);
+  }, [formData.name, selectedProject]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Check for name uniqueness before submitting
+    if (formData.name.trim()) {
+      await checkNameUniqueness(formData.name);
+      if (nameError) {
+        return;
+      }
+    }
     setLoading(true);
     setError("");
 
@@ -114,7 +165,7 @@ export function AddTeamDialog({ onTeamAdded }: AddTeamDialogProps) {
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="col-span-3"
+                className={`col-span-3 ${nameError ? 'border-red-500 focus:border-red-500' : ''}`}
                 required
                 disabled={loading}
                 placeholder="e.g., Frontend Team"
@@ -134,9 +185,9 @@ export function AddTeamDialog({ onTeamAdded }: AddTeamDialogProps) {
                 rows={3}
               />
             </div>
-            {error && (
-              <div className="col-span-4 text-sm text-red-600 bg-red-50 p-3 rounded-md">
-                {error}
+            {(nameError || error) && (
+              <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md mb-2">
+                {nameError || error}
               </div>
             )}
           </div>

@@ -34,7 +34,7 @@ export function FeaturesCard({
     <Card className="w-full md:w-1/2 border-1 shadow-none">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-base flex items-center">
-          <FileText className="h-4 w-4 mr-2" />Key Features
+          <FileText className="h-4 w-4 mr-2" />Key Feature Readiness
         </CardTitle>
         <AddFeatureDialog
           releaseId={releaseId}

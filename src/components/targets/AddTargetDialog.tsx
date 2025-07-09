@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -31,6 +31,9 @@ export function AddTargetDialog({ onTargetAdded }: AddTargetDialogProps) {
     is_live: false,
   });
   const [error, setError] = useState("");
+  const [nameError, setNameError] = useState("");
+  const [shortNameError, setShortNameError] = useState("");
+  const [isCheckingName, setIsCheckingName] = useState(false);
   const { selectedProject } = useAuth();
 
   const handleOpenChange = (newOpen: boolean) => {
@@ -43,11 +46,118 @@ export function AddTargetDialog({ onTargetAdded }: AddTargetDialogProps) {
         is_live: false,
       });
       setError("");
+      setNameError("");
+      setShortNameError("");
     }
   };
 
+  // Check if target name is unique within the project
+  const checkNameUniqueness = async (name: string) => {
+    if (!name.trim() || !selectedProject) {
+      setNameError("");
+      return;
+    }
+
+    setIsCheckingName(true);
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("targets")
+        .select("id, name")
+        .eq("project_id", selectedProject.id)
+        .ilike("name", name.trim())
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') { // PGRST116 is "not found"
+        console.error("Error checking name uniqueness:", error);
+        return;
+      }
+
+      if (data) {
+        setNameError("A target with this name already exists in this project. Please choose a different name.");
+      } else {
+        setNameError("");
+      }
+    } catch (error) {
+      console.error("Error checking name uniqueness:", error);
+    } finally {
+      setIsCheckingName(false);
+    }
+  };
+
+  // Check if target short_name is unique within the project
+  const checkShortNameUniqueness = async (shortName: string) => {
+    if (!shortName.trim() || !selectedProject) {
+      setShortNameError("");
+      return;
+    }
+    setIsCheckingName(true);
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("targets")
+        .select("id, short_name")
+        .eq("project_id", selectedProject.id)
+        .ilike("short_name", shortName.trim())
+        .maybeSingle();
+      if (error && error.code !== 'PGRST116') {
+        console.error("Error checking short_name uniqueness:", error);
+        return;
+      }
+      if (data) {
+        setShortNameError("A target with this short name already exists in this project. Please choose a different short name.");
+      } else {
+        setShortNameError("");
+      }
+    } catch (error) {
+      console.error("Error checking short_name uniqueness:", error);
+    } finally {
+      setIsCheckingName(false);
+    }
+  };
+
+  // Debounced name validation
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (formData.name.trim()) {
+        checkNameUniqueness(formData.name);
+      } else {
+        setNameError("");
+      }
+    }, 500); // 500ms delay
+
+    return () => clearTimeout(timeoutId);
+  }, [formData.name, selectedProject]);
+
+  // Debounced short_name validation
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (formData.short_name.trim()) {
+        checkShortNameUniqueness(formData.short_name);
+      } else {
+        setShortNameError("");
+      }
+    }, 500);
+    return () => clearTimeout(timeoutId);
+  }, [formData.short_name, selectedProject]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Check for name and short_name uniqueness before submitting
+    if (formData.name.trim()) {
+      await checkNameUniqueness(formData.name);
+      if (nameError) {
+        return; // Don't submit if name is not unique
+      }
+    }
+    if (formData.short_name.trim()) {
+      await checkShortNameUniqueness(formData.short_name);
+      if (shortNameError) {
+        return; // Don't submit if short_name is not unique
+      }
+    }
+
     setLoading(true);
     setError("");
 
@@ -117,7 +227,7 @@ export function AddTargetDialog({ onTargetAdded }: AddTargetDialogProps) {
                 id="short_name"
                 value={formData.short_name}
                 onChange={(e) => setFormData({ ...formData, short_name: e.target.value })}
-                className="col-span-3"
+                className={`col-span-3 ${shortNameError ? 'border-red-500 focus:border-red-500' : ''}`}
                 required
                 disabled={loading}
                 placeholder="e.g., acme, corp"
@@ -131,7 +241,7 @@ export function AddTargetDialog({ onTargetAdded }: AddTargetDialogProps) {
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="col-span-3"
+                className={`col-span-3 ${nameError ? 'border-red-500 focus:border-red-500' : ''}`}
                 required
                 disabled={loading}
                 placeholder="e.g., Acme Corporation"
@@ -150,12 +260,12 @@ export function AddTargetDialog({ onTargetAdded }: AddTargetDialogProps) {
                 <Label htmlFor="is_live">Mark as live target</Label>
               </div>
             </div>
-            {error && (
-              <div className="col-span-4 text-sm text-red-600 bg-red-50 p-3 rounded-md">
-                {error}
-              </div>
-            )}
           </div>
+          {(nameError || shortNameError || error) && (
+            <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md mb-2">
+              {nameError || shortNameError || error}
+            </div>
+          )}
           <DialogFooter>
             <Button
               type="button"
@@ -165,7 +275,7 @@ export function AddTargetDialog({ onTargetAdded }: AddTargetDialogProps) {
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading || !!nameError || !!shortNameError}>
               {loading ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />

@@ -7,6 +7,8 @@ import { createClient } from "@/lib/supabase";
 interface Project {
   id: string;
   name: string;
+  is_manage_members?: boolean;
+  is_manage_features?: boolean;
 }
 
 interface AuthContextType {
@@ -54,7 +56,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           project_id,
           projects (
             id,
-            name
+            name,
+            is_manage_members,
+            is_manage_features
           )
         `)
         .eq('user_id', userId);
@@ -66,7 +70,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       return data?.map((item: any) => ({
         id: item.projects.id,
-        name: item.projects.name
+        name: item.projects.name,
+        is_manage_members: item.projects.is_manage_members,
+        is_manage_features: item.projects.is_manage_features
       })) || [];
     } catch (error) {
       console.error('Error fetching user projects:', error);
