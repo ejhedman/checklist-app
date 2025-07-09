@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Edit, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import type { Member } from "./MemberCard";
+import { useMembers } from "@/hooks/useMembers";
 
 export function EditMemberDialog({ member, onMemberUpdated }: { member: Member; onMemberUpdated: () => void }) {
   const [open, setOpen] = useState(false);
@@ -25,6 +26,20 @@ export function EditMemberDialog({ member, onMemberUpdated }: { member: Member; 
     nickname: member.nickname || "",
     member_role: member.member_role || "member" as "member" | "release_manager" | "admin",
   });
+
+  const { members } = useMembers();
+  const [nicknameError, setNicknameError] = useState("");
+
+  useEffect(() => {
+    if (!formData.nickname.trim() || !members) {
+      setNicknameError("");
+      return;
+    }
+    const nicknameTaken = members.some(
+      (m) => m.id !== member.id && m.nickname && m.nickname.toLowerCase() === formData.nickname.trim().toLowerCase()
+    );
+    setNicknameError(nicknameTaken ? "This nickname is already used by another member in this project." : "");
+  }, [formData.nickname, members, member.id]);
 
   const handleOpenChange = (newOpen: boolean) => {
     setOpen(newOpen);
@@ -38,6 +53,9 @@ export function EditMemberDialog({ member, onMemberUpdated }: { member: Member; 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (nicknameError) {
+      return;
+    }
     setLoading(true);
     try {
       const supabase = createClient();
@@ -115,9 +133,12 @@ export function EditMemberDialog({ member, onMemberUpdated }: { member: Member; 
                 id="nickname"
                 value={formData.nickname}
                 onChange={(e) => setFormData({ ...formData, nickname: e.target.value })}
-                className="col-span-3"
+                className={nicknameError ? "col-span-3 border-red-500" : "col-span-3"}
                 placeholder="Optional nickname"
               />
+              {nicknameError && (
+                <div className="col-span-4 text-red-600 text-xs mt-1">{nicknameError}</div>
+              )}
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="member_role" className="text-right">
@@ -151,7 +172,7 @@ export function EditMemberDialog({ member, onMemberUpdated }: { member: Member; 
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading || !!nicknameError}>
               {loading ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -20,6 +20,8 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import { useMembers } from "@/hooks/useMembers";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface AuthUser {
   id: string;
@@ -37,43 +39,55 @@ export function AddMemberDialog({ onMemberAdded }: AddMemberDialogProps) {
   const [loading, setLoading] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
   const [authUsers, setAuthUsers] = useState<AuthUser[]>([]);
-  const [searchOpen, setSearchOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
-  const [selectedUser, setSelectedUser] = useState<AuthUser | null>(null);
+  const [selectedUsers, setSelectedUsers] = useState<AuthUser[]>([]);
   const [formData, setFormData] = useState({
-    nickname: "",
     member_role: "member" as "member" | "release_manager" | "admin",
   });
   const { selectedProject } = useAuth();
+  const { members } = useMembers();
+  const [emailError, setEmailError] = useState("");
 
-  const handleOpenChange = (newOpen: boolean) => {
+  const handleOpenChange = useCallback((newOpen: boolean) => {
+    console.log('Dialog open state changing to:', newOpen);
     setOpen(newOpen);
     if (newOpen) {
+      console.log('Dialog opened, resetting form');
       // Reset form
       setFormData({
-        nickname: "",
         member_role: "member",
       });
-      setSelectedUser(null);
+      setSelectedUsers([]);
       setSearchValue("");
       setAuthUsers([]);
     }
-  };
+  }, []);
 
-  const searchAuthUsers = async (email: string) => {
-    if (email.length < 2) {
+  const searchAuthUsers = useCallback(async (email: string) => {
+    if (!selectedProject) {
+      console.log('No project selected, cannot search for users');
       setAuthUsers([]);
       return;
     }
 
+    console.log('Searching for users with email:', email);
+    console.log('Project ID:', selectedProject.id);
+
     setSearchLoading(true);
     try {
-      const response = await fetch(`/api/auth-users/search?email=${encodeURIComponent(email)}`);
+      // If email is empty or very short, search for all users
+      const searchParam = email.length < 2 ? "" : email;
+      const response = await fetch(`/api/auth-users/search?email=${encodeURIComponent(searchParam)}&projectId=${selectedProject.id}`);
+      console.log('API Response status:', response.status);
+      
       if (response.ok) {
         const users = await response.json();
+        console.log('API Response users:', users);
+        console.log('Number of users found:', users.length);
         setAuthUsers(users);
       } else {
-        console.error('Failed to search auth users');
+        const errorText = await response.text();
+        console.error('Failed to search auth users. Status:', response.status, 'Error:', errorText);
         setAuthUsers([]);
       }
     } catch (error) {
@@ -82,26 +96,52 @@ export function AddMemberDialog({ onMemberAdded }: AddMemberDialogProps) {
     } finally {
       setSearchLoading(false);
     }
-  };
+  }, [selectedProject]);
 
   useEffect(() => {
+    console.log('useEffect triggered - searchValue:', searchValue);
     const timeoutId = setTimeout(() => {
+      console.log('Searching after timeout with value:', searchValue);
+      // Always search, even with empty value to show all users
       searchAuthUsers(searchValue);
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [searchValue]);
+  }, [searchValue, searchAuthUsers]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Trigger search when dialog opens
+  useEffect(() => {
+    if (open && selectedProject) {
+      console.log('Dialog opened, searching for all users');
+      searchAuthUsers("");
+    }
+  }, [open, selectedProject, searchAuthUsers]);
+
+  useEffect(() => {
+    if (!selectedUsers.length || !members) {
+      setEmailError("");
+      return;
+    }
+    const emailTaken = selectedUsers.some(
+      (user) => members.some(m => m.email.toLowerCase() === user.email.toLowerCase())
+    );
+    setEmailError(emailTaken ? "One or more selected users already exist as members in this project." : "");
+  }, [selectedUsers, members]);
+
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedUser) {
-      alert("Please select a user from the list");
+    if (!selectedUsers.length) {
+      alert("Please select at least one user from the list");
       return;
     }
 
     if (!selectedProject) {
       alert("Please select a project first");
+      return;
+    }
+
+    if (emailError) {
       return;
     }
 
@@ -111,17 +151,19 @@ export function AddMemberDialog({ onMemberAdded }: AddMemberDialogProps) {
       const supabase = createClient();
 
       // Insert new member using the database function
-      const { data, error } = await supabase.rpc('create_member_from_auth_user', {
-        auth_user_id: selectedUser.id,
-        nickname: formData.nickname || null,
-        member_role: formData.member_role,
-        project_id: selectedProject.id
-      });
+      for (const user of selectedUsers) {
+        console.log('Adding user:', user);
+        const { data, error } = await supabase.rpc('create_member_from_auth_user', {
+          auth_user_id: user.id,
+          project_id: selectedProject.id,
+          member_role: formData.member_role
+        });
 
-      if (error) {
-        console.error("Error creating member:", error);
-        alert("Failed to create member: " + error.message);
-        return;
+        if (error) {
+          console.error("Error creating member:", error);
+          alert("Failed to create member: " + error.message);
+          return;
+        }
       }
 
       setOpen(false);
@@ -132,7 +174,30 @@ export function AddMemberDialog({ onMemberAdded }: AddMemberDialogProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedUsers, selectedProject, emailError, formData.member_role, onMemberAdded]);
+
+  const handleUserToggle = useCallback((user: AuthUser) => {
+    setSelectedUsers(prev => {
+      const isSelected = prev.some(u => u.id === user.id);
+      if (isSelected) {
+        return prev.filter(u => u.id !== user.id);
+      } else {
+        return [...prev, user];
+      }
+    });
+  }, []);
+
+  const handleCancel = useCallback(() => {
+    setOpen(false);
+  }, []);
+
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchValue(e.target.value);
+  }, []);
+
+  const handleRoleChange = useCallback((value: "member" | "release_manager" | "admin") => {
+    setFormData(prev => ({ ...prev, member_role: value }));
+  }, []);
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -142,105 +207,88 @@ export function AddMemberDialog({ onMemberAdded }: AddMemberDialogProps) {
           Add Member
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle>Add New Member</DialogTitle>
+          <DialogTitle>Add New Members</DialogTitle>
           <DialogDescription>
-            Select an existing user and assign them a member role.
+            Select users to add as members to this project. Only users not already in the project are shown.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1">
+          <div className="grid gap-4 py-4 flex-1">
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="email" className="text-right">
-                User Email *
+              <Label htmlFor="search" className="text-right">
+                Search Users
               </Label>
               <div className="col-span-3">
-                <Popover open={searchOpen} onOpenChange={setSearchOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={searchOpen}
-                      className="w-full justify-between"
-                    >
-                      {selectedUser ? selectedUser.email : "Search for user..."}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-full p-0">
-                    <Command>
-                      <CommandInput
-                        placeholder="Search users by email..."
-                        value={searchValue}
-                        onValueChange={setSearchValue}
-                      />
-                      <CommandList>
-                        <CommandEmpty>
-                          {searchLoading ? (
-                            <div className="flex items-center justify-center py-4">
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                              <span className="ml-2">Searching...</span>
-                            </div>
-                          ) : (
-                            "No users found."
-                          )}
-                        </CommandEmpty>
-                        <CommandGroup>
-                          {authUsers.map((user) => (
-                            <CommandItem
-                              key={user.id}
-                              value={user.email}
-                              onSelect={() => {
-                                setSelectedUser(user);
-                                setSearchOpen(false);
-                              }}
-                            >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  selectedUser?.id === user.id ? "opacity-100" : "opacity-0"
-                                )}
-                              />
-                              <div className="flex flex-col">
-                                <span>{user.email}</span>
-                                <span className="text-sm text-muted-foreground">
-                                  {user.full_name}
-                                </span>
-                              </div>
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
+                <Input
+                  id="search"
+                  placeholder="Search users by email..."
+                  value={searchValue}
+                  onChange={handleSearchChange}
+                />
               </div>
             </div>
 
-            {selectedUser && (
+            <div className="grid grid-cols-4 items-start gap-4">
+              <Label className="text-right pt-2">
+                Available Users
+              </Label>
+              <div className="col-span-3 max-h-64 overflow-y-auto border rounded-md p-2">
+                {searchLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    <span>Searching...</span>
+                  </div>
+                ) : authUsers.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    {searchValue.length > 0 ? "No users found." : "No users available to add."}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {authUsers.map((user) => {
+                      const isSelected = selectedUsers.some(u => u.id === user.id);
+                      return (
+                        <div
+                          key={user.id}
+                          className={cn(
+                            "flex items-center space-x-3 p-2 rounded-md hover:bg-accent cursor-pointer",
+                            isSelected && "bg-accent"
+                          )}
+                          onClick={() => handleUserToggle(user)}
+                        >
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={() => handleUserToggle(user)}
+                            onClick={e => e.stopPropagation()}
+                          />
+                          <div className="flex flex-col flex-1">
+                            <span className="font-medium">{user.email}</span>
+                            <span className="text-sm text-muted-foreground">
+                              {user.full_name}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {selectedUsers.length > 0 && (
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label className="text-right">
-                  Full Name
+                  Selected Users
                 </Label>
                 <div className="col-span-3 text-sm text-muted-foreground">
-                  {selectedUser.full_name}
+                  {selectedUsers.length === 1 
+                    ? selectedUsers[0].full_name 
+                    : `${selectedUsers.length} users selected`
+                  }
                 </div>
               </div>
             )}
-
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="nickname" className="text-right">
-                Nickname
-              </Label>
-              <Input
-                id="nickname"
-                value={formData.nickname}
-                onChange={(e) => setFormData({ ...formData, nickname: e.target.value })}
-                className="col-span-3"
-                placeholder="Optional nickname"
-              />
-            </div>
 
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="member_role" className="text-right">
@@ -249,9 +297,7 @@ export function AddMemberDialog({ onMemberAdded }: AddMemberDialogProps) {
               <div className="col-span-3">
                 <Select
                   value={formData.member_role}
-                  onValueChange={(value: "member" | "release_manager" | "admin") =>
-                    setFormData({ ...formData, member_role: value })
-                  }
+                  onValueChange={handleRoleChange}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select a role" />
@@ -264,24 +310,28 @@ export function AddMemberDialog({ onMemberAdded }: AddMemberDialogProps) {
                 </Select>
               </div>
             </div>
+
+            {emailError && (
+              <div className="col-span-4 text-red-600 text-xs">{emailError}</div>
+            )}
           </div>
           <DialogFooter>
             <Button
               type="button"
               variant="outline"
-              onClick={() => setOpen(false)}
+              onClick={handleCancel}
               disabled={loading}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={loading || !selectedUser}>
+            <Button type="submit" disabled={loading || !selectedUsers.length || !!emailError}>
               {loading ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Adding...
                 </>
               ) : (
-                "Add Member"
+                selectedUsers.length === 1 ? "Add Member" : `Add ${selectedUsers.length} Members`
               )}
             </Button>
           </DialogFooter>

@@ -119,7 +119,7 @@ export function EditProjectDialog({ project, onProjectUpdated }: EditProjectDial
 
     // Get current project users
     const { data: currentProjectUsers, error: projectUsersError } = await supabase
-      .from("project_user_map")
+      .from("members")
       .select("user_id")
       .eq("project_id", project.id);
 
@@ -147,11 +147,24 @@ export function EditProjectDialog({ project, onProjectUpdated }: EditProjectDial
     try {
       const supabase = createClient();
       
+      // Get user details from auth
+      const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(selectedUserId);
+      
+      if (authError || !authUser.user) {
+        console.error("Error getting user details:", authError);
+        setError("Failed to get user details");
+        return;
+      }
+
+      // Create member record for this user in the project
       const { error } = await supabase
-        .from("project_user_map")
+        .from("members")
         .insert({
+          user_id: selectedUserId,
+          email: authUser.user.email || '',
+          full_name: authUser.user.user_metadata?.full_name || authUser.user.email || 'Unknown',
           project_id: project.id,
-          user_id: selectedUserId
+          member_role: 'member'
         });
 
       if (error) {
@@ -181,7 +194,7 @@ export function EditProjectDialog({ project, onProjectUpdated }: EditProjectDial
       const supabase = createClient();
       
       const { error } = await supabase
-        .from("project_user_map")
+        .from("members")
         .delete()
         .eq("project_id", project.id)
         .eq("user_id", userId);

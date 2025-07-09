@@ -21,13 +21,10 @@ export default function ProjectsPage() {
         created_at,
         is_manage_members,
         is_manage_features,
-        project_user_map(
+        members(
           user_id,
-          members(
-            user_id,
-            email,
-            full_name
-          )
+          email,
+          full_name
         )
       `)
       .order("name");
@@ -42,10 +39,10 @@ export default function ProjectsPage() {
         created_at: project.created_at,
         is_manage_members: project.is_manage_members,
         is_manage_features: project.is_manage_features,
-        users: project.project_user_map?.filter((mapping: any) => mapping.members)?.map((mapping: any) => ({
-          id: mapping.members.user_id,
-          email: mapping.members.email,
-          full_name: mapping.members.full_name
+        users: project.members?.map((member: any) => ({
+          id: member.user_id,
+          email: member.email,
+          full_name: member.full_name
         })) || []
       })) || [];
       

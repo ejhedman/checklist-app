@@ -51,7 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const fetchUserProjects = async (userId: string): Promise<Project[]> => {
     try {
       const { data, error } = await supabase
-        .from('project_user_map')
+        .from('members')
         .select(`
           project_id,
           projects (

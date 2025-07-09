@@ -30,6 +30,7 @@ interface TeamMember {
   full_name: string;
   email: string;
   nickname?: string;
+  project_id: string;
 }
 
 interface EditTeamDialogProps {
@@ -151,7 +152,7 @@ export function EditTeamDialog({ team, onTeamUpdated }: EditTeamDialogProps) {
       // Fetch all users (filtered by project)
       const { data: users, error: usersError } = await supabase
         .from("members")
-        .select("id, full_name, email, nickname")
+        .select("id, full_name, email, nickname, project_id")
         .eq("project_id", member.project_id)
         .order("full_name");
 
@@ -169,7 +170,8 @@ export function EditTeamDialog({ team, onTeamUpdated }: EditTeamDialogProps) {
             id,
             full_name,
             email,
-            nickname
+            nickname,
+            project_id
           )
         `)
         .eq("team_id", team.id);
@@ -257,6 +259,7 @@ export function EditTeamDialog({ team, onTeamUpdated }: EditTeamDialogProps) {
         const memberAssignments = pendingMembersToAdd.map((member) => ({
           team_id: team.id,
           member_id: member.id,
+          project_id: member.project_id, // Add project_id from the member
         }));
         
         const { error: addError } = await supabase

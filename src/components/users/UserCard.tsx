@@ -26,6 +26,7 @@ export interface User {
   created_at: string;
   last_sign_in_at?: string;
   app_role?: 'admin' | 'user';
+  project_count?: number;
 }
 
 export function UserCard({ user, onUserUpdated }: { user: User; onUserUpdated: () => void }) {
@@ -158,27 +159,31 @@ export function UserCard({ user, onUserUpdated }: { user: User; onUserUpdated: (
           <div>
             <div className="flex items-center justify-between">
               <p className="text-sm text-muted-foreground">Role</p>
-              <p className="text-sm text-muted-foreground">Last Login</p>
+              <p className="text-sm text-muted-foreground">Projects</p>
             </div>
             <div className="flex items-center justify-between mt-1">
               <Badge variant={getRoleColor(user.app_role || 'user') as any} className="text-xs">
                 <Shield className="h-3 w-3 mr-1" />
                 {getRoleLabel(user.app_role || 'user')}
               </Badge>
-              <div className="flex items-center">
-                <Clock className="h-3 w-3 mr-1 text-muted-foreground" />
-                <span className="text-sm">{formatLastLogin(user.last_sign_in_at)}</span>
-              </div>
+              <p className="text-sm text-muted-foreground">
+                {user.project_count || 0}
+              </p>
             </div>
           </div>
           <div>
             <div className="flex items-center justify-between">
               <p className="text-sm text-muted-foreground">Created</p>
+              <p className="text-sm text-muted-foreground">Last Login</p>
             </div>
             <div className="flex items-center justify-between mt-1">
               <p className="text-sm text-muted-foreground">
                 {new Date(user.created_at).toLocaleDateString()}
               </p>
+              <div className="flex items-center">
+                <Clock className="h-3 w-3 mr-1 text-muted-foreground" />
+                <span className="text-sm">{formatLastLogin(user.last_sign_in_at)}</span>
+              </div>
             </div>
           </div>
         </div>

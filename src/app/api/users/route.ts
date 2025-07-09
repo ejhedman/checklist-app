@@ -33,10 +33,31 @@ export async function GET() {
       );
     }
 
+    // Fetch project counts for each user
+    const { data: projectCounts, error: projectError } = await supabase
+      .from('members')
+      .select('user_id')
+      .not('user_id', 'is', null);
+
+    if (projectError) {
+      console.error('Error fetching project counts:', projectError);
+      return NextResponse.json(
+        { error: projectError.message },
+        { status: 500 }
+      );
+    }
+
     // Create a map of user_id to role for quick lookup
     const roleMap = new Map();
     userRoles?.forEach(userRole => {
       roleMap.set(userRole.user_id, userRole.sys_role);
+    });
+
+    // Create a map of user_id to project count for quick lookup
+    const projectCountMap = new Map();
+    projectCounts?.forEach(project => {
+      const currentCount = projectCountMap.get(project.user_id) || 0;
+      projectCountMap.set(project.user_id, currentCount + 1);
     });
 
     // Transform auth users to our User interface
@@ -49,6 +70,7 @@ export async function GET() {
       created_at: authUser.created_at,
       last_sign_in_at: authUser.last_sign_in_at,
       app_role: roleMap.get(authUser.id) || 'user', // Default to 'user' if no role found
+      project_count: projectCountMap.get(authUser.id) || 0, // Add project count
     }));
 
     return NextResponse.json(transformedUsers);

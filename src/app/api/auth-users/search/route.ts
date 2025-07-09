@@ -11,10 +11,15 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const email = searchParams.get('email');
+    const projectId = searchParams.get('projectId');
 
-    if (!email || email.length < 2) {
+    console.log('API Search - Email:', email);
+    console.log('API Search - Project ID:', projectId);
+
+    if (!projectId) {
+      console.log('API Search - Project ID missing');
       return NextResponse.json(
-        { error: 'Email search term must be at least 2 characters' },
+        { error: 'Project ID is required' },
         { status: 400 }
       );
     }
@@ -30,12 +35,34 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    console.log('API Search - Total auth users found:', authUsers.users.length);
+
+    // Get existing members for this project to exclude them
+    const { data: existingMembers, error: membersError } = await supabase
+      .from('members')
+      .select('user_id')
+      .eq('project_id', projectId);
+
+    if (membersError) {
+      console.error('Error fetching existing members:', membersError);
+      return NextResponse.json(
+        { error: membersError.message },
+        { status: 500 }
+      );
+    }
+
+    console.log('API Search - Existing members for project:', existingMembers?.length || 0);
+    console.log('API Search - Existing member user IDs:', existingMembers?.map(m => m.user_id) || []);
+
+    // Create a set of existing member user IDs for quick lookup
+    const existingMemberIds = new Set(existingMembers?.map(m => m.user_id) || []);
+
     // Filter and transform the results
     const filteredUsers = authUsers.users
       .filter(user => 
         user.email && 
-        user.email.toLowerCase().includes(email.toLowerCase()) &&
-        user.email_confirmed_at // Only confirmed users
+        (!email || email.length < 2 || user.email.toLowerCase().includes(email.toLowerCase())) &&
+        !existingMemberIds.has(user.id) // Exclude users who are already members
       )
       .map(user => ({
         id: user.id,
@@ -44,6 +71,12 @@ export async function GET(request: NextRequest) {
         created_at: user.created_at
       }))
       .slice(0, 10); // Limit to 10 results
+
+    console.log('API Search - Filtered users after email match:', authUsers.users.filter(user => 
+      user.email && (!email || email.length < 2 || user.email.toLowerCase().includes(email.toLowerCase()))
+    ).length);
+    console.log('API Search - Final filtered users (excluding existing members):', filteredUsers.length);
+    console.log('API Search - Final users:', filteredUsers);
 
     return NextResponse.json(filteredUsers);
 

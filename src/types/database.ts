@@ -21,29 +21,6 @@ export interface Database {
           updated_at?: string
         }
       }
-      project_user_map: {
-        Row: {
-          id: string
-          project_id: string
-          user_id: string
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          project_id: string
-          user_id: string
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          project_id?: string
-          user_id?: string
-          created_at?: string
-          updated_at?: string
-        }
-      }
       members: {
         Row: {
           id: string

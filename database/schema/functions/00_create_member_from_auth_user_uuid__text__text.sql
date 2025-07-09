@@ -1,8 +1,8 @@
--- Function: create_member_from_auth_user(uuid, text, text)
+-- Function: create_member_from_auth_user(uuid, text, text, uuid)
 -- Owner: postgres
 --
 
-CREATE OR REPLACE FUNCTION "public"."create_member_from_auth_user"("auth_user_id" "uuid", "nickname" "text" DEFAULT NULL::"text", "member_role" "text" DEFAULT 'member'::"text") RETURNS "uuid"
+CREATE OR REPLACE FUNCTION "public"."create_member_from_auth_user"("auth_user_id" "uuid", "nickname" "text" DEFAULT NULL::"text", "member_role" "text" DEFAULT 'member'::"text", "project_id" "uuid" DEFAULT NULL::"uuid") RETURNS "uuid"
     LANGUAGE "plpgsql" SECURITY DEFINER
     AS $$
 DECLARE
@@ -22,18 +22,20 @@ BEGIN
   END IF;
   
   -- Insert into members table using member_role column
-  INSERT INTO members (id, user_id, email, full_name, nickname, member_role)
+  INSERT INTO members (id, user_id, email, full_name, nickname, member_role, project_id)
   VALUES (
     gen_random_uuid(),
     auth_user_id,
     (SELECT email FROM auth.users WHERE id = auth_user_id),
     (SELECT COALESCE(raw_user_meta_data->>'full_name', email) FROM auth.users WHERE id = auth_user_id),
     nickname,
-    member_role
+    member_role,
+    project_id
   )
   ON CONFLICT (user_id) DO UPDATE SET
     nickname = EXCLUDED.nickname,
     member_role = EXCLUDED.member_role,
+    project_id = EXCLUDED.project_id,
     updated_at = now()
   RETURNING user_id INTO member_user_id;
   

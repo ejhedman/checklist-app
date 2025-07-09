@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -33,7 +33,7 @@ export function useMembers() {
   const [error, setError] = useState<string | null>(null);
   const { selectedProject } = useAuth();
 
-  const transformMemberData = (data: any[]): TransformedMember[] => {
+  const transformMemberData = useCallback((data: any[]): TransformedMember[] => {
     return data.map((member) => ({
       id: member.id,
       full_name: member.full_name,
@@ -44,9 +44,9 @@ export function useMembers() {
       teams: member.team_members?.map((tm: any) => tm.teams?.name).filter(Boolean) || [],
       active_releases: 0, // TODO: Calculate this from member_release_state
     }));
-  };
+  }, []);
 
-  const fetchMembers = async () => {
+  const fetchMembers = useCallback(async () => {
     setLoading(true);
     setError(null);
     
@@ -93,7 +93,7 @@ export function useMembers() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedProject, transformMemberData]);
 
   useEffect(() => {
     if (selectedProject) {
@@ -102,7 +102,7 @@ export function useMembers() {
       setMembers([]);
       setLoading(false);
     }
-  }, [selectedProject]);
+  }, [selectedProject, fetchMembers]);
 
   return {
     members,

@@ -14,7 +14,6 @@
 \i tables/sys_roles.sql
 \i tables/targets.sql
 \i tables/team_members.sql
-\i tables/06_project_user_map.sql
 \i tables/features.sql
 \i tables/teams.sql
 \i tables/members.sql
