@@ -9,14 +9,14 @@ import { useAuth } from "@/contexts/AuthContext";
 export default function TargetsPage() {
   const [targets, setTargets] = useState<Target[]>([]);
   const [loading, setLoading] = useState(true);
-  const { selectedTenant } = useAuth();
+  const { selectedProject } = useAuth();
 
   const fetchTargets = async () => {
     setLoading(true);
     const supabase = createClient();
     
-    if (!selectedTenant) {
-      console.error("No tenant selected");
+    if (!selectedProject) {
+      console.error("No project selected");
       setTargets([]);
       setLoading(false);
       return;
@@ -31,7 +31,7 @@ export default function TargetsPage() {
         is_live,
         created_at
       `)
-      .eq('tenant_id', selectedTenant.id)
+      .eq('project_id', selectedProject.id)
       .order("name");
 
     if (error) {
@@ -43,13 +43,13 @@ export default function TargetsPage() {
   };
 
   useEffect(() => {
-    if (selectedTenant) {
+    if (selectedProject) {
       fetchTargets();
     } else {
       setTargets([]);
       setLoading(false);
     }
-  }, [selectedTenant]);
+  }, [selectedProject]);
 
   return (
     <div className="space-y-6">

@@ -7,7 +7,7 @@ import { Footer } from "@/components/layout/Footer";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { ToastProvider } from "@/components/ui/toast";
-import { TenantRequiredMessage } from "@/components/layout/TenantRequiredMessage";
+import { ProjectRequiredMessage } from "@/components/layout/ProjectRequiredMessage";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -33,9 +33,9 @@ export default function RootLayout({
                 <main
                   className="ml-64 flex-1 overflow-y-auto bg-background p-6 pt-4"
                 >
-                  <TenantRequiredMessage>
+                  <ProjectRequiredMessage>
                     {children}
-                  </TenantRequiredMessage>
+                  </ProjectRequiredMessage>
                 </main>
               </div>
               <Footer />

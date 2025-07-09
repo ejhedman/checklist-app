@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS "public"."targets" (
     "is_live" boolean DEFAULT false NOT NULL,
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "tenant_id" "uuid" NOT NULL
+    "project_id" "uuid" NOT NULL
 );
 
 -- Comments
@@ -23,12 +23,12 @@ COMMENT ON COLUMN "public"."targets"."name" IS 'TODO: Add description.';
 COMMENT ON COLUMN "public"."targets"."is_live" IS 'TODO: Add description.';
 COMMENT ON COLUMN "public"."targets"."created_at" IS 'TODO: Add description.';
 COMMENT ON COLUMN "public"."targets"."updated_at" IS 'TODO: Add description.';
-COMMENT ON COLUMN "public"."targets"."tenant_id" IS 'TODO: Add description.';
+COMMENT ON COLUMN "public"."targets"."project_id" IS 'Reference to the project this target belongs to';
 
 -- Foreign Keys
 --
 ALTER TABLE ONLY "public"."targets"
-    ADD CONSTRAINT "targets_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE CASCADE;
+    ADD CONSTRAINT "targets_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE CASCADE;
 
 -- Triggers
 --

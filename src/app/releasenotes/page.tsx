@@ -8,15 +8,15 @@ import { useAuth } from "@/contexts/AuthContext";
 export default function ReleaseNotesListPage() {
   const [releases, setReleases] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const { selectedTenant } = useAuth();
+  const { selectedProject } = useAuth();
 
   useEffect(() => {
     const fetchReleases = async () => {
       setLoading(true);
       const supabase = createClient();
       
-      if (!selectedTenant) {
-        console.error("No tenant selected");
+      if (!selectedProject) {
+        console.error("No project selected");
         setReleases([]);
         setLoading(false);
         return;
@@ -25,19 +25,19 @@ export default function ReleaseNotesListPage() {
       const { data } = await supabase
         .from("releases")
         .select("id, name, target_date, release_summary, state")
-        .eq("tenant_id", selectedTenant.id)
+        .eq("project_id", selectedProject.id)
         .order("target_date", { ascending: false });
       setReleases(data || []);
       setLoading(false);
     };
     
-    if (selectedTenant) {
+    if (selectedProject) {
       fetchReleases();
     } else {
       setReleases([]);
       setLoading(false);
     }
-  }, [selectedTenant]);
+  }, [selectedProject]);
 
   if (loading) {
     return <div className="p-8 text-center text-muted-foreground">Loading release notes...</div>;

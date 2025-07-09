@@ -86,7 +86,7 @@ export function EditTeamDialog({ team, onTeamUpdated }: EditTeamDialogProps) {
     const supabase = createClient();
 
     try {
-      // Get current user's member info for tenant filtering
+      // Get current user's member info for project filtering
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError || !user) {
         console.error("No authenticated user found");
@@ -95,7 +95,7 @@ export function EditTeamDialog({ team, onTeamUpdated }: EditTeamDialogProps) {
 
       const { data: member, error: memberError } = await supabase
         .from('members')
-        .select('tenant_id')
+        .select('project_id')
         .eq('email', user.email)
         .single();
 
@@ -104,11 +104,11 @@ export function EditTeamDialog({ team, onTeamUpdated }: EditTeamDialogProps) {
         return;
       }
 
-      // Fetch all users (filtered by tenant)
+      // Fetch all users (filtered by project)
       const { data: users, error: usersError } = await supabase
         .from("members")
         .select("id, full_name, email, nickname")
-        .eq("tenant_id", member.tenant_id)
+        .eq("project_id", member.project_id)
         .order("full_name");
 
       if (usersError) {

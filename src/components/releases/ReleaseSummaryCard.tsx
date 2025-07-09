@@ -7,7 +7,8 @@ import Link from "next/link";
 import React from "react";
 import { createClient } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
-import { StateBadge, getStateBackgroundColor } from "@/components/ui/state-icons";
+import { StateBadge } from "@/components/ui/state-icons";
+import { getStatePaleBackgroundColor } from "@/lib/state-colors";
 import { useRouter } from "next/navigation";
 import { ReleaseDetailBottomContent } from "./ReleaseDetailBottomContent";
 import ReleaseDetailCard from "./ReleaseDetailCard";
@@ -30,8 +31,9 @@ export interface ReleaseSummaryCardProps {
     total_members: number;
     ready_members: number;
     is_archived?: boolean;
+    is_ready?: boolean;
     targets?: string[];
-    tenant?: {
+    project?: {
       id: string;
       name: string;
     };
@@ -94,7 +96,7 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
   const [teamNames, setTeamNames] = useState<string[]>([]);
   const [isArchived, setIsArchived] = useState(release.is_archived);
   const [archiving, setArchiving] = useState(false);
-  const { user, memberId, selectedTenant, is_release_manager } = useAuth();
+  const { user, memberId, selectedProject, is_release_manager } = useAuth();
   const router = useRouter();
   const [expanded, setExpanded] = useState(collapsible ? initialExpanded : true);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -139,7 +141,7 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
   }, [release.id]);
 
   useEffect(() => {
-    if (expanded && !expandedReleaseDetail && selectedTenant && user) {
+    if (expanded && !expandedReleaseDetail && selectedProject && user) {
       setDetailLoading(true);
       setDetailError(null);
       const fetchDetail = async () => {
@@ -156,8 +158,8 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
             is_archived,
             targets,
             created_at,
-            tenant_id,
-            tenants (
+            project_id,
+            projects (
               id,
               name
             ),
@@ -172,7 +174,7 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
                     full_name,
                     email,
                     nickname,
-                    tenant_id
+                    project_id
                   )
                 )
               )
@@ -200,7 +202,7 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
             )
           `)
           .eq("id", release.id)
-          .eq("tenant_id", selectedTenant.id)
+          .eq("project_id", selectedProject.id)
           .order("created_at", { foreignTable: "features", ascending: true })
           .single();
         if (supabaseError || !data) {
@@ -264,14 +266,14 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
                 full_name: tm.member.full_name,
                 email: tm.member.email,
                 nickname: tm.member.nickname,
-                tenant_id: tm.member.tenant_id,
+                project_id: tm.member.project_id,
                 is_ready: memberReadyState?.is_ready || false,
               };
             }) || [],
           })) || [],
           total_members,
           ready_members,
-          tenant: data.tenants,
+          project: data.projects,
         };
         setExpandedReleaseDetail(transformedRelease);
         setFeatures(transformedRelease.features || []);
@@ -285,7 +287,7 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
       setDetailLoading(false);
       setDetailError(null);
     }
-  }, [expanded, selectedTenant, user, release.id, expandedReleaseDetail]);
+  }, [expanded, selectedProject, user, release.id, expandedReleaseDetail]);
 
   // Keep summary counts in sync with expandedReleaseDetail
   useEffect(() => {
@@ -381,25 +383,25 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
 
   const updateMemberReady = async (releaseId: string, memberId: string, isReady: boolean) => {
     const supabase = createClient();
-    let memberTenantId = null;
+    let memberProjectId = null;
     if (expandedReleaseDetail && expandedReleaseDetail.teams) {
       for (const team of expandedReleaseDetail.teams) {
         const member = team.members?.find((m: any) => m.id === memberId);
         if (member) {
-          memberTenantId = member.tenant_id;
+          memberProjectId = member.project_id;
           break;
         }
       }
     }
-    if (!memberTenantId && expandedReleaseDetail?.tenant?.id) {
-      memberTenantId = expandedReleaseDetail.tenant.id;
+    if (!memberProjectId && expandedReleaseDetail?.project?.id) {
+      memberProjectId = expandedReleaseDetail.project.id;
     }
     const { error } = await supabase
       .from("member_release_state")
       .upsert({
         release_id: releaseId,
         member_id: memberId,
-        tenant_id: memberTenantId,
+        project_id: memberProjectId,
         is_ready: isReady,
       });
     if (error) {
@@ -436,44 +438,35 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
     // Determine if all features and members are ready
     const allFeaturesReady = totalFeatures > 0 && readyFeatures === totalFeatures;
     const allMembersReady = totalMembers > 0 && readyMembers === totalMembers;
-    const hasNotReadyItems = readyFeatures < totalFeatures || readyMembers < totalMembers;
     
-    let newState = releaseDetail.state;
+    // Calculate if the release is ready (all features and members ready)
+    const isReleaseReady = allFeaturesReady && allMembersReady;
     
-    // If all features and members are ready, set state to "ready"
-    if (allFeaturesReady && allMembersReady) {
-      newState = "ready";
-    }
-    // If there are any not-ready items, set state to "pending"
-    else if (hasNotReadyItems) {
-      newState = "pending";
-    }
-    
-    // Only update if the state actually changed
-    if (newState !== releaseDetail.state) {
+    // Only update if the is_ready status actually changed
+    if (isReleaseReady !== releaseDetail.is_ready) {
       const supabase = createClient();
       const { error } = await supabase
         .from("releases")
-        .update({ state: newState })
+        .update({ is_ready: isReleaseReady })
         .eq("id", release.id);
       
       if (error) {
-        console.error('Error updating release state:', error);
+        console.error('Error updating release is_ready:', error);
       } else {
         // Update the local state
-        setExpandedReleaseDetail((prev: any) => prev ? { ...prev, state: newState } : null);
+        setExpandedReleaseDetail((prev: any) => prev ? { ...prev, is_ready: isReleaseReady } : null);
         
-        // Log activity for state change
+        // Log activity for is_ready change
         if (user?.id) {
           const { error: activityError } = await supabase.from("activity_log").insert({
             release_id: release.id,
             member_id: memberId,
-            tenant_id: releaseDetail.tenant?.id || "",
-            activity_type: "release_state_change",
+            project_id: releaseDetail.project?.id || "",
+            activity_type: "release_ready_change",
             activity_details: { 
-              oldState: releaseDetail.state, 
-              newState,
-              reason: "automatic_state_change",
+              oldIsReady: releaseDetail.is_ready, 
+              newIsReady: isReleaseReady,
+              reason: "automatic_ready_change",
               readyFeatures,
               totalFeatures,
               readyMembers,
@@ -482,7 +475,7 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
             },
           });
           if (activityError) {
-            console.error("Failed to log release state change activity:", activityError);
+            console.error("Failed to log release ready change activity:", activityError);
           }
         }
       }
@@ -575,7 +568,7 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
         }
         style={{ cursor: collapsible && !expanded ? 'pointer' : 'default' }}
       >
-        <CardHeader className={`flex flex-row items-center justify-between px-4 py-3 rounded-t-lg ${collapsible && expanded ? '' : collapsible ? 'border-b border-border' : ''} ${getStateBackgroundColor(summaryState as any, release.is_archived)}`}>
+        <CardHeader className={`flex flex-row items-center justify-between px-4 py-3 rounded-t-lg ${collapsible && expanded ? '' : collapsible ? 'border-b border-border' : ''} ${getStatePaleBackgroundColor(summaryState as any, release.is_archived)}`}>
           <div className="flex items-center justify-between w-full">
             <div
               className="flex items-center flex-1 min-w-0 rounded px-1 py-0.5 transition-colors"
@@ -597,7 +590,7 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
                 {getStateIcon(summaryState)}
                 <div className="flex items-center gap-3 min-w-0">
                   <span className="font-semibold truncate">
-                    {release.tenant?.name ? `${release.tenant.name}: ` : ''}{release.name}
+                    {release.project?.name ? `${release.project.name}: ` : ''}{release.name}
                   </span>
                   <StateBadge state={summaryState as any} />
                   {collapsible && (
@@ -713,6 +706,26 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
             </div>
             {(!expanded) && (
               <>
+                {/** Overall Release Readiness */}
+                {(() => {
+                  const isReleaseReady = expandedReleaseDetail?.is_ready || release.is_ready;
+                  return (
+                    <div className="space-y-1">
+                      <p className={`text-sm ${
+                        isReleaseReady
+                          ? 'text-green-600 font-bold'
+                          : 'text-muted-foreground'
+                      }`}>Release Ready</p>
+                      <p className={`text-lg font-semibold ${
+                        isReleaseReady
+                          ? 'text-green-600'
+                          : ''
+                      }`}>
+                        {isReleaseReady ? "✓ Ready" : "⏳ Pending"}
+                      </p>
+                    </div>
+                  );
+                })()}
                 {/** Key Feature Readiness coloring logic */}
                 {(() => {
                   const isFeatureComplete = summaryReadyFeatures === summaryFeatureCount && summaryFeatureCount > 0;

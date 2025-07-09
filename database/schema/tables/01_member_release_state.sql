@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS "public"."member_release_state" (
     "is_ready" boolean DEFAULT false NOT NULL,
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "tenant_id" "uuid" NOT NULL
+    "project_id" "uuid" NOT NULL
 );
 
 -- Comments
@@ -21,7 +21,7 @@ COMMENT ON COLUMN "public"."member_release_state"."member_id" IS 'TODO: Add desc
 COMMENT ON COLUMN "public"."member_release_state"."is_ready" IS 'TODO: Add description.';
 COMMENT ON COLUMN "public"."member_release_state"."created_at" IS 'TODO: Add description.';
 COMMENT ON COLUMN "public"."member_release_state"."updated_at" IS 'TODO: Add description.';
-COMMENT ON COLUMN "public"."member_release_state"."tenant_id" IS 'TODO: Add description.';
+COMMENT ON COLUMN "public"."member_release_state"."project_id" IS 'Reference to the project this member release state belongs to';
 
 -- Foreign Keys
 --
@@ -30,7 +30,7 @@ ALTER TABLE ONLY "public"."member_release_state"
 ALTER TABLE ONLY "public"."member_release_state"
     ADD CONSTRAINT "member_release_state_release_id_fkey" FOREIGN KEY ("release_id") REFERENCES "public"."releases"("id") ON DELETE CASCADE;
 ALTER TABLE ONLY "public"."member_release_state"
-    ADD CONSTRAINT "member_release_state_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE CASCADE;
+    ADD CONSTRAINT "member_release_state_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE CASCADE;
 
 -- Triggers
 --

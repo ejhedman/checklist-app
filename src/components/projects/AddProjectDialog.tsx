@@ -13,34 +13,27 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
-import { useAuth } from "@/contexts/AuthContext";
 
-interface AddTargetDialogProps {
-  onTargetAdded: () => void;
+interface AddProjectDialogProps {
+  onProjectAdded: () => void;
 }
 
-export function AddTargetDialog({ onTargetAdded }: AddTargetDialogProps) {
+export function AddProjectDialog({ onProjectAdded }: AddProjectDialogProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    short_name: "",
     name: "",
-    is_live: false,
   });
   const [error, setError] = useState("");
-  const { selectedProject } = useAuth();
 
   const handleOpenChange = (newOpen: boolean) => {
     setOpen(newOpen);
     if (newOpen) {
       // Reset form
       setFormData({
-        short_name: "",
         name: "",
-        is_live: false,
       });
       setError("");
     }
@@ -54,36 +47,27 @@ export function AddTargetDialog({ onTargetAdded }: AddTargetDialogProps) {
     try {
       const supabase = createClient();
 
-      if (!selectedProject) {
-        setError("Please select a project first");
-        setLoading(false);
-        return;
-      }
-
-      // Insert new target
-      const { error: targetError } = await supabase
-        .from("targets")
+      // Insert new project
+      const { error: projectError } = await supabase
+        .from("projects")
         .insert({
-          short_name: formData.short_name,
           name: formData.name,
-          is_live: formData.is_live,
-          project_id: selectedProject.id,
         })
         .select()
         .single();
 
-      if (targetError) {
-        console.error("Error creating target:", targetError);
-        if (targetError.code === '23505') {
-          setError("A target with this short name already exists. Please choose a different short name.");
+      if (projectError) {
+        console.error("Error creating project:", projectError);
+        if (projectError.code === '23505') {
+          setError("A project with this name already exists. Please choose a different name.");
         } else {
-          setError("Failed to create target: " + targetError.message);
+          setError("Failed to create project: " + projectError.message);
         }
         return;
       }
 
       setOpen(false);
-      onTargetAdded();
+      onProjectAdded();
     } catch (error) {
       console.error("Error:", error);
       setError("An unexpected error occurred");
@@ -97,35 +81,21 @@ export function AddTargetDialog({ onTargetAdded }: AddTargetDialogProps) {
       <DialogTrigger asChild>
         <Button>
           <Plus className="h-4 w-4 mr-2" />
-          Add Target
+          New Project
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Add New Target</DialogTitle>
+          <DialogTitle>Add New Project</DialogTitle>
           <DialogDescription>
-            Create a new target for your organization.
+            Create a new project for your organization.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="short_name" className="text-right">
-                Short Name *
-              </Label>
-              <Input
-                id="short_name"
-                value={formData.short_name}
-                onChange={(e) => setFormData({ ...formData, short_name: e.target.value })}
-                className="col-span-3"
-                required
-                disabled={loading}
-                placeholder="e.g., acme, corp"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="name" className="text-right">
-                Full Name *
+                Name *
               </Label>
               <Input
                 id="name"
@@ -134,21 +104,8 @@ export function AddTargetDialog({ onTargetAdded }: AddTargetDialogProps) {
                 className="col-span-3"
                 required
                 disabled={loading}
-                placeholder="e.g., Acme Corporation"
+                placeholder="e.g., DWH, Production"
               />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <div className="col-span-4 flex items-center space-x-2">
-                <Checkbox
-                  id="is_live"
-                  checked={formData.is_live}
-                  onCheckedChange={(checked) => 
-                    setFormData({ ...formData, is_live: checked as boolean })
-                  }
-                  disabled={loading}
-                />
-                <Label htmlFor="is_live">Mark as live target</Label>
-              </div>
             </div>
             {error && (
               <div className="col-span-4 text-sm text-red-600 bg-red-50 p-3 rounded-md">
@@ -172,7 +129,7 @@ export function AddTargetDialog({ onTargetAdded }: AddTargetDialogProps) {
                   Adding...
                 </>
               ) : (
-                "Add Target"
+                "Add Project"
               )}
             </Button>
           </DialogFooter>

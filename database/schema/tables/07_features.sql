@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS "public"."features" (
     "is_config" boolean DEFAULT false NOT NULL,
     "comments" "text",
     "dri_member_id" "uuid",
-    "tenant_id" "uuid" NOT NULL
+    "project_id" "uuid" NOT NULL
 );
 
 -- Comments
@@ -35,7 +35,7 @@ COMMENT ON COLUMN "public"."features"."updated_at" IS 'TODO: Add description.';
 COMMENT ON COLUMN "public"."features"."is_config" IS 'Indicates if this feature is a configuration change (peer to is_platform)';
 COMMENT ON COLUMN "public"."features"."comments" IS 'User comments/notes about the feature status';
 COMMENT ON COLUMN "public"."features"."dri_member_id" IS 'TODO: Add description.';
-COMMENT ON COLUMN "public"."features"."tenant_id" IS 'TODO: Add description.';
+COMMENT ON COLUMN "public"."features"."project_id" IS 'Reference to the project this feature belongs to';
 
 -- Foreign Keys
 --
@@ -44,7 +44,7 @@ ALTER TABLE ONLY "public"."features"
 ALTER TABLE ONLY "public"."features"
     ADD CONSTRAINT "features_release_id_fkey" FOREIGN KEY ("release_id") REFERENCES "public"."releases"("id") ON DELETE CASCADE;
 ALTER TABLE ONLY "public"."features"
-    ADD CONSTRAINT "features_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE CASCADE;
+    ADD CONSTRAINT "features_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE CASCADE;
 
 -- Triggers
 --

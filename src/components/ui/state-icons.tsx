@@ -2,8 +2,13 @@ import React from "react";
 import { AlertTriangle, CheckCircle, Clock, Calendar } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-
-export type ReleaseState = "past_due" | "ready" | "pending" | "complete" | "cancelled";
+import { 
+  ReleaseState, 
+  getStateIconColor, 
+  getStateBadgeConfig, 
+  getStateDisplayText,
+  getStatePaleBackgroundColor 
+} from "@/lib/state-colors";
 
 interface ReleaseStateIconProps {
   state: ReleaseState;
@@ -13,19 +18,20 @@ interface ReleaseStateIconProps {
 
 export function ReleaseStateIcon({ state, className, size = 16 }: ReleaseStateIconProps) {
   const iconConfig = {
-    past_due: { icon: AlertTriangle, className: "text-red-500" },
-    ready: { icon: CheckCircle, className: "text-green-500" },
-    pending: { icon: Clock, className: "text-amber-500" },
-    complete: { icon: CheckCircle, className: "text-blue-500" },
-    cancelled: { icon: Calendar, className: "text-gray-500" }
+    past_due: { icon: AlertTriangle },
+    next: { icon: CheckCircle },
+    pending: { icon: Clock },
+    complete: { icon: CheckCircle },
+    cancelled: { icon: Calendar }
   };
 
   const config = iconConfig[state] || iconConfig.pending;
   const IconComponent = config.icon;
+  const iconColor = getStateIconColor(state);
 
   return (
     <IconComponent 
-      className={cn(config.className, className)} 
+      className={cn(iconColor, className)} 
       size={size}
     />
   );
@@ -38,31 +44,8 @@ interface StateBadgeProps {
 }
 
 export function StateBadge({ state, className, variant }: StateBadgeProps) {
-  const badgeConfig = {
-    past_due: { 
-      className: "bg-red-500 text-white", 
-      variant: "destructive" as const 
-    },
-    ready: { 
-      className: "bg-green-600 text-white", 
-      variant: "default" as const 
-    },
-    pending: { 
-      className: "bg-amber-400 text-black", 
-      variant: "default" as const 
-    },
-    complete: { 
-      className: "bg-blue-500 text-white", 
-      variant: "default" as const 
-    },
-    cancelled: { 
-      className: "bg-gray-500 text-white", 
-      variant: "secondary" as const 
-    }
-  };
-
-  const config = badgeConfig[state] || badgeConfig.pending;
-  const displayText = state.replace("_", " ");
+  const config = getStateBadgeConfig(state);
+  const displayText = getStateDisplayText(state);
 
   return (
     <Badge 
@@ -97,17 +80,5 @@ export function StateIndicator({
   );
 }
 
-// Helper function to get background color for state
-export function getStateBackgroundColor(state: ReleaseState, isArchived?: boolean): string {
-  if (isArchived) return "bg-gray-200";
-  
-  const colorMap = {
-    ready: "bg-green-50",
-    pending: "bg-amber-50", 
-    past_due: "bg-red-50",
-    complete: "bg-blue-50",
-    cancelled: "bg-gray-50"
-  };
-  
-  return colorMap[state] || "bg-gray-50";
-} 
+// Re-export the shared function for backward compatibility
+export { getStatePaleBackgroundColor as getStateBackgroundColor }; 

@@ -6,12 +6,18 @@ import { createClient } from "@/lib/supabase";
 import { useToast } from "@/components/ui/toast";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
+import { getStateColor, ReleaseState } from "@/lib/state-colors";
+
+// Wrapper function to convert string to ReleaseState
+function getStateColorWrapper(state: string) {
+  return getStateColor(state as ReleaseState);
+}
 
 interface Release {
   id: string;
   name: string;
   target_date: string;
-  state: 'pending' | 'ready' | 'past_due' | 'complete' | 'cancelled';
+  state: 'pending' | 'next' | 'past_due' | 'complete' | 'cancelled';
 }
 
 interface CalendarDay {
@@ -28,23 +34,6 @@ interface DragState {
   releaseId: string | null;
   releaseName: string | null;
   originalDate: string | null;
-}
-
-function getStateColor(state: string) {
-  switch (state) {
-    case "past_due":
-      return "bg-red-500 text-white";
-    case "ready":
-      return "bg-green-500 text-white";
-    case "pending":
-      return "bg-yellow-300 text-black";
-    case "complete":
-      return "bg-blue-500 text-white";
-    case "cancelled":
-      return "bg-gray-500 text-white";
-    default:
-      return "bg-gray-200 text-black";
-  }
 }
 
 function generateCalendarDays(year: number, month: number, releases: Release[], userInvolvedReleaseIds: Set<string>): CalendarDay[] {
@@ -224,7 +213,7 @@ function CalendarGrid({
                       key={release.id}
                       className={`
                         w-full px-1 py-0.5 mb-0.5 rounded text-xs truncate cursor-grab active:cursor-grabbing
-                        ${getStateColor(release.state)}
+                        ${getStateColorWrapper(release.state)}
                         ${dragState.isDragging && dragState.releaseId === release.id ? 'opacity-50' : ''}
                       `}
                       title={release.name}
@@ -255,7 +244,7 @@ export default function CalendarPage() {
   const [userInvolvedReleaseIds, setUserInvolvedReleaseIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const { addToast } = useToast();
-  const { user, selectedTenant, is_release_manager } = useAuth();
+  const { user, selectedProject, is_release_manager } = useAuth();
   const [dragState, setDragState] = useState<DragState>({
     isDragging: false,
     releaseId: null,
@@ -264,15 +253,15 @@ export default function CalendarPage() {
   });
 
   const fetchUserInvolvement = async () => {
-    if (!user || !selectedTenant) return;
+    if (!user || !selectedProject) return;
     const supabase = createClient();
 
-    // 1. Get all team IDs for the user (filtered by tenant)
+    // 1. Get all team IDs for the user (filtered by project)
     const { data: teamMemberRows, error: teamMemberError } = await supabase
       .from("team_members")
       .select("team_id")
       .eq("member_id", user.id)
-      .eq("tenant_id", selectedTenant.id);
+      .eq("project_id", selectedProject.id);
 
     if (teamMemberError) {
       console.error("Error fetching user teams:", teamMemberError);
@@ -281,13 +270,13 @@ export default function CalendarPage() {
 
     const userTeamIds = (teamMemberRows ?? []).map(row => row.team_id);
 
-    // 2. Get all release IDs for those teams (filtered by tenant)
+    // 2. Get all release IDs for those teams (filtered by project)
     let teamReleaseIds: string[] = [];
     if (userTeamIds.length > 0) {
       const { data: releaseTeamsRows, error: releaseTeamsError } = await supabase
         .from("release_teams")
         .select("release_id")
-        .eq("tenant_id", selectedTenant.id)
+        .eq("project_id", selectedProject.id)
         .in("team_id", userTeamIds);
 
       if (releaseTeamsError) {
@@ -297,12 +286,12 @@ export default function CalendarPage() {
       teamReleaseIds = (releaseTeamsRows ?? []).map(row => row.release_id);
     }
 
-    // 3. Get all release IDs where user is DRI for a feature (filtered by tenant)
+    // 3. Get all release IDs where user is DRI for a feature (filtered by project)
     const { data: driFeaturesRows, error: driFeaturesError } = await supabase
       .from("features")
       .select("release_id")
       .eq("dri_member_id", user.id)
-      .eq("tenant_id", selectedTenant.id);
+      .eq("project_id", selectedProject.id);
 
     if (driFeaturesError) {
       console.error("Error fetching DRI features:", driFeaturesError);
@@ -310,14 +299,14 @@ export default function CalendarPage() {
     }
     const driReleaseIds = (driFeaturesRows ?? []).map(row => row.release_id);
 
-    // 4. Get all release IDs where user is a team member AND is not ready (member_release_state.is_ready = false, filtered by tenant)
+    // 4. Get all release IDs where user is a team member AND is not ready (member_release_state.is_ready = false, filtered by project)
     let notReadyReleaseIds: string[] = [];
     if (teamReleaseIds.length > 0) {
       const { data: notReadyRows, error: notReadyError } = await supabase
         .from("member_release_state")
         .select("release_id")
         .eq("member_id", user.id)
-        .eq("tenant_id", selectedTenant.id)
+        .eq("project_id", selectedProject.id)
         .eq("is_ready", false)
         .in("release_id", teamReleaseIds);
       if (notReadyError) {
@@ -336,8 +325,8 @@ export default function CalendarPage() {
     try {
       const supabase = createClient();
       
-      if (!selectedTenant) {
-        console.error("No tenant selected");
+      if (!selectedProject) {
+        console.error("No project selected");
         setReleases([]);
         setLoading(false);
         return;
@@ -346,7 +335,7 @@ export default function CalendarPage() {
       const { data, error } = await supabase
         .from("releases")
         .select("id, name, target_date, state")
-        .eq("tenant_id", selectedTenant.id)
+        .eq("project_id", selectedProject.id)
         .order("target_date");
 
       if (error) {
@@ -367,9 +356,9 @@ export default function CalendarPage() {
     try {
       const supabase = createClient();
       
-      if (!selectedTenant || !user) {
-        console.error("No tenant selected or user not found");
-        throw new Error("No tenant selected or user not found");
+      if (!selectedProject || !user) {
+        console.error("No project selected or user not found");
+        throw new Error("No project selected or user not found");
       }
       
       // Get the current release data to log the change
@@ -403,7 +392,7 @@ export default function CalendarPage() {
           .from('members')
           .select('id')
           .eq('email', user.email)
-          .eq('tenant_id', selectedTenant.id)
+          .eq('project_id', selectedProject.id)
           .single();
 
         if (memberError || !member) {
@@ -414,7 +403,7 @@ export default function CalendarPage() {
         const { error: activityError } = await supabase.from("activity_log").insert({
           release_id: releaseId,
           member_id: member.id,
-          tenant_id: selectedTenant.id,
+          project_id: selectedProject.id,
           activity_type: "release_date_changed",
           activity_details: { 
             oldDate: oldDate,
@@ -464,7 +453,7 @@ export default function CalendarPage() {
   };
 
   useEffect(() => {
-    if (selectedTenant && user) {
+    if (selectedProject && user) {
       fetchReleases();
       fetchUserInvolvement();
     } else {
@@ -472,7 +461,7 @@ export default function CalendarPage() {
       setUserInvolvedReleaseIds(new Set());
       setLoading(false);
     }
-  }, [selectedTenant, user]);
+  }, [selectedProject, user]);
 
   // Global drag end handler to reset drag state
   useEffect(() => {

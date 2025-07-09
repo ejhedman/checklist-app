@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS "public"."activity_log" (
     "activity_details" "jsonb",
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "member_id" "uuid",
-    "tenant_id" "uuid" NOT NULL
+    "project_id" "uuid" NOT NULL
 );
 
 -- Comments
@@ -27,7 +27,7 @@ COMMENT ON COLUMN "public"."activity_log"."activity_type" IS 'TODO: Add descript
 COMMENT ON COLUMN "public"."activity_log"."activity_details" IS 'TODO: Add description.';
 COMMENT ON COLUMN "public"."activity_log"."created_at" IS 'TODO: Add description.';
 COMMENT ON COLUMN "public"."activity_log"."member_id" IS 'TODO: Add description.';
-COMMENT ON COLUMN "public"."activity_log"."tenant_id" IS 'TODO: Add description.';
+COMMENT ON COLUMN "public"."activity_log"."project_id" IS 'Reference to the project this activity belongs to';
 
 -- Foreign Keys
 --
@@ -40,7 +40,7 @@ ALTER TABLE ONLY "public"."activity_log"
 ALTER TABLE ONLY "public"."activity_log"
     ADD CONSTRAINT "activity_log_team_id_fkey" FOREIGN KEY ("team_id") REFERENCES "public"."teams"("id") ON DELETE CASCADE;
 ALTER TABLE ONLY "public"."activity_log"
-    ADD CONSTRAINT "activity_log_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE CASCADE;
+    ADD CONSTRAINT "activity_log_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE CASCADE;
 
 -- Triggers
 --

@@ -30,7 +30,7 @@ export function AddTeamDialog({ onTeamAdded }: AddTeamDialogProps) {
     description: "",
   });
   const [error, setError] = useState("");
-  const { selectedTenant } = useAuth();
+  const { selectedProject } = useAuth();
 
   const handleOpenChange = (newOpen: boolean) => {
     setOpen(newOpen);
@@ -52,7 +52,7 @@ export function AddTeamDialog({ onTeamAdded }: AddTeamDialogProps) {
     try {
       const supabase = createClient();
 
-      if (!selectedTenant) {
+      if (!selectedProject) {
         setError("Please select a project first");
         setLoading(false);
         return;
@@ -64,7 +64,7 @@ export function AddTeamDialog({ onTeamAdded }: AddTeamDialogProps) {
         .insert({
           name: formData.name,
           description: formData.description || null,
-          tenant_id: selectedTenant.id,
+          project_id: selectedProject.id,
         })
         .select()
         .single();

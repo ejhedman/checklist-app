@@ -42,12 +42,12 @@ export function AddFeatureDialog({ releaseId, releaseName, onFeatureAdded, onFea
   const [members, setMembers] = useState<Array<{ id: string; full_name: string; email: string }>>([]);
   const { user, is_release_manager } = useAuth();
 
-  // Helper function to get member info (id and tenant_id)
+  // Helper function to get member info (id and project_id)
   const getMemberInfo = async (userId: string) => {
     const supabase = createClient();
     const { data, error } = await supabase
       .from("members")
-      .select("id, tenant_id")
+      .select("id, project_id")
       .eq("user_id", userId)
       .single();
     
@@ -63,7 +63,7 @@ export function AddFeatureDialog({ releaseId, releaseName, onFeatureAdded, onFea
   const fetchMembers = async () => {
     const supabase = createClient();
     
-    // Get current user's member info for tenant filtering
+    // Get current user's member info for project filtering
     if (!user?.email) {
       console.error("No authenticated user found");
       return;
@@ -71,7 +71,7 @@ export function AddFeatureDialog({ releaseId, releaseName, onFeatureAdded, onFea
 
     const { data: member, error: memberError } = await supabase
       .from('members')
-      .select('tenant_id')
+      .select('project_id')
       .eq('email', user.email)
       .single();
 
@@ -83,7 +83,7 @@ export function AddFeatureDialog({ releaseId, releaseName, onFeatureAdded, onFea
     const { data, error } = await supabase
       .from("members")
       .select("id, full_name, email")
-      .eq("tenant_id", member.tenant_id)
+      .eq("project_id", member.project_id)
       .order("full_name");
     
     if (!error && data) {
@@ -133,7 +133,7 @@ export function AddFeatureDialog({ releaseId, releaseName, onFeatureAdded, onFea
           is_platform: formData.isPlatform,
           is_config: formData.isConfig,
           is_ready: false, // Always default to false when creating
-          tenant_id: memberInfo?.tenant_id,
+          project_id: memberInfo?.project_id,
         })
         .select()
         .single();
@@ -150,7 +150,7 @@ export function AddFeatureDialog({ releaseId, releaseName, onFeatureAdded, onFea
           release_id: releaseId,
           feature_id: featureData.id,
           member_id: memberInfo.id,
-          tenant_id: memberInfo.tenant_id,
+          project_id: memberInfo.project_id,
           activity_type: "feature_added",
           activity_details: { name: formData.name },
         });

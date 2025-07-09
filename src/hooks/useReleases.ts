@@ -10,10 +10,11 @@ interface Release {
   platform_update: boolean;
   config_update: boolean;
   is_archived: boolean;
+  is_ready: boolean;
   targets?: string[];
   created_at: string;
-  tenant_id: string;
-  tenants?: {
+  project_id: string;
+  projects?: {
     id: string;
     name: string;
   };
@@ -59,7 +60,7 @@ interface TransformedRelease extends Release {
   ready_features: number;
   total_members: number;
   ready_members: number;
-  tenant?: {
+  project?: {
     id: string;
     name: string;
   };
@@ -74,7 +75,7 @@ export function useReleases(options: UseReleasesOptions = {}) {
   const [releases, setReleases] = useState<TransformedRelease[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { selectedTenant } = useAuth();
+  const { selectedProject } = useAuth();
   const { showArchived = false, includeDetails = true } = options;
 
   const transformReleaseData = (data: any[]): TransformedRelease[] => {
@@ -109,7 +110,7 @@ export function useReleases(options: UseReleasesOptions = {}) {
         total_members,
         ready_members,
         features: release.features || [],
-        tenant: release.tenants,
+        project: release.projects,
       };
     });
   };
@@ -119,8 +120,8 @@ export function useReleases(options: UseReleasesOptions = {}) {
     setError(null);
     const supabase = createClient();
     
-    if (!selectedTenant) {
-      console.error("No tenant selected");
+    if (!selectedProject) {
+      console.error("No project selected");
       setReleases([]);
       setLoading(false);
       return;
@@ -135,10 +136,11 @@ export function useReleases(options: UseReleasesOptions = {}) {
         platform_update,
         config_update,
         is_archived,
+        is_ready,
         targets,
         created_at,
-        tenant_id,
-        tenants (
+        project_id,
+        projects (
           id,
           name
         )
@@ -185,7 +187,7 @@ export function useReleases(options: UseReleasesOptions = {}) {
       let query = supabase
         .from("releases")
         .select(baseQuery)
-        .eq('tenant_id', selectedTenant.id)
+        .eq('project_id', selectedProject.id)
         .order("target_date", { ascending: true });
 
       if (!showArchived) {
@@ -211,13 +213,13 @@ export function useReleases(options: UseReleasesOptions = {}) {
   };
 
   useEffect(() => {
-    if (selectedTenant) {
+    if (selectedProject) {
       fetchReleases();
     } else {
       setReleases([]);
       setLoading(false);
     }
-  }, [selectedTenant, showArchived, includeDetails]);
+  }, [selectedProject, showArchived, includeDetails]);
 
   return {
     releases,

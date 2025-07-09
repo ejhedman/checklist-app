@@ -6,15 +6,15 @@ import { ReleaseSummaryCard } from "@/components/releases/ReleaseSummaryCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { useReleases } from "@/hooks/useReleases";
 import { LoadingSpinner } from "@/components/ui/loading";
-import { ReleaseStateIcon } from "@/components/ui/state-icons";
+import { getStateIcon } from "@/lib/state-colors";
 
 export default function ReleasesPage() {
   const [showArchived, setShowArchived] = useState(false);
-  const { selectedTenant } = useAuth();
+  const { selectedProject } = useAuth();
   const { releases, loading, error, refetch } = useReleases({ showArchived });
 
-  const getStateIcon = (state: string) => {
-    return <ReleaseStateIcon state={state as any} size={16} />;
+  const getStateIconWrapper = (state: string) => {
+    return getStateIcon(state as any);
   };
 
   return (
@@ -45,7 +45,7 @@ export default function ReleasesPage() {
               <ReleaseSummaryCard
                 key={release.id}
                 release={release}
-                getStateIcon={getStateIcon}
+                getStateIcon={getStateIconWrapper}
                 onReleaseUpdated={refetch}
                 collapsible={true}
                 initialExpanded={false}

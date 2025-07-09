@@ -9,7 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 export default function DisplayReleaseNotesPage() {
   const { slug } = useParams();
   const router = useRouter();
-  const { selectedTenant, user } = useAuth();
+  const { selectedProject, user } = useAuth();
   const [releaseNotes, setReleaseNotes] = useState<string>("");
   const [releaseSummary, setReleaseSummary] = useState<string>("");
   const [releaseName, setReleaseName] = useState<string>("");
@@ -22,37 +22,37 @@ export default function DisplayReleaseNotesPage() {
       setError(null);
       const supabase = createClient();
       
-      // Check if user is authenticated and tenant is selected
+      // Check if user is authenticated and project is selected
       if (!user) {
         setError("No authenticated user found");
         setLoading(false);
         return;
       }
 
-      if (!selectedTenant) {
-        setError("No tenant selected");
+      if (!selectedProject) {
+        setError("No project selected");
         setLoading(false);
         return;
       }
       
-      // Find release by name (slug) and tenant
+      // Find release by name (slug) and project
       const { data, error } = await supabase
         .from("releases")
-        .select("id, name, release_notes, release_summary, tenant_id")
+        .select("id, name, release_notes, release_summary, project_id")
         .eq("name", decodeURIComponent(slug as string))
-        .eq("tenant_id", selectedTenant.id)
+        .eq("project_id", selectedProject.id)
         .single();
         
       if (error) {
-        // Release not found or doesn't belong to selected tenant - redirect to home
-        console.log('Release not found or tenant mismatch, redirecting to home');
+        // Release not found or doesn't belong to selected project - redirect to home
+        console.log('Release not found or project mismatch, redirecting to home');
         router.push('/');
         return;
       }
 
-      // Additional validation: check if the release's tenant matches the selected tenant
-      if (data.tenant_id !== selectedTenant.id) {
-        console.log('Release tenant does not match selected tenant, redirecting to home');
+      // Additional validation: check if the release's project matches the selected project
+      if (data.project_id !== selectedProject.id) {
+        console.log('Release project does not match selected project, redirecting to home');
         router.push('/');
         return;
       }
@@ -63,10 +63,10 @@ export default function DisplayReleaseNotesPage() {
       setLoading(false);
     };
     
-    if (selectedTenant) {
+    if (selectedProject) {
       fetchReleaseNotes();
     }
-  }, [slug, selectedTenant]);
+  }, [slug, selectedProject]);
 
   if (loading) {
     return (

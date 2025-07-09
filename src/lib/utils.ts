@@ -21,7 +21,7 @@ export async function getCurrentMemberInfo() {
     // Get the member record for this user
     const { data: member, error: memberError } = await supabase
       .from('members')
-      .select('id, member_id, tenant_id, full_name, email')
+      .select('id, member_id, project_id, full_name, email')
       .eq('email', user.email)
       .single();
 

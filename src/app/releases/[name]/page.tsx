@@ -13,7 +13,7 @@ export default function ReleaseDetailPage({ params }: { params: Promise<{ name: 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  const { selectedTenant, user } = useAuth();
+  const { selectedProject, user } = useAuth();
 
   // Unwrap the params Promise using React.use()
   const resolvedParams = use(params);
@@ -27,15 +27,15 @@ export default function ReleaseDetailPage({ params }: { params: Promise<{ name: 
     
     const supabase = createClient();
     
-    // Check if user is authenticated and tenant is selected
+    // Check if user is authenticated and project is selected
     if (!user) {
       setError("No authenticated user found");
       setLoading(false);
       return;
     }
 
-    if (!selectedTenant) {
-      setError("No tenant selected");
+    if (!selectedProject) {
+      setError("No project selected");
       setLoading(false);
       return;
     }
@@ -52,8 +52,8 @@ export default function ReleaseDetailPage({ params }: { params: Promise<{ name: 
         is_archived,
         targets,
         created_at,
-        tenant_id,
-        tenants (
+        project_id,
+        projects (
           id,
           name
         ),
@@ -68,7 +68,7 @@ export default function ReleaseDetailPage({ params }: { params: Promise<{ name: 
                 full_name,
                 email,
                 nickname,
-                tenant_id
+                project_id
               )
             )
           )
@@ -96,20 +96,20 @@ export default function ReleaseDetailPage({ params }: { params: Promise<{ name: 
         )
       `)
       .eq("name", decodedName)
-      .eq("tenant_id", selectedTenant.id)
+      .eq("project_id", selectedProject.id)
       .order("created_at", { foreignTable: "features", ascending: true })
       .single();
 
     if (supabaseError || !data) {
-      // Release not found or doesn't belong to selected tenant - redirect to home
-      console.log('Release not found or tenant mismatch, redirecting to home');
+      // Release not found or doesn't belong to selected project - redirect to home
+      console.log('Release not found or project mismatch, redirecting to home');
       router.push('/');
       return;
     }
 
-    // Additional validation: check if the release's tenant matches the selected tenant
-    if (data.tenant_id !== selectedTenant.id) {
-      console.log('Release tenant does not match selected tenant, redirecting to home');
+    // Additional validation: check if the release's project matches the selected project
+    if (data.project_id !== selectedProject.id) {
+      console.log('Release project does not match selected project, redirecting to home');
       router.push('/');
       return;
     }
@@ -161,14 +161,14 @@ export default function ReleaseDetailPage({ params }: { params: Promise<{ name: 
             full_name: tm.member.full_name,
             email: tm.member.email,
             nickname: tm.member.nickname,
-            tenant_id: tm.member.tenant_id,
+            project_id: tm.member.project_id,
             is_ready: memberReadyState?.is_ready || false,
           };
         }) || [],
       })) || [],
       total_members,
       ready_members,
-      tenant: data.tenants,
+      project: data.projects,
     };
 
     setRelease(transformedRelease);
@@ -178,21 +178,21 @@ export default function ReleaseDetailPage({ params }: { params: Promise<{ name: 
   const handleMemberReadyChange = async (releaseId: string, memberId: string, isReady: boolean) => {
     const supabase = createClient();
     
-    // Find the member to get their tenant_id
-    let memberTenantId = null;
+    // Find the member to get their project_id
+    let memberProjectId = null;
     if (release && release.teams) {
       for (const team of release.teams) {
         const member = team.members?.find((m: any) => m.id === memberId);
         if (member) {
-          memberTenantId = member.tenant_id;
+          memberProjectId = member.project_id;
           break;
         }
       }
     }
     
-    // If we can't find the member's tenant_id, use the release's tenant_id as fallback
-    if (!memberTenantId && release?.tenant?.id) {
-      memberTenantId = release.tenant.id;
+    // If we can't find the member's project_id, use the release's project_id as fallback
+    if (!memberProjectId && release?.project?.id) {
+      memberProjectId = release.project.id;
     }
     
     const { error: updateError } = await supabase
@@ -200,7 +200,7 @@ export default function ReleaseDetailPage({ params }: { params: Promise<{ name: 
       .upsert({
         release_id: releaseId,
         member_id: memberId,
-        tenant_id: memberTenantId,
+        project_id: memberProjectId,
         is_ready: isReady,
       });
 
@@ -213,10 +213,10 @@ export default function ReleaseDetailPage({ params }: { params: Promise<{ name: 
   };
 
   useEffect(() => {
-    if (selectedTenant) {
+    if (selectedProject) {
       fetchRelease();
     }
-  }, [decodedName, selectedTenant]);
+  }, [decodedName, selectedProject]);
 
   if (loading) {
     return (

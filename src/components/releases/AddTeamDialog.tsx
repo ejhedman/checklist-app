@@ -31,14 +31,14 @@ export function AddTeamDialog({ releaseId, releaseName, onTeamsUpdated, currentT
   const [selectedTeams, setSelectedTeams] = useState<string[]>(currentTeams.map(t => t.id));
   const [error, setError] = useState("");
   const [teams, setTeams] = useState<Array<{ id: string; name: string }>>([]);
-  const { user, selectedTenant, is_release_manager } = useAuth();
+  const { user, selectedProject, is_release_manager } = useAuth();
 
-  // Helper function to get member info (id and tenant_id)
+  // Helper function to get member info (id and project_id)
   const getMemberInfo = async (userId: string) => {
     const supabase = createClient();
     const { data, error } = await supabase
       .from("members")
-      .select("id, tenant_id")
+      .select("id, project_id")
       .eq("user_id", userId)
       .single();
     
@@ -54,8 +54,8 @@ export function AddTeamDialog({ releaseId, releaseName, onTeamsUpdated, currentT
   const fetchTeams = async () => {
     const supabase = createClient();
     
-    if (!selectedTenant) {
-      console.error("No tenant selected");
+    if (!selectedProject) {
+      console.error("No project selected");
       setError("Please select a project first");
       return;
     }
@@ -63,7 +63,7 @@ export function AddTeamDialog({ releaseId, releaseName, onTeamsUpdated, currentT
     const { data, error } = await supabase
       .from("teams")
       .select("id, name")
-      .eq("tenant_id", selectedTenant.id)
+      .eq("project_id", selectedProject.id)
       .order("name");
     
     if (!error && data) {
@@ -134,11 +134,11 @@ export function AddTeamDialog({ releaseId, releaseName, onTeamsUpdated, currentT
       }
 
       // Add new teams
-      if (teamsToAdd.length > 0 && selectedTenant) {
+      if (teamsToAdd.length > 0 && selectedProject) {
         const releaseTeamInserts = teamsToAdd.map(teamId => ({
           release_id: releaseId,
           team_id: teamId,
-          tenant_id: selectedTenant.id,
+          project_id: selectedProject.id,
         }));
 
         const { error: addError } = await supabase
@@ -153,13 +153,13 @@ export function AddTeamDialog({ releaseId, releaseName, onTeamsUpdated, currentT
       }
 
       // Log activity for added teams
-      if (user?.id && memberInfo && teamsToAdd.length > 0 && selectedTenant) {
+      if (user?.id && memberInfo && teamsToAdd.length > 0 && selectedProject) {
         for (const teamId of teamsToAdd) {
           const { error: activityError } = await supabase.from("activity_log").insert({
             release_id: releaseId,
             team_id: teamId,
             member_id: memberInfo.id,
-            tenant_id: selectedTenant.id,
+            project_id: selectedProject.id,
             activity_type: "team_added",
             activity_details: {},
           });

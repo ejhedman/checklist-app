@@ -16,8 +16,8 @@ import { useUserMilestones } from "@/hooks/useUserMilestones";
 import { PageLoadingState } from "@/components/ui/loading";
 
 export default function HomePage() {
-  const [showAllTenants, setShowAllTenants] = useState(false);
-  const { selectedTenant } = useAuth();
+  const [showAllProjects, setShowAllProjects] = useState(false);
+  const { selectedProject } = useAuth();
   const { data, loading: dashboardLoading, error: dashboardError } = useDashboardData();
   const { milestones: userMilestones, loading: milestonesLoading, error: milestonesError } = useUserMilestones();
 
@@ -26,7 +26,7 @@ export default function HomePage() {
   if (loading) {
     return (
       <PageLoadingState 
-        title={`Loading data for ${selectedTenant?.name || 'selected project'}...`}
+        title={`Loading data for ${selectedProject?.name || 'selected project'}...`}
         showSkeleton={true}
       />
     );
@@ -34,19 +34,19 @@ export default function HomePage() {
 
   return (
     <div className="space-y-8">
-      {/* Tenant title and checkbox */}
+      {/* Project title and checkbox */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">
-          {selectedTenant ? `Project: ${selectedTenant.name}` : 'No Project Selected'}
+          {selectedProject ? `Project: ${selectedProject.name}` : 'No Project Selected'}
         </h1>
         {/* <div className="flex items-center space-x-2">
           <Checkbox
-            id="showAllTenants"
-            checked={showAllTenants}
-            onCheckedChange={(checked) => setShowAllTenants(checked as boolean)}
-            disabled={!selectedTenant || availableTenants.length <= 1}
+            id="showAllProjects"
+            checked={showAllProjects}
+            onCheckedChange={(checked) => setShowAllProjects(checked as boolean)}
+            disabled={!selectedProject || availableProjects.length <= 1}
           />
-          <Label htmlFor="showAllTenants" className="text-sm">
+          <Label htmlFor="showAllProjects" className="text-sm">
             Show all of my Projects
           </Label>
         </div> */}

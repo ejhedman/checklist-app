@@ -41,7 +41,7 @@ export function useTeams() {
   const [teams, setTeams] = useState<TransformedTeam[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { selectedTenant } = useAuth();
+  const { selectedProject } = useAuth();
 
   const transformTeamData = (data: Team[]): TransformedTeam[] => {
     return data?.map((team) => ({
@@ -70,8 +70,8 @@ export function useTeams() {
     setError(null);
     const supabase = createClient();
     
-    if (!selectedTenant) {
-      console.error("No tenant selected");
+    if (!selectedProject) {
+      console.error("No project selected");
       setTeams([]);
       setLoading(false);
       return;
@@ -98,7 +98,7 @@ export function useTeams() {
             release_id
           )
         `)
-        .eq('tenant_id', selectedTenant.id)
+        .eq('project_id', selectedProject.id)
         .order("name");
 
       // Debug log: raw data from Supabase
@@ -135,13 +135,13 @@ export function useTeams() {
   };
 
   useEffect(() => {
-    if (selectedTenant) {
+    if (selectedProject) {
       fetchTeams();
     } else {
       setTeams([]);
       setLoading(false);
     }
-  }, [selectedTenant]);
+  }, [selectedProject]);
 
   return {
     teams,

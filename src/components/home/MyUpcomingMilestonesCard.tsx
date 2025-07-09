@@ -26,11 +26,11 @@ export default function MyUpcomingMilestonesCard({ milestones }: { milestones: a
                     <h3 className="font-semibold">
                       {milestone.type === 'team_member' ? (
                         <Link href={`/releases/${encodeURIComponent(milestone.title)}`} className="hover:underline text-primary">
-                          {milestone.tenant_name ? `${milestone.tenant_name}: ` : ''}{milestone.title}
+                          {milestone.project_name ? `${milestone.project_name}: ` : ''}{milestone.title}
                         </Link>
                       ) : (
                         <Link href={`/releases/${encodeURIComponent(milestone.release_name)}`} className="hover:underline text-primary">
-                          {milestone.tenant_name ? `${milestone.tenant_name}: ` : ''}{milestone.release_name}
+                          {milestone.project_name ? `${milestone.project_name}: ` : ''}{milestone.release_name}
                         </Link>
                       )}
                     </h3>
@@ -55,7 +55,7 @@ export default function MyUpcomingMilestonesCard({ milestones }: { milestones: a
                         {milestone.is_ready ? "Ready" : "Not Ready"}
                       </Badge>
                     )}
-                    {milestone.state === "ready" ? (
+                    {milestone.state === "next" ? (
                       <Badge className="bg-green-600 text-white" variant="default">
                         {milestone.state.replace("_", " ")}
                       </Badge>

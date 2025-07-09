@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS "public"."members" (
     "member_role" "text" DEFAULT 'user'::"text" NOT NULL,
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "tenant_id" "uuid" NOT NULL,
+    "project_id" "uuid" NOT NULL,
     CONSTRAINT "members_role_check" CHECK (("member_role" = ANY (ARRAY['member'::"text", 'release_manager'::"text", 'admin'::"text"])))
 );
 
@@ -28,12 +28,12 @@ COMMENT ON COLUMN "public"."members"."nickname" IS 'TODO: Add description.';
 COMMENT ON COLUMN "public"."members"."member_role" IS 'TODO: Add description.';
 COMMENT ON COLUMN "public"."members"."created_at" IS 'TODO: Add description.';
 COMMENT ON COLUMN "public"."members"."updated_at" IS 'TODO: Add description.';
-COMMENT ON COLUMN "public"."members"."tenant_id" IS 'TODO: Add description.';
+COMMENT ON COLUMN "public"."members"."project_id" IS 'Reference to the project this member belongs to';
 
 -- Foreign Keys
 --
 ALTER TABLE ONLY "public"."members"
-    ADD CONSTRAINT "members_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE CASCADE;
+    ADD CONSTRAINT "members_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE CASCADE;
 
 -- Triggers
 --

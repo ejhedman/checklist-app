@@ -39,15 +39,15 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
   });
   const [error, setError] = useState("");
   const [targets, setTargets] = useState<Array<{ id: string; short_name: string; name: string }>>([]);
-  const { user, selectedTenant, is_release_manager } = useAuth();
+  const { user, selectedProject, is_release_manager } = useAuth();
 
-  // Helper function to get member info (id and tenant_id)
+  // Helper function to get member info (id and project_id)
   const getMemberInfo = async (userId: string) => {
     console.log("Getting member info for user:", userId);
     const supabase = createClient();
     const { data, error } = await supabase
       .from("members")
-      .select("id, tenant_id")
+      .select("id, project_id")
       .eq("user_id", userId)
       .single();
     
@@ -65,20 +65,20 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
   // Fetch targets when dialog opens
   const fetchTargets = async () => {
     const supabase = createClient();
-    let tenantId = null;
-    if (isEdit && initialRelease?.tenant?.id) {
-      tenantId = initialRelease.tenant.id;
-    } else if (selectedTenant) {
-      tenantId = selectedTenant.id;
+    let projectId = null;
+    if (isEdit && initialRelease?.project?.id) {
+      projectId = initialRelease.project.id;
+    } else if (selectedProject) {
+      projectId = selectedProject.id;
     }
-    if (!tenantId) {
+    if (!projectId) {
       setTargets([]);
       return;
     }
     const { data, error } = await supabase
       .from("targets")
       .select("id, short_name, name")
-      .eq("tenant_id", tenantId)
+      .eq("project_id", projectId)
       .order("name");
     if (!error && data) {
       setTargets(data);
@@ -134,7 +134,7 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
     try {
       const supabase = createClient();
       
-      if (!selectedTenant) {
+      if (!selectedProject) {
         setError("Please select a project first");
         setLoading(false);
         return;
@@ -181,7 +181,7 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
             const { error: activityError } = await supabase.from("activity_log").insert({
               release_id: initialRelease.id,
               member_id: memberInfo.id,
-              tenant_id: selectedTenant.id,
+              project_id: selectedProject.id,
               activity_type: "release_updated",
               activity_details: { 
                 changes: changes,
@@ -213,7 +213,7 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
         const templateRes = await fetch('/docs/release-notes-template.md');
         const templateText = await templateRes.text();
         
-        // Get member info for tenant_id
+        // Get member info for project_id
         let memberInfo = null;
         if (user?.id) {
           memberInfo = await getMemberInfo(user.id);
@@ -229,7 +229,7 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
             config_update: formData.configUpdate,
             release_notes: templateText,
             release_summary: formData.summary,
-            tenant_id: selectedTenant.id,
+            project_id: selectedProject.id,
             targets: formData.selectedTargets,
           })
           .select()
@@ -246,7 +246,7 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
             const { error: activityError } = await supabase.from("activity_log").insert({
               release_id: release.id,
               member_id: memberInfo.id,
-              tenant_id: selectedTenant.id,
+              project_id: selectedProject.id,
               activity_type: "release_created",
               activity_details: { name: release.name },
             });

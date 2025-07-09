@@ -9,7 +9,7 @@ import { LoadingSpinner } from "@/components/ui/loading";
 
 export default function TeamsPage() {
   const [expandedTeams, setExpandedTeams] = useState<Set<string>>(new Set());
-  const { selectedTenant } = useAuth();
+  const { selectedProject } = useAuth();
   const { teams, loading, error, refetch } = useTeams();
 
   const toggleTeamExpansion = (teamId: string) => {

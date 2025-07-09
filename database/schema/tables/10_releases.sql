@@ -17,7 +17,8 @@ CREATE TABLE IF NOT EXISTS "public"."releases" (
     "release_summary" "text",
     "is_archived" boolean DEFAULT false NOT NULL,
     "targets" "jsonb" DEFAULT '[]'::"jsonb",
-    "tenant_id" "uuid" NOT NULL,
+    "project_id" "uuid" NOT NULL,
+    "is_ready" boolean DEFAULT false NOT NULL,
     CONSTRAINT "releases_state_check" CHECK (("state" = ANY (ARRAY['pending'::"text", 'ready'::"text", 'past_due'::"text", 'complete'::"text", 'cancelled'::"text"])))
 );
 
@@ -36,12 +37,13 @@ COMMENT ON COLUMN "public"."releases"."release_notes" IS 'Markdown-formatted rel
 COMMENT ON COLUMN "public"."releases"."release_summary" IS 'TODO: Add description.';
 COMMENT ON COLUMN "public"."releases"."is_archived" IS 'TODO: Add description.';
 COMMENT ON COLUMN "public"."releases"."targets" IS 'Array of target short names associated with this release';
-COMMENT ON COLUMN "public"."releases"."tenant_id" IS 'TODO: Add description.';
+COMMENT ON COLUMN "public"."releases"."project_id" IS 'Reference to the project this release belongs to';
+COMMENT ON COLUMN "public"."releases"."is_ready" IS 'Indicates whether the release is ready for deployment';
 
 -- Foreign Keys
 --
 ALTER TABLE ONLY "public"."releases"
-    ADD CONSTRAINT "releases_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE CASCADE;
+    ADD CONSTRAINT "releases_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE CASCADE;
 
 -- Triggers
 --

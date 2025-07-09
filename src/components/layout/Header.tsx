@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { LogOut, User } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { LoginDialog } from "@/components/auth/LoginDialog";
-import { TenantSelector } from "./TenantSelector";
+import { ProjectSelector } from "./ProjectSelector";
 
 export function Header() {
   const { user, userRole, memberId, memberRole, signOut } = useAuth();
@@ -28,7 +28,7 @@ export function Header() {
         <div className="flex items-center space-x-4">
           {user ? (
             <>
-              <TenantSelector />
+              <ProjectSelector />
               <Button variant="ghost" size="sm">
                 <User className="h-4 w-4 mr-2" />
                 {user.email}

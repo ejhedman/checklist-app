@@ -8,7 +8,7 @@ import { LoadingSpinner } from "@/components/ui/loading";
 import { Card, CardContent } from "@/components/ui/card";
 
 export default function MembersPage() {
-  const { selectedTenant } = useAuth();
+  const { selectedProject } = useAuth();
   const { members, loading, error, refetch } = useMembers();
 
   const handleMemberAdded = () => {

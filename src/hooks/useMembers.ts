@@ -31,7 +31,7 @@ export function useMembers() {
   const [members, setMembers] = useState<TransformedMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { selectedTenant } = useAuth();
+  const { selectedProject } = useAuth();
 
   const transformMemberData = (data: any[]): TransformedMember[] => {
     return data.map((member) => ({
@@ -53,14 +53,14 @@ export function useMembers() {
     try {
       const supabase = createClient();
       
-      if (!selectedTenant) {
-        console.error("No tenant selected");
+      if (!selectedProject) {
+        console.error("No project selected");
         setMembers([]);
         setLoading(false);
         return;
       }
       
-      // Fetch members with their team memberships (filtered by tenant)
+      // Fetch members with their team memberships (filtered by project)
       const { data: members, error: membersError } = await supabase
         .from("members")
         .select(`
@@ -76,7 +76,7 @@ export function useMembers() {
             )
           )
         `)
-        .eq('tenant_id', selectedTenant.id)
+        .eq('project_id', selectedProject.id)
         .order("full_name");
 
       if (membersError) {
@@ -96,13 +96,13 @@ export function useMembers() {
   };
 
   useEffect(() => {
-    if (selectedTenant) {
+    if (selectedProject) {
       fetchMembers();
     } else {
       setMembers([]);
       setLoading(false);
     }
-  }, [selectedTenant]);
+  }, [selectedProject]);
 
   return {
     members,

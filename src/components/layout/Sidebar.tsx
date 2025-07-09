@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 
 export function Sidebar() {
-  const { userRole, user, loading, selectedTenant } = useAuth();
+  const { userRole, user, loading, selectedProject } = useAuth();
   const isAdmin = userRole === 'admin';
   
   // Debug logging
@@ -38,26 +38,26 @@ export function Sidebar() {
       <nav className="space-y-2 h-full flex flex-col">
         <div className="flex-1 space-y-2">
           <Link href="/">
-            <Button variant="ghost" className="w-full justify-start" disabled={!selectedTenant}>
+            <Button variant="ghost" className="w-full justify-start" disabled={!selectedProject}>
               <Home className="h-4 w-4 mr-2" />
               Home
             </Button>
           </Link>
           <div className="border-t border-border my-2"></div>
           <Link href="/releases">
-            <Button variant="ghost" className="w-full justify-start" disabled={!selectedTenant}>
+            <Button variant="ghost" className="w-full justify-start" disabled={!selectedProject}>
               <Calendar className="h-4 w-4 mr-2" />
               Releases
             </Button>
           </Link>
           <Link href="/releasenotes">
-            <Button variant="ghost" className="w-full justify-start" disabled={!selectedTenant}>
+            <Button variant="ghost" className="w-full justify-start" disabled={!selectedProject}>
               <Pencil className="h-4 w-4 mr-2" />
               Release Notes
             </Button>
           </Link>
           <Link href="/calendar">
-            <Button variant="ghost" className="w-full justify-start" disabled={!selectedTenant}>
+            <Button variant="ghost" className="w-full justify-start" disabled={!selectedProject}>
               <CalendarDays className="h-4 w-4 mr-2" />
               Calendar
             </Button>
@@ -68,19 +68,19 @@ export function Sidebar() {
         <div className="mt-auto space-y-2">
           <div className="border-t border-border my-2"></div>
           <Link href="/members">
-            <Button variant="ghost" className="w-full justify-start" disabled={!selectedTenant}>
+            <Button variant="ghost" className="w-full justify-start" disabled={!selectedProject}>
               <User className="h-4 w-4 mr-2" />
               Project Members
             </Button>
           </Link>
           <Link href="/teams">
-            <Button variant="ghost" className="w-full justify-start" disabled={!selectedTenant}>
+            <Button variant="ghost" className="w-full justify-start" disabled={!selectedProject}>
               <Users className="h-4 w-4 mr-2" />
               ProjectTeams
             </Button>
           </Link>
           <Link href="/targets">
-            <Button variant="ghost" className="w-full justify-start" disabled={!selectedTenant}>
+            <Button variant="ghost" className="w-full justify-start" disabled={!selectedProject}>
               <Target className="h-4 w-4 mr-2" />
               Targets
             </Button>
@@ -95,7 +95,7 @@ export function Sidebar() {
           {isAdmin && (
             <>
               <div className="border-t border-border my-2"></div>
-              <Link href="/tenants">
+              <Link href="/projects">
                 <Button variant="ghost" className="w-full justify-start">
                   <Briefcase className="h-4 w-4 mr-2" />
                   Projects

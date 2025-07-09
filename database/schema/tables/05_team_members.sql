@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS "public"."team_members" (
     "member_id" "uuid" NOT NULL,
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "tenant_id" "uuid" NOT NULL
+    "project_id" "uuid" NOT NULL
 );
 
 -- Comments
@@ -19,7 +19,7 @@ COMMENT ON COLUMN "public"."team_members"."team_id" IS 'TODO: Add description.';
 COMMENT ON COLUMN "public"."team_members"."member_id" IS 'TODO: Add description.';
 COMMENT ON COLUMN "public"."team_members"."created_at" IS 'TODO: Add description.';
 COMMENT ON COLUMN "public"."team_members"."updated_at" IS 'TODO: Add description.';
-COMMENT ON COLUMN "public"."team_members"."tenant_id" IS 'TODO: Add description.';
+COMMENT ON COLUMN "public"."team_members"."project_id" IS 'Reference to the project this team member belongs to';
 
 -- Foreign Keys
 --
@@ -28,7 +28,7 @@ ALTER TABLE ONLY "public"."team_members"
 ALTER TABLE ONLY "public"."team_members"
     ADD CONSTRAINT "team_members_team_id_fkey" FOREIGN KEY ("team_id") REFERENCES "public"."teams"("id") ON DELETE CASCADE;
 ALTER TABLE ONLY "public"."team_members"
-    ADD CONSTRAINT "team_members_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE CASCADE;
+    ADD CONSTRAINT "team_members_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE CASCADE;
 
 -- Triggers
 --

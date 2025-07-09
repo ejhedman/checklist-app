@@ -44,7 +44,7 @@ export function AddMemberDialog({ onMemberAdded }: AddMemberDialogProps) {
     nickname: "",
     member_role: "member" as "member" | "release_manager" | "admin",
   });
-  const { selectedTenant } = useAuth();
+  const { selectedProject } = useAuth();
 
   const handleOpenChange = (newOpen: boolean) => {
     setOpen(newOpen);
@@ -100,7 +100,7 @@ export function AddMemberDialog({ onMemberAdded }: AddMemberDialogProps) {
       return;
     }
 
-    if (!selectedTenant) {
+    if (!selectedProject) {
       alert("Please select a project first");
       return;
     }
@@ -115,7 +115,7 @@ export function AddMemberDialog({ onMemberAdded }: AddMemberDialogProps) {
         auth_user_id: selectedUser.id,
         nickname: formData.nickname || null,
         member_role: formData.member_role,
-        tenant_id: selectedTenant.id
+        project_id: selectedProject.id
       });
 
       if (error) {

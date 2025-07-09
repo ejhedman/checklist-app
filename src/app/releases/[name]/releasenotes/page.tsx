@@ -50,7 +50,7 @@ export default function ReleaseNotesPage() {
       setError(null);
       const supabase = createClient();
       
-      // Get current user's member info for tenant filtering
+      // Get current user's member info for project filtering
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError || !user) {
         setError("No authenticated user found");
@@ -60,7 +60,7 @@ export default function ReleaseNotesPage() {
 
       const { data: member, error: memberError } = await supabase
         .from('members')
-        .select('tenant_id')
+        .select('project_id')
         .eq('email', user.email)
         .single();
 
@@ -70,12 +70,12 @@ export default function ReleaseNotesPage() {
         return;
       }
       
-      // Find release by name (slug) and tenant
+      // Find release by name (slug) and project
       const { data, error } = await supabase
         .from("releases")
         .select("id, release_notes, release_summary")
         .eq("name", decodeURIComponent(name as string))
-        .eq("tenant_id", member.tenant_id)
+        .eq("project_id", member.project_id)
         .single();
       if (error) {
         setError("Release not found");
@@ -106,7 +106,7 @@ export default function ReleaseNotesPage() {
 
     const { data: member, error: memberError } = await supabase
       .from('members')
-      .select('id, tenant_id')
+      .select('id, project_id')
       .eq('email', user.email)
       .single();
 
@@ -127,7 +127,7 @@ export default function ReleaseNotesPage() {
       const { error: activityError } = await supabase.from("activity_log").insert({
         release_id: releaseId,
         member_id: member.id,
-        tenant_id: member.tenant_id,
+        project_id: member.project_id,
         activity_type: "release_notes_updated",
         activity_details: { 
           method: "manual_edit"
@@ -160,7 +160,7 @@ export default function ReleaseNotesPage() {
 
     const { data: member, error: memberError } = await supabase
       .from('members')
-      .select('id, tenant_id')
+      .select('id, project_id')
       .eq('email', user.email)
       .single();
 
@@ -181,7 +181,7 @@ export default function ReleaseNotesPage() {
       const { error: activityError } = await supabase.from("activity_log").insert({
         release_id: releaseId,
         member_id: member.id,
-        tenant_id: member.tenant_id,
+        project_id: member.project_id,
         activity_type: "release_summary_updated",
         activity_details: { 
           method: "manual_edit"

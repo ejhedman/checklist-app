@@ -8,7 +8,7 @@ interface Milestone {
   title: string;
   target_date: string;
   state: string;
-  tenant_name?: string;
+  project_name?: string;
   is_ready: boolean;
   release_id: string;
   release_name?: string;
@@ -19,9 +19,9 @@ export function useUserMilestones() {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { selectedTenant, availableTenants, user } = useAuth();
+  const { selectedProject, availableProjects, user } = useAuth();
 
-  const getUserMilestones = async (tenantIds: string[]): Promise<Milestone[]> => {
+  const getUserMilestones = async (projectIds: string[]): Promise<Milestone[]> => {
     const supabase = createClient();
     
     try {
@@ -32,7 +32,7 @@ export function useUserMilestones() {
       // Get the member record for this user
       const { data: member, error: memberError } = await supabase
         .from('members')
-        .select('id, full_name, email, tenant_id')
+        .select('id, full_name, email, project_id')
         .eq('email', user.email)
         .single();
 
@@ -48,8 +48,8 @@ export function useUserMilestones() {
           name,
           target_date,
           state,
-          tenant_id,
-          tenants(name),
+          project_id,
+          projects(name),
           release_teams!inner(
             team:teams!inner(
               team_members!inner(
@@ -64,8 +64,8 @@ export function useUserMilestones() {
         .order('target_date', { ascending: true })
         .limit(10);
       
-      if (tenantIds.length > 0) {
-        teamMemberQuery = teamMemberQuery.in('tenant_id', tenantIds);
+      if (projectIds.length > 0) {
+        teamMemberQuery = teamMemberQuery.in('project_id', projectIds);
       }
       
       const { data: teamMemberReleases, error: teamError } = await teamMemberQuery;
@@ -98,8 +98,8 @@ export function useUserMilestones() {
             name,
             target_date,
             state,
-            tenant_id,
-            tenants(name)
+            project_id,
+            projects(name)
           ).order('target_date', { ascending: true })
         `)
         .eq('dri_member_id', member.id)
@@ -107,8 +107,8 @@ export function useUserMilestones() {
         .not('releases.state', 'in', '(complete,cancelled)')
         .limit(10);
       
-      if (tenantIds.length > 0) {
-        driQuery = driQuery.in('tenant_id', tenantIds);
+      if (projectIds.length > 0) {
+        driQuery = driQuery.in('project_id', projectIds);
       }
       
       const { data: driFeatures, error: driError } = await driQuery;
@@ -130,7 +130,7 @@ export function useUserMilestones() {
               title: release.name,
               target_date: release.target_date,
               state: release.state,
-              tenant_name: release.tenants?.name,
+              project_name: release.projects?.name,
               is_ready: memberReadyState?.is_ready || false,
               release_id: release.id
             });
@@ -148,7 +148,7 @@ export function useUserMilestones() {
               title: feature.name,
               target_date: feature.releases.target_date,
               state: feature.releases.state,
-              tenant_name: feature.releases.tenants?.name,
+              project_name: feature.releases.projects?.name,
               is_ready: feature.is_ready,
               release_id: feature.releases.id,
               release_name: feature.releases.name,
@@ -176,15 +176,15 @@ export function useUserMilestones() {
     setError(null);
     
     try {
-      if (!selectedTenant) {
+      if (!selectedProject) {
         setMilestones([]);
         setLoading(false);
         return;
       }
 
-      // For now, use only the selected tenant
-      const tenantIds = [selectedTenant.id];
-      const milestoneData = await getUserMilestones(tenantIds);
+      // For now, use only the selected project
+      const projectIds = [selectedProject.id];
+      const milestoneData = await getUserMilestones(projectIds);
       setMilestones(milestoneData);
     } catch (err) {
       console.error("Error in fetchMilestones:", err);
@@ -196,7 +196,7 @@ export function useUserMilestones() {
 
   useEffect(() => {
     fetchMilestones();
-  }, [selectedTenant, user]);
+  }, [selectedProject, user]);
 
   return {
     milestones,

@@ -22,9 +22,9 @@ export function useDashboardData() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { selectedTenant, user } = useAuth();
+  const { selectedProject, user } = useAuth();
 
-  const getDashboardData = async (tenantIds: string[]): Promise<DashboardData> => {
+  const getDashboardData = async (projectIds: string[]): Promise<DashboardData> => {
     const supabase = createClient();
     
     try {
@@ -40,16 +40,16 @@ export function useDashboardData() {
         };
       }
 
-      // Get releases statistics (filtered by tenant)
+      // Get releases statistics (filtered by project)
       let releasesQuery = supabase
         .from('releases')
         .select('*')
         .eq('is_archived', false);
       
-      if (tenantIds.length > 0) {
-        releasesQuery = releasesQuery.in('tenant_id', tenantIds);
+      if (projectIds.length > 0) {
+        releasesQuery = releasesQuery.in('project_id', projectIds);
       } else {
-        // If no tenant IDs, return empty result
+        // If no project IDs, return empty result
         return {
           totalReleases: 0,
           activeTeams: 0,
@@ -66,13 +66,13 @@ export function useDashboardData() {
         console.error("Releases fetch error:", releasesError);
       }
 
-      // Get teams count (filtered by tenant)
+      // Get teams count (filtered by project)
       let teamsQuery = supabase
         .from('teams')
         .select('*');
       
-      if (tenantIds.length > 0) {
-        teamsQuery = teamsQuery.in('tenant_id', tenantIds);
+      if (projectIds.length > 0) {
+        teamsQuery = teamsQuery.in('project_id', projectIds);
       }
       
       const { data: teams, error: teamsError } = await teamsQuery;
@@ -81,12 +81,12 @@ export function useDashboardData() {
         console.error("Teams fetch error:", teamsError);
       }
 
-      // Get upcoming releases (not archived, not complete, not cancelled, filtered by tenant)
+      // Get upcoming releases (not archived, not complete, not cancelled, filtered by project)
       let upcomingQuery = supabase
         .from('releases')
         .select(`
           *,
-          tenants(name),
+          projects(name),
           release_teams(
             team_id
           )
@@ -96,8 +96,8 @@ export function useDashboardData() {
         .order('target_date', { ascending: true })
         .limit(3);
       
-      if (tenantIds.length > 0) {
-        upcomingQuery = upcomingQuery.in('tenant_id', tenantIds);
+      if (projectIds.length > 0) {
+        upcomingQuery = upcomingQuery.in('project_id', projectIds);
       }
       
       const { data: upcomingReleases, error: upcomingError } = await upcomingQuery;
@@ -106,15 +106,15 @@ export function useDashboardData() {
         console.error("Upcoming releases fetch error:", upcomingError);
       }
 
-      // Get recent activity log (filtered by tenant)
+      // Get recent activity log (filtered by project)
       let activityQuery = supabase
         .from('activity_log')
         .select(`*, members(full_name, email, nickname), features(name), teams(name), releases(name)`)
         .order('created_at', { ascending: false })
         .limit(7);
       
-      if (tenantIds.length > 0) {
-        activityQuery = activityQuery.in('tenant_id', tenantIds);
+      if (projectIds.length > 0) {
+        activityQuery = activityQuery.in('project_id', projectIds);
       }
       
       const { data: recentActivity, error: activityError } = await activityQuery;
@@ -126,7 +126,7 @@ export function useDashboardData() {
       // Calculate statistics
       const totalReleases = releases?.length || 0;
       const activeTeams = teams?.length || 0;
-      const readyReleases = releases?.filter((r: any) => r.state === 'ready').length || 0;
+      const readyReleases = releases?.filter((r: any) => r.is_ready === true).length || 0;
       const pastDueReleases = releases?.filter((r: any) => r.state === 'past_due').length || 0;
 
       return {
@@ -156,7 +156,7 @@ export function useDashboardData() {
     setError(null);
     
     try {
-      if (!selectedTenant) {
+      if (!selectedProject) {
         setData({
           totalReleases: 0,
           activeTeams: 0,
@@ -169,8 +169,8 @@ export function useDashboardData() {
         return;
       }
 
-      const tenantIds = [selectedTenant.id];
-      const dashboardData = await getDashboardData(tenantIds);
+      const projectIds = [selectedProject.id];
+      const dashboardData = await getDashboardData(projectIds);
       setData(dashboardData);
     } catch (err) {
       console.error("Error in fetchDashboardData:", err);
@@ -182,7 +182,7 @@ export function useDashboardData() {
 
   useEffect(() => {
     fetchDashboardData();
-  }, [selectedTenant, user]);
+  }, [selectedProject, user]);
 
   return {
     data,

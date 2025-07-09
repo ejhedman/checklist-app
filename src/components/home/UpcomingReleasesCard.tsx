@@ -25,7 +25,7 @@ export default function UpcomingReleasesCard({ releases }: { releases: any[] }) 
                   <div>
                     <h3 className="font-semibold">
                       <Link href={`/releases/${encodeURIComponent(release.name)}`} className="hover:underline text-primary">
-                        {release.tenants?.name ? `${release.tenants.name}: ` : ''}{release.name}
+                        {release.projects?.name ? `${release.projects.name}: ` : ''}{release.name}
                       </Link>
                     </h3>
                     <p className="text-sm text-muted-foreground">
@@ -39,7 +39,7 @@ export default function UpcomingReleasesCard({ releases }: { releases: any[] }) 
                         <span>{daysRemaining} days</span>
                       </div>
                     )}
-                    {release.state === "ready" ? (
+                    {release.state === "next" ? (
                       <Badge className="bg-green-600 text-white" variant="default">
                         {release.state.replace("_", " ")}
                       </Badge>

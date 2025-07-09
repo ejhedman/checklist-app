@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useState, useRef } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase";
 
-interface Tenant {
+interface Project {
   id: string;
   name: string;
 }
@@ -13,14 +13,14 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  tenantLoading: boolean;
+  projectLoading: boolean;
   userRole: 'admin' | 'user' | null;
   memberId: string | null;
   memberRole: string | null;
   is_release_manager: boolean;
-  availableTenants: Tenant[];
-  selectedTenant: Tenant | null;
-  setSelectedTenant: (tenant: Tenant | null) => void;
+  availableProjects: Project[];
+  selectedProject: Project | null;
+  setSelectedProject: (project: Project | null) => void;
   signOut: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -31,13 +31,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [tenantLoading, setTenantLoading] = useState(true);
+  const [projectLoading, setProjectLoading] = useState(true);
   const [userRole, setUserRole] = useState<'admin' | 'user' | null>(null);
   const [memberId, setMemberId] = useState<string | null>(null);
   const [memberRole, setMemberRole] = useState<string | null>(null);
   const [is_release_manager, setIsReleaseManager] = useState<boolean>(false);
-  const [availableTenants, setAvailableTenants] = useState<Tenant[]>([]);
-  const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
+  const [availableProjects, setAvailableProjects] = useState<Project[]>([]);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   
   // Use refs to prevent race conditions and duplicate fetches
   const roleFetchPromise = useRef<Promise<'admin' | 'user'> | null>(null);
@@ -46,13 +46,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const supabase = createClient();
 
-  const fetchUserTenants = async (userId: string): Promise<Tenant[]> => {
+  const fetchUserProjects = async (userId: string): Promise<Project[]> => {
     try {
       const { data, error } = await supabase
-        .from('tenant_user_map')
+        .from('project_user_map')
         .select(`
-          tenant_id,
-          tenants (
+          project_id,
+          projects (
             id,
             name
           )
@@ -60,16 +60,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .eq('user_id', userId);
 
       if (error) {
-        console.error('Error fetching user tenants:', error);
+        console.error('Error fetching user projects:', error);
         return [];
       }
 
       return data?.map((item: any) => ({
-        id: item.tenants.id,
-        name: item.tenants.name
+        id: item.projects.id,
+        name: item.projects.name
       })) || [];
     } catch (error) {
-      console.error('Error fetching user tenants:', error);
+      console.error('Error fetching user projects:', error);
       return [];
     }
   };
@@ -146,8 +146,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return roleFetchPromise.current;
   };
 
-  const fetchMemberInfo = async (userId: string, tenantId: string | null) => {
-    if (!tenantId) {
+  const fetchMemberInfo = async (userId: string, projectId: string | null) => {
+    if (!projectId) {
       setMemberId(null);
       setMemberRole(null);
       setIsReleaseManager(false);
@@ -159,7 +159,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .from('members')
         .select('id, member_role')
         .eq('user_id', userId)
-        .eq('tenant_id', tenantId)
+        .eq('project_id', projectId)
         .single();
 
       if (!error && data) {
@@ -190,8 +190,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setMemberId(null);
       setMemberRole(null);
       setIsReleaseManager(false);
-      setAvailableTenants([]);
-      setSelectedTenant(null);
+      setAvailableProjects([]);
+      setSelectedProject(null);
       // Clear the fetch promise and user ID
       roleFetchPromise.current = null;
       lastFetchedUserId.current = null;
@@ -226,11 +226,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Handle tenant selection
-  const handleTenantSelection = (tenant: Tenant | null) => {
-    setSelectedTenant(tenant);
-    if (user && tenant) {
-      fetchMemberInfo(user.id, tenant.id);
+  // Handle project selection
+  const handleProjectSelection = (project: Project | null) => {
+    setSelectedProject(project);
+    if (user && project) {
+      fetchMemberInfo(user.id, project.id);
     } else {
       setMemberId(null);
       setMemberRole(null);
@@ -309,8 +309,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setMemberId(null);
           setMemberRole(null);
           setIsReleaseManager(false);
-          setAvailableTenants([]);
-          setSelectedTenant(null);
+          setAvailableProjects([]);
+          setSelectedProject(null);
           // Clear the fetch promise and user ID
           roleFetchPromise.current = null;
           lastFetchedUserId.current = null;
@@ -328,34 +328,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (user) {
-      // Fetch available tenants for the user
-      const fetchTenants = async () => {
-        setTenantLoading(true);
-        const tenants = await fetchUserTenants(user.id);
-        setAvailableTenants(tenants);
+      // Fetch available projects for the user
+      const fetchProjects = async () => {
+        setProjectLoading(true);
+        const projects = await fetchUserProjects(user.id);
+        setAvailableProjects(projects);
         
-        // Auto-select tenant if user has only one
-        if (tenants.length === 1) {
-          handleTenantSelection(tenants[0]);
-        } else if (tenants.length === 0) {
-          // No tenants available
-          setSelectedTenant(null);
+        // Auto-select project if user has only one
+        if (projects.length === 1) {
+          handleProjectSelection(projects[0]);
+        } else if (projects.length === 0) {
+          // No projects available
+          setSelectedProject(null);
           setMemberId(null);
           setMemberRole(null);
           setIsReleaseManager(false);
         }
-        // If user has multiple tenants, don't auto-select - let them choose
-        setTenantLoading(false);
+        // If user has multiple projects, don't auto-select - let them choose
+        setProjectLoading(false);
       };
       
-      fetchTenants();
+      fetchProjects();
     } else {
-      setAvailableTenants([]);
-      setSelectedTenant(null);
+      setAvailableProjects([]);
+      setSelectedProject(null);
       setMemberId(null);
       setMemberRole(null);
       setIsReleaseManager(false);
-      setTenantLoading(false);
+      setProjectLoading(false);
     }
   }, [user]);
 
@@ -363,14 +363,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user,
     session,
     loading,
-    tenantLoading,
+    projectLoading,
     userRole,
     memberId,
     memberRole,
     is_release_manager,
-    availableTenants,
-    selectedTenant,
-    setSelectedTenant: handleTenantSelection,
+    availableProjects,
+    selectedProject,
+    setSelectedProject: handleProjectSelection,
     signOut,
     refreshUser,
   };

@@ -13,36 +13,7 @@ import { CreateReleaseDialog } from "./CreateReleaseDialog";
 import { AddFeatureDialog } from "./AddFeatureDialog";
 import { ReleaseSummaryCard } from "./ReleaseSummaryCard";
 import { ReleaseDetailBottomContent } from "./ReleaseDetailBottomContent";
-
-export function getStateColor(state: string) {
-  switch (state) {
-    case "past_due":
-      return "bg-red-500";
-    case "ready":
-      return "bg-green-500";
-    case "pending":
-      return "bg-yellow-300";
-    case "complete":
-      return "bg-blue-500";
-    default:
-      return "bg-gray-200";
-  }
-}
-
-export function getStateIcon(state: string) {
-  switch (state) {
-    case "past_due":
-      return <AlertTriangle className="h-4 w-4" />;
-    case "ready":
-      return <CheckCircle className="h-4 w-4" />;
-    case "pending":
-      return <Clock className="h-4 w-4" />;
-    case "complete":
-      return <CheckCircle className="h-4 w-4" />;
-    default:
-      return <Calendar className="h-4 w-4" />;
-  }
-}
+import { getStateBackgroundColor, getStatePaleBackgroundColor, getStateIcon, ReleaseState } from "@/lib/state-colors";
 
 // Helper to calculate days until target date
 function getDaysUntil(dateString: string) {
@@ -56,21 +27,9 @@ function getDaysUntil(dateString: string) {
   return diffDays;
 }
 
-// Map release state to a pale background color for the header (copied from ReleaseSummaryCard)
-function getPaleBgForState(state: string, is_archived?: boolean) {
-  if (is_archived) return "bg-gray-200";
-  switch (state) {
-    case "ready":
-      return "bg-green-50";
-    case "pending":
-      return "bg-amber-50";
-    case "past_due":
-      return "bg-red-50";
-    case "complete":
-      return "bg-blue-50";
-    default:
-      return "bg-gray-50";
-  }
+// Wrapper function to convert string to ReleaseState
+function getStateIconWrapper(state: string) {
+  return getStateIcon(state as ReleaseState);
 }
 
 export default function ReleaseDetailCard({ release, onMemberReadyChange, onReleaseUpdated } : {
@@ -187,7 +146,7 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onRele
           release_id: release.id,
           feature_id: selectedFeature.id,
           member_id: memberId,
-          tenant_id: release.tenant?.id || "",
+          project_id: release.project?.id || "",
           activity_type: "feature_ready",
           activity_details: { comments, releaseName: release.name, featureName: selectedFeature.name },
         });
@@ -209,25 +168,25 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onRele
 
   const updateMemberReady = async (releaseId: string, memberId: string, isReady: boolean) => {
     const supabase = createClient();
-    let memberTenantId = null;
+    let memberProjectId = null;
     if (release && release.teams) {
       for (const team of release.teams) {
         const member = team.members?.find((m: any) => m.id === memberId);
         if (member) {
-          memberTenantId = member.tenant_id;
+          memberProjectId = member.project_id;
           break;
         }
       }
     }
-    if (!memberTenantId && release?.tenant?.id) {
-      memberTenantId = release.tenant.id;
+    if (!memberProjectId && release?.project?.id) {
+      memberProjectId = release.project.id;
     }
     const { error } = await supabase
       .from("member_release_state")
       .upsert({
         release_id: releaseId,
         member_id: memberId,
-        tenant_id: memberTenantId,
+        project_id: memberProjectId,
         is_ready: isReady,
       });
     if (error) {
@@ -244,7 +203,7 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onRele
         const { error: activityError } = await supabase.from("activity_log").insert({
           release_id: releaseId,
           member_id: memberId,
-          tenant_id: memberTenantId,
+          project_id: memberProjectId,
           activity_type: "member_ready",
           activity_details: { isReady, releaseName: release.name },
         });
@@ -272,7 +231,7 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onRele
         const { error: activityError } = await supabase.from("activity_log").insert({
           release_id: release.id,
           member_id: memberId,
-          tenant_id: release.tenant?.id || "",
+          project_id: release.project?.id || "",
           activity_type: "release_state_change",
           activity_details: { oldState: release.state, newState, releaseName: release.name },
         });
@@ -304,7 +263,7 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onRele
     <div className="flex flex-col gap-6">
       <ReleaseSummaryCard
         release={release}
-        getStateIcon={getStateIcon}
+        getStateIcon={getStateIconWrapper}
         onReleaseUpdated={() => onReleaseUpdated?.()}
         collapsible={false}
         initialExpanded={true}

@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS "public"."release_teams" (
     "team_id" "uuid" NOT NULL,
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "tenant_id" "uuid" NOT NULL
+    "project_id" "uuid" NOT NULL
 );
 
 -- Comments
@@ -19,7 +19,7 @@ COMMENT ON COLUMN "public"."release_teams"."release_id" IS 'TODO: Add descriptio
 COMMENT ON COLUMN "public"."release_teams"."team_id" IS 'TODO: Add description.';
 COMMENT ON COLUMN "public"."release_teams"."created_at" IS 'TODO: Add description.';
 COMMENT ON COLUMN "public"."release_teams"."updated_at" IS 'TODO: Add description.';
-COMMENT ON COLUMN "public"."release_teams"."tenant_id" IS 'TODO: Add description.';
+COMMENT ON COLUMN "public"."release_teams"."project_id" IS 'Reference to the project this release team belongs to';
 
 -- Foreign Keys
 --
@@ -28,7 +28,7 @@ ALTER TABLE ONLY "public"."release_teams"
 ALTER TABLE ONLY "public"."release_teams"
     ADD CONSTRAINT "release_teams_team_id_fkey" FOREIGN KEY ("team_id") REFERENCES "public"."teams"("id") ON DELETE CASCADE;
 ALTER TABLE ONLY "public"."release_teams"
-    ADD CONSTRAINT "release_teams_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE CASCADE;
+    ADD CONSTRAINT "release_teams_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE CASCADE;
 
 -- Triggers
 --

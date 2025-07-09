@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS "public"."teams" (
     "description" "text",
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "tenant_id" "uuid" NOT NULL
+    "project_id" "uuid" NOT NULL
 );
 
 -- Comments
@@ -21,12 +21,12 @@ COMMENT ON COLUMN "public"."teams"."name" IS 'TODO: Add description.';
 COMMENT ON COLUMN "public"."teams"."description" IS 'TODO: Add description.';
 COMMENT ON COLUMN "public"."teams"."created_at" IS 'TODO: Add description.';
 COMMENT ON COLUMN "public"."teams"."updated_at" IS 'TODO: Add description.';
-COMMENT ON COLUMN "public"."teams"."tenant_id" IS 'TODO: Add description.';
+COMMENT ON COLUMN "public"."teams"."project_id" IS 'Reference to the project this team belongs to';
 
 -- Foreign Keys
 --
 ALTER TABLE ONLY "public"."teams"
-    ADD CONSTRAINT "teams_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE CASCADE;
+    ADD CONSTRAINT "teams_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE CASCADE;
 
 -- Triggers
 --

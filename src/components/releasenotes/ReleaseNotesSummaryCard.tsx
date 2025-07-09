@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { AlertTriangle, CheckCircle, Clock, Calendar } from "lucide-react";
+import { getStateIcon, getStatePaleBackgroundColor, ReleaseState } from "@/lib/state-colors";
 
 interface ReleaseNotesSummaryCardProps {
   release: {
@@ -15,19 +15,9 @@ interface ReleaseNotesSummaryCardProps {
   };
 }
 
-function getStateIcon(state?: string) {
-  switch (state) {
-    case "past_due":
-      return <AlertTriangle className="h-4 w-4" />;
-    case "ready":
-      return <CheckCircle className="h-4 w-4" />;
-    case "pending":
-      return <Clock className="h-4 w-4" />;
-    case "complete":
-      return <CheckCircle className="h-4 w-4" />;
-    default:
-      return <Calendar className="h-4 w-4" />;
-  }
+function getStateIconWrapper(state?: string) {
+  const validState = (state || "pending") as ReleaseState;
+  return getStateIcon(validState);
 }
 
 export function ReleaseNotesSummaryCard({ release }: ReleaseNotesSummaryCardProps) {
@@ -51,20 +41,8 @@ export function ReleaseNotesSummaryCard({ release }: ReleaseNotesSummaryCardProp
 
   // Color conventions based on state
   const getHeaderBg = (state?: string) => {
-    switch (state) {
-      case "ready":
-        return "bg-green-50";
-      case "pending":
-        return "bg-amber-50";
-      case "past_due":
-        return "bg-red-50";
-      case "complete":
-        return "bg-blue-50";
-      case "cancelled":
-        return "bg-gray-100";
-      default:
-        return "bg-muted";
-    }
+    const validState = (state || "pending") as ReleaseState;
+    return getStatePaleBackgroundColor(validState);
   };
 
   return (
@@ -73,7 +51,7 @@ export function ReleaseNotesSummaryCard({ release }: ReleaseNotesSummaryCardProp
         <div className="flex items-center justify-between w-full">
           {/* Release Name (left) */}
           <div className="flex-1 min-w-0 flex items-center">
-            {getStateIcon(release.state)}
+            {getStateIconWrapper(release.state)}
             <CardTitle className="truncate ml-2">{release.name}</CardTitle>
           </div>
           {/* Date (center) */}
