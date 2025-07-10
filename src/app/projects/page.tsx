@@ -2,52 +2,24 @@
 
 import { useState, useEffect } from "react";
 import { AddProjectDialog } from "@/components/projects/AddProjectDialog";
-import { createClient } from "@/lib/supabase";
 import { ProjectCard, Project } from "@/components/projects/ProjectCard";
+import { ProjectsRepository } from "@/lib/repository";
 
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const projectsRepository = new ProjectsRepository();
 
   const fetchProjects = async () => {
     setLoading(true);
-    const supabase = createClient();
     
-    const { data, error } = await supabase
-      .from("projects")
-      .select(`
-        id,
-        name,
-        created_at,
-        is_manage_members,
-        is_manage_features,
-        members(
-          user_id,
-          email,
-          full_name
-        )
-      `)
-      .order("name");
-
-    if (error) {
+    try {
+      const projects = await projectsRepository.getProjects();
+      setProjects(projects);
+    } catch (error) {
       console.error("Error fetching projects:", error);
-    } else {
-      // Transform the data to flatten the user structure
-      const transformedData = data?.map(project => ({
-        id: project.id,
-        name: project.name,
-        created_at: project.created_at,
-        is_manage_members: project.is_manage_members,
-        is_manage_features: project.is_manage_features,
-        users: project.members?.map((member: any) => ({
-          id: member.user_id,
-          email: member.email,
-          full_name: member.full_name
-        })) || []
-      })) || [];
-      
-      setProjects(transformedData);
     }
+    
     setLoading(false);
   };
 

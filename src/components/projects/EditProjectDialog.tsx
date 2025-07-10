@@ -146,23 +146,19 @@ export function EditProjectDialog({ project, onProjectUpdated }: EditProjectDial
     setLoading(true);
     try {
       const supabase = createClient();
-      
-      // Get user details from auth
-      const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(selectedUserId);
-      
-      if (authError || !authUser.user) {
-        console.error("Error getting user details:", authError);
-        setError("Failed to get user details");
+      // Use info from availableUsers
+      const userToAdd = availableUsers.find(u => u.id === selectedUserId);
+      if (!userToAdd) {
+        setError("User not found in available users");
         return;
       }
-
       // Create member record for this user in the project
       const { error } = await supabase
         .from("members")
         .insert({
-          user_id: selectedUserId,
-          email: authUser.user.email || '',
-          full_name: authUser.user.user_metadata?.full_name || authUser.user.email || 'Unknown',
+          user_id: userToAdd.id,
+          email: userToAdd.email,
+          full_name: userToAdd.full_name,
           project_id: project.id,
           member_role: 'member'
         });
@@ -174,12 +170,9 @@ export function EditProjectDialog({ project, onProjectUpdated }: EditProjectDial
       }
 
       // Update local state
-      const userToAdd = availableUsers.find(u => u.id === selectedUserId);
-      if (userToAdd) {
-        setProjectUsers([...projectUsers, userToAdd]);
-        setAvailableUsers(availableUsers.filter(u => u.id !== selectedUserId));
-        setSelectedUserId("");
-      }
+      setProjectUsers([...projectUsers, userToAdd]);
+      setAvailableUsers(availableUsers.filter(u => u.id !== selectedUserId));
+      setSelectedUserId("");
     } catch (error) {
       console.error("Error:", error);
       setError("An unexpected error occurred");
@@ -273,7 +266,7 @@ export function EditProjectDialog({ project, onProjectUpdated }: EditProjectDial
           <Pencil className="h-4 w-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="min-w-[500px]">
         <DialogHeader>
           <DialogTitle>Edit Project</DialogTitle>
           <DialogDescription>
@@ -281,58 +274,53 @@ export function EditProjectDialog({ project, onProjectUpdated }: EditProjectDial
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">
-                Name *
-              </Label>
+          <div className="flex flex-col gap-4 py-4">
+            {/* Project Name */}
+            <div className="flex flex-col gap-1">
+              <Label htmlFor="name">Name *</Label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className={`col-span-3 ${nameError ? 'border-red-500 focus:border-red-500' : ''}`}
+                className={nameError ? 'border-red-500 focus:border-red-500' : ''}
                 required
                 disabled={loading}
                 placeholder="e.g., DWH, Production"
               />
             </div>
-            
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="is_manage_members" className="text-right">
-                Manage Members
-              </Label>
+
+            {/* Manage Members Checkbox */}
+            <div className="flex items-center gap-2">
               <input
                 id="is_manage_members"
                 type="checkbox"
                 checked={formData.is_manage_members}
                 onChange={e => setFormData({ ...formData, is_manage_members: e.target.checked })}
-                className="col-span-3"
                 disabled={loading}
               />
+              <Label htmlFor="is_manage_members" className="mb-0 cursor-pointer">Manage Members</Label>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="is_manage_features" className="text-right">
-                Manage Features
-              </Label>
+
+            {/* Manage Features Checkbox */}
+            <div className="flex items-center gap-2">
               <input
                 id="is_manage_features"
                 type="checkbox"
                 checked={formData.is_manage_features}
                 onChange={e => setFormData({ ...formData, is_manage_features: e.target.checked })}
-                className="col-span-3"
                 disabled={loading}
               />
+              <Label htmlFor="is_manage_features" className="mb-0 cursor-pointer">Manage Features</Label>
             </div>
-            
+
             {/* User Management Section */}
-            <div className="space-y-4">
+            <div className="flex flex-col gap-2 pt-2">
               <Label className="text-base font-medium">User Management</Label>
-              
               {/* Current Users */}
-              <div className="space-y-2">
+              <div className="flex flex-col gap-1">
                 <Label className="text-sm font-medium">Current Users:</Label>
                 {projectUsers.length > 0 ? (
-                  <div className="space-y-1">
+                  <div className="flex flex-col gap-1">
                     {projectUsers.map((user) => (
                       <div key={user.id} className="flex items-center justify-between p-2 bg-muted rounded-md">
                         <span className="text-sm">{user.email} ({user.full_name})</span>
@@ -352,13 +340,12 @@ export function EditProjectDialog({ project, onProjectUpdated }: EditProjectDial
                   <div className="text-sm text-muted-foreground">No users associated with this project</div>
                 )}
               </div>
-              
               {/* Add User */}
-              <div className="space-y-2">
+              <div className="flex flex-col gap-1">
                 <Label className="text-sm font-medium">Add User:</Label>
-                <div className="flex gap-2">
+                <div className="flex pr-4 gap-0 items-center">
                   <Select value={selectedUserId} onValueChange={setSelectedUserId} disabled={loading}>
-                    <SelectTrigger className="flex-1">
+                    <SelectTrigger className="flex-1 max-w-[340px]">
                       <SelectValue placeholder="Select a user to add" />
                     </SelectTrigger>
                     <SelectContent>
@@ -374,13 +361,13 @@ export function EditProjectDialog({ project, onProjectUpdated }: EditProjectDial
                     onClick={handleAddUser}
                     disabled={!selectedUserId || loading}
                     size="sm"
+                    className="ml-2"
                   >
                     <Plus className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
             </div>
-            
           </div>
           {(nameError || error) && (
             <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md mb-2">

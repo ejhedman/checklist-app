@@ -1,19 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase";
 import { ReleaseNotesSummaryCard } from "@/components/releasenotes/ReleaseNotesSummaryCard";
 import { useAuth } from "@/contexts/AuthContext";
+import { ReleaseNotesRepository } from "@/lib/repository";
 
 export default function ReleaseNotesListPage() {
   const [releases, setReleases] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const { selectedProject } = useAuth();
+  const releaseNotesRepository = new ReleaseNotesRepository();
 
   useEffect(() => {
     const fetchReleases = async () => {
       setLoading(true);
-      const supabase = createClient();
       
       if (!selectedProject) {
         console.error("No project selected");
@@ -22,12 +22,13 @@ export default function ReleaseNotesListPage() {
         return;
       }
       
-      const { data } = await supabase
-        .from("releases")
-        .select("id, name, target_date, release_summary, state")
-        .eq("project_id", selectedProject.id)
-        .order("target_date", { ascending: false });
-      setReleases(data || []);
+      try {
+        const releases = await releaseNotesRepository.getReleasesForNotes();
+        setReleases(releases);
+      } catch (error) {
+        console.error("Error fetching releases:", error);
+        setReleases([]);
+      }
       setLoading(false);
     };
     

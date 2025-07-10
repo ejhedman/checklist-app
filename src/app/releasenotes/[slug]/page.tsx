@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase";
 import { ReleaseNotesDisplay } from "@/components/releasenotes/ReleaseNotesDisplay";
 import { useAuth } from "@/contexts/AuthContext";
+import { ReleaseNotesRepository } from "@/lib/repository";
 
 export default function DisplayReleaseNotesPage() {
   const { slug } = useParams();
@@ -15,12 +15,12 @@ export default function DisplayReleaseNotesPage() {
   const [releaseName, setReleaseName] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const releaseNotesRepository = new ReleaseNotesRepository();
 
   useEffect(() => {
     const fetchReleaseNotes = async () => {
       setLoading(true);
       setError(null);
-      const supabase = createClient();
       
       // Check if user is authenticated and project is selected
       if (!user) {
@@ -35,31 +35,27 @@ export default function DisplayReleaseNotesPage() {
         return;
       }
       
-      // Find release by name (slug) and project
-      const { data, error } = await supabase
-        .from("releases")
-        .select("id, name, release_notes, release_summary, project_id")
-        .eq("name", decodeURIComponent(slug as string))
-        .eq("project_id", selectedProject.id)
-        .single();
+      try {
+        // Find release by name (slug) and project
+        const release = await releaseNotesRepository.getReleaseBySlug(decodeURIComponent(slug as string));
         
-      if (error) {
+        // Additional validation: check if the release's project matches the selected project
+        if (release.project_id !== selectedProject.id) {
+          console.log('Release project does not match selected project, redirecting to home');
+          router.push('/');
+          return;
+        }
+        
+        setReleaseName(release.name);
+        setReleaseNotes(release.release_notes || "");
+        setReleaseSummary(release.release_summary || "");
+      } catch (error) {
         // Release not found or doesn't belong to selected project - redirect to home
         console.log('Release not found or project mismatch, redirecting to home');
         router.push('/');
         return;
       }
-
-      // Additional validation: check if the release's project matches the selected project
-      if (data.project_id !== selectedProject.id) {
-        console.log('Release project does not match selected project, redirecting to home');
-        router.push('/');
-        return;
-      }
       
-      setReleaseName(data.name);
-      setReleaseNotes(data.release_notes || "");
-      setReleaseSummary(data.release_summary || "");
       setLoading(false);
     };
     

@@ -13,7 +13,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Release Management Checklist",
-  description: "Plan, track, and complete software releases with structured checklists",
+  description: "Plan, track, and deployed software releases with structured checklists",
 };
 
 export default function RootLayout({

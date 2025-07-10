@@ -591,10 +591,8 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
         style={{ cursor: collapsible && !expanded ? 'pointer' : 'default' }}
       >
         <CardHeader className={`flex flex-row items-center justify-between px-4 py-3 rounded-t-lg ${collapsible && expanded ? '' : collapsible ? 'border-b border-border' : ''} ${getStatePaleBackgroundColor(summaryState as any, release.is_archived)}`}>
-          <div className="flex items-center justify-between w-full">
-            <div
-              className="flex items-center flex-1 min-w-0 rounded px-1 py-0.5 transition-colors"
-            >
+          <div className="flex items-center w-full justify-between">
+            <div className="flex items-center flex-1 min-w-0 rounded px-1 py-0.5 transition-colors">
               <div className="flex items-center space-x-3 min-w-0">
                 {collapsible && (
                   <button
@@ -630,30 +628,6 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
                       </Badge>
                     );
                   })()}
-                  {collapsible && (
-                    <button
-                      type="button"
-                      aria-label="View Release Detail"
-                      className="bg-white p-2 rounded hover:bg-gray-100 transition-colors shadow-sm ml-1"
-                      onClick={e => {
-                        e.stopPropagation();
-                        router.push(`/releases/${encodeURIComponent(release.name)}`);
-                      }}
-                    >
-                      <ExternalLink className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    aria-label="View Release Notes"
-                    className="bg-white p-2 rounded hover:bg-gray-100 transition-colors shadow-sm ml-1"
-                    onClick={e => {
-                      e.stopPropagation();
-                      router.push(`/releases/${encodeURIComponent(release.name)}/releasenotes`);
-                    }}
-                  >
-                    <FileText className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
-                  </button>
                 </div>
               </div>
               <div className="flex-1 flex justify-center">
@@ -669,48 +643,32 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
                 </CardDescription>
               </div>
             </div>
-            <div className="flex items-center space-x-2 justify-end ml-2">
-              {!expanded && isPast && (
-                <div className="flex items-center space-x-2" onClick={e => e.stopPropagation()}>
-                  <Checkbox
-                    checked={!!isArchived}
-                    onCheckedChange={checked => handleArchiveChange(!!checked)}
-                    disabled={archiving}
-                    id={`archive-${release.id}`}
-                  />
-                  <label htmlFor={`archive-${release.id}`} className="text-sm select-none cursor-pointer">
-                    Archive
-                  </label>
-                </div>
+            {/* Move link and release notes buttons to the right side */}
+            <div className="flex items-center space-x-2 ml-4">
+              {collapsible && (
+                <button
+                  type="button"
+                  aria-label="View Release Detail"
+                  className="bg-white p-2 rounded hover:bg-gray-100 transition-colors shadow-sm"
+                  onClick={e => {
+                    e.stopPropagation();
+                    router.push(`/releases/${encodeURIComponent(release.name)}`);
+                  }}
+                >
+                  <ExternalLink className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
+                </button>
               )}
-              {is_release_manager && (
-                <>
-                  {expanded && (
-                    <button
-                      type="button"
-                      aria-label="Edit Release"
-                      className="p-2 rounded hover:bg-gray-100 transition-colors"
-                      onClick={e => {
-                        e.stopPropagation();
-                        setEditOpen(true);
-                      }}
-                    >
-                      <Pencil className="h-5 w-5 text-muted-foreground hover:text-foreground transition-colors" />
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    aria-label="Delete Release"
-                    className="p-2 rounded hover:bg-red-100 transition-colors"
-                    onClick={e => {
-                      e.stopPropagation();
-                      setDeleteDialogOpen(true);
-                    }}
-                  >
-                    <Trash2 className="h-5 w-5 text-red-500 hover:text-red-700 transition-colors" />
-                  </button>
-                </>
-              )}
+              <button
+                type="button"
+                aria-label="View Release Notes"
+                className="bg-white p-2 rounded hover:bg-gray-100 transition-colors shadow-sm"
+                onClick={e => {
+                  e.stopPropagation();
+                  router.push(`/releases/${encodeURIComponent(release.name)}/releasenotes`);
+                }}
+              >
+                <FileText className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
+              </button>
             </div>
           </div>
         </CardHeader>
@@ -866,7 +824,7 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
             <DialogTitle>Delete Release</DialogTitle>
           </DialogHeader>
           <div className="py-4">
-            <p>Are you sure you want to delete the release "{release.name}"?</p>
+            <p>Are you sure you want to delete the release &quot;{release.name}&quot;?</p>
             <p className="text-sm text-muted-foreground mt-2">
               This action cannot be undone. All release data, features, and team assignments will be permanently deleted.
             </p>

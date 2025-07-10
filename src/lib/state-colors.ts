@@ -1,4 +1,4 @@
-export type ReleaseState = "past_due" | "next" | "pending" | "complete" | "cancelled";
+export type ReleaseState = "past_due" | "next" | "pending" | "deployed" | "cancelled";
 
 // Color configurations for different use cases
 const stateColorConfig = {
@@ -26,7 +26,7 @@ const stateColorConfig = {
     badge: "bg-amber-400 text-black",
     badgeVariant: "default" as const
   },
-  complete: {
+  deployed: {
     background: "bg-blue-500",
     backgroundPale: "bg-blue-50",
     text: "text-white",
@@ -117,7 +117,7 @@ export function getStateIcon(state: ReleaseState): React.ReactNode {
     past_due: AlertTriangle,
     next: CheckCircle,
     pending: Clock,
-    complete: CheckCircle,
+    deployed: CheckCircle,
     cancelled: Calendar
   };
   

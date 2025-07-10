@@ -16,9 +16,9 @@ export default function MyUpcomingMilestonesCard({ milestones }: { milestones: a
         <div className="space-y-4">
           {milestones.length > 0 ? (
             milestones.map((milestone) => {
-              const daysRemaining = Math.ceil(
+              const daysRemaining = milestone.target_date ? Math.ceil(
                 (new Date(milestone.target_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
-              );
+              ) : 0;
               return (
                 <div key={milestone.id} className="flex items-center justify-between">
                   <div>
@@ -34,7 +34,7 @@ export default function MyUpcomingMilestonesCard({ milestones }: { milestones: a
                       )}
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                      Target: {new Date(milestone.target_date).toLocaleDateString()}
+                      Target: {milestone.target_date ? new Date(milestone.target_date).toLocaleDateString() : 'No target date'}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {milestone.type === 'team_member'
@@ -54,25 +54,31 @@ export default function MyUpcomingMilestonesCard({ milestones }: { milestones: a
                         {milestone.is_ready ? "Ready" : "Not Ready"}
                       </Badge>
                     )}
-                    {milestone.state === "next" ? (
-                      <Badge className="bg-green-600 text-white" variant="default">
-                        {milestone.state.replace("_", " ")}
-                      </Badge>
-                    ) : milestone.state === "pending" ? (
-                      <Badge className="bg-amber-400 text-black" variant="default">
-                        {milestone.state.replace("_", " ")}
-                      </Badge>
-                    ) : milestone.state === "past_due" ? (
-                      <Badge className="bg-red-500 text-white" variant="default">
-                        {milestone.state.replace("_", " ")}
-                      </Badge>
-                    ) : milestone.state === "complete" ? (
-                      <Badge className="bg-blue-500 text-white" variant="default">
-                        {milestone.state.replace("_", " ")}
-                      </Badge>
+                    {milestone.state ? (
+                      milestone.state === "next" ? (
+                        <Badge className="bg-green-600 text-white" variant="default">
+                          {milestone.state.replace("_", " ")}
+                        </Badge>
+                      ) : milestone.state === "pending" ? (
+                        <Badge className="bg-amber-400 text-black" variant="default">
+                          {milestone.state.replace("_", " ")}
+                        </Badge>
+                      ) : milestone.state === "past_due" ? (
+                        <Badge className="bg-red-500 text-white" variant="default">
+                          {milestone.state.replace("_", " ")}
+                        </Badge>
+                      ) : milestone.state === "deployed" ? (
+                        <Badge className="bg-blue-500 text-white" variant="default">
+                          {milestone.state.replace("_", " ")}
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary">
+                          {milestone.state.replace("_", " ")}
+                        </Badge>
+                      )
                     ) : (
                       <Badge variant="secondary">
-                        {milestone.state.replace("_", " ")}
+                        Unknown
                       </Badge>
                     )}
                   </div>

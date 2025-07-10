@@ -21,7 +21,7 @@ export function ReleaseStateIcon({ state, className, size = 16 }: ReleaseStateIc
     past_due: { icon: AlertTriangle },
     next: { icon: CheckCircle },
     pending: { icon: Clock },
-    complete: { icon: CheckCircle },
+    deployed: { icon: CheckCircle },
     cancelled: { icon: Calendar }
   };
 

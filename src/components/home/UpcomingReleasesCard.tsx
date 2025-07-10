@@ -51,7 +51,7 @@ export default function UpcomingReleasesCard({ releases }: { releases: any[] }) 
                       <Badge className="bg-red-500 text-white" variant="default">
                         {release.state.replace("_", " ")}
                       </Badge>
-                    ) : release.state === "complete" ? (
+                    ) : release.state === "deployed" ? (
                       <Badge className="bg-blue-500 text-white" variant="default">
                         {release.state.replace("_", " ")}
                       </Badge>

@@ -1,58 +1,6 @@
 import { useState, useEffect } from "react";
-import { createClient } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
-
-interface Release {
-  id: string;
-  name: string;
-  target_date: string;
-  state: string;
-  platform_update: boolean;
-  config_update: boolean;
-  is_archived: boolean;
-  is_ready: boolean;
-  targets?: string[];
-  created_at: string;
-  project_id: string;
-  projects?: {
-    id: string;
-    name: string;
-  };
-  release_teams?: Array<{
-    team: {
-      id: string;
-      name: string;
-      description: string;
-      team_members: Array<{
-        member: {
-          id: string;
-          full_name: string;
-          email: string;
-        };
-      }>;
-    };
-  }>;
-  member_release_state?: Array<{
-    member_id: string;
-    is_ready: boolean;
-  }>;
-  features?: Array<{
-    id: string;
-    name: string;
-    description: string;
-    jira_ticket: string;
-    is_platform: boolean;
-    is_config: boolean;
-    is_ready: boolean;
-    comments: string;
-    dri_member_id: string;
-    dri_member: {
-      id: string;
-      full_name: string;
-      email: string;
-    };
-  }>;
-}
+import { ReleasesRepository, Release } from "@/lib/repository";
 
 interface TransformedRelease extends Release {
   team_count: number;
@@ -77,8 +25,9 @@ export function useReleases(options: UseReleasesOptions = {}) {
   const [error, setError] = useState<string | null>(null);
   const { selectedProject } = useAuth();
   const { showArchived = false, includeDetails = true } = options;
+  const releasesRepository = new ReleasesRepository();
 
-  const transformReleaseData = (data: any[]): TransformedRelease[] => {
+  const transformReleaseData = (data: Release[]): TransformedRelease[] => {
     return data.map((release) => {
       // Aggregate all members from all teams
       const allMembers: any[] = [];
@@ -118,7 +67,6 @@ export function useReleases(options: UseReleasesOptions = {}) {
   const fetchReleases = async (): Promise<void> => {
     setLoading(true);
     setError(null);
-    const supabase = createClient();
     
     if (!selectedProject) {
       console.error("No project selected");
@@ -128,81 +76,11 @@ export function useReleases(options: UseReleasesOptions = {}) {
     }
 
     try {
-      let baseQuery = `
-        id,
-        name,
-        target_date,
-        state,
-        platform_update,
-        config_update,
-        is_archived,
-        is_ready,
-        targets,
-        created_at,
-        project_id,
-        projects (
-          id,
-          name
-        )
-      `;
-
-      if (includeDetails) {
-        baseQuery += `,
-        release_teams (
-          team:teams (
-            id,
-            name,
-            description,
-            team_members (
-              member:members (
-                id,
-                full_name,
-                email
-              )
-            )
-          )
-        ),
-        member_release_state (
-          member_id,
-          is_ready
-        ),
-        features (
-          id,
-          name,
-          description,
-          jira_ticket,
-          is_platform,
-          is_config,
-          is_ready,
-          comments,
-          dri_member_id,
-          dri_member:members!dri_member_id (
-            id,
-            full_name,
-            email
-          )
-        )`;
-      }
-
-      let query = supabase
-        .from("releases")
-        .select(baseQuery)
-        .eq('project_id', selectedProject.id)
-        .order("target_date", { ascending: true });
-
-      if (!showArchived) {
-        query = query.eq("is_archived", false);
-      }
-
-      const { data, error: supabaseError } = await query;
-
-      if (supabaseError) {
-        console.error("Error fetching releases:", supabaseError);
-        setError(supabaseError.message);
-        return;
-      }
-
-      const transformedData = transformReleaseData(data || []);
+      const releases = await releasesRepository.getReleases(selectedProject.id, {
+        includeDetails,
+        showArchived
+      });
+      const transformedData = transformReleaseData(releases);
       setReleases(transformedData);
     } catch (err) {
       console.error("Error in fetchReleases:", err);

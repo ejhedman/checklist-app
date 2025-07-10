@@ -135,7 +135,7 @@ export interface Database {
           target_date: string
           platform_update: boolean
           config_update: boolean
-          state: 'pending' | 'next' | 'past_due' | 'complete' | 'cancelled'
+          state: 'pending' | 'next' | 'past_due' | 'deployed' | 'cancelled'
           project_id: string
           created_at: string
           updated_at: string
@@ -151,7 +151,7 @@ export interface Database {
           target_date: string
           platform_update?: boolean
           config_update?: boolean
-          state?: 'pending' | 'next' | 'past_due' | 'complete' | 'cancelled'
+          state?: 'pending' | 'next' | 'past_due' | 'deployed' | 'cancelled'
           project_id: string
           created_at?: string
           updated_at?: string
@@ -167,7 +167,7 @@ export interface Database {
           target_date?: string
           platform_update?: boolean
           config_update?: boolean
-          state?: 'pending' | 'next' | 'past_due' | 'complete' | 'cancelled'
+          state?: 'pending' | 'next' | 'past_due' | 'deployed' | 'cancelled'
           project_id?: string
           created_at?: string
           updated_at?: string

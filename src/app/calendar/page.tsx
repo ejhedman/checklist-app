@@ -2,9 +2,9 @@
 
 import { useEffect, useState, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { createClient } from "@/lib/supabase";
 import { useToast } from "@/components/ui/toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { CalendarRepository } from "@/lib/repository";
 import Link from "next/link";
 import { getStateColor, ReleaseState } from "@/lib/state-colors";
 
@@ -17,7 +17,7 @@ interface Release {
   id: string;
   name: string;
   target_date: string;
-  state: 'pending' | 'next' | 'past_due' | 'complete' | 'cancelled';
+  state: 'pending' | 'next' | 'past_due' | 'deployed' | 'cancelled';
 }
 
 interface CalendarDay {
@@ -254,77 +254,18 @@ export default function CalendarPage() {
 
   const fetchUserInvolvement = async () => {
     if (!user || !selectedProject) return;
-    const supabase = createClient();
-
-    // 1. Get all team IDs for the user (filtered by project)
-    const { data: teamMemberRows, error: teamMemberError } = await supabase
-      .from("team_members")
-      .select("team_id")
-      .eq("member_id", user.id)
-      .eq("project_id", selectedProject.id);
-
-    if (teamMemberError) {
-      console.error("Error fetching user teams:", teamMemberError);
-      return;
+    
+    try {
+      const calendarRepository = new CalendarRepository();
+      const involvement = await calendarRepository.getUserInvolvement(user.id, selectedProject.id);
+      setUserInvolvedReleaseIds(involvement.involvedReleaseIds);
+    } catch (error) {
+      console.error("Error fetching user involvement:", error);
     }
-
-    const userTeamIds = (teamMemberRows ?? []).map(row => row.team_id);
-
-    // 2. Get all release IDs for those teams (filtered by project)
-    let teamReleaseIds: string[] = [];
-    if (userTeamIds.length > 0) {
-      const { data: releaseTeamsRows, error: releaseTeamsError } = await supabase
-        .from("release_teams")
-        .select("release_id")
-        .eq("project_id", selectedProject.id)
-        .in("team_id", userTeamIds);
-
-      if (releaseTeamsError) {
-        console.error("Error fetching release teams:", releaseTeamsError);
-        return;
-      }
-      teamReleaseIds = (releaseTeamsRows ?? []).map(row => row.release_id);
-    }
-
-    // 3. Get all release IDs where user is DRI for a feature (filtered by project)
-    const { data: driFeaturesRows, error: driFeaturesError } = await supabase
-      .from("features")
-      .select("release_id")
-      .eq("dri_member_id", user.id)
-      .eq("project_id", selectedProject.id);
-
-    if (driFeaturesError) {
-      console.error("Error fetching DRI features:", driFeaturesError);
-      return;
-    }
-    const driReleaseIds = (driFeaturesRows ?? []).map(row => row.release_id);
-
-    // 4. Get all release IDs where user is a team member AND is not ready (member_release_state.is_ready = false, filtered by project)
-    let notReadyReleaseIds: string[] = [];
-    if (teamReleaseIds.length > 0) {
-      const { data: notReadyRows, error: notReadyError } = await supabase
-        .from("member_release_state")
-        .select("release_id")
-        .eq("member_id", user.id)
-        .eq("project_id", selectedProject.id)
-        .eq("is_ready", false)
-        .in("release_id", teamReleaseIds);
-      if (notReadyError) {
-        console.error("Error fetching not ready releases:", notReadyError);
-        return;
-      }
-      notReadyReleaseIds = (notReadyRows ?? []).map(row => row.release_id);
-    }
-
-    // 5. Combine all involved release IDs
-    const involvedIds = new Set<string>([...driReleaseIds, ...notReadyReleaseIds]);
-    setUserInvolvedReleaseIds(involvedIds);
   };
 
   const fetchReleases = async () => {
     try {
-      const supabase = createClient();
-      
       if (!selectedProject) {
         console.error("No project selected");
         setReleases([]);
@@ -332,17 +273,9 @@ export default function CalendarPage() {
         return;
       }
       
-      const { data, error } = await supabase
-        .from("releases")
-        .select("id, name, target_date, state")
-        .eq("project_id", selectedProject.id)
-        .order("target_date");
-
-      if (error) {
-        console.error("Error fetching releases:", error);
-      } else {
-        setReleases(data || []);
-      }
+      const calendarRepository = new CalendarRepository();
+      const releases = await calendarRepository.getReleases(selectedProject.id);
+      setReleases(releases);
     } catch (error) {
       console.error("Error fetching releases:", error);
       // Set empty array on error to prevent infinite loading
@@ -354,53 +287,30 @@ export default function CalendarPage() {
 
   const handleReleaseMove = async (releaseId: string, newDate: string) => {
     try {
-      const supabase = createClient();
-      
       if (!selectedProject || !user) {
         console.error("No project selected or user not found");
         throw new Error("No project selected or user not found");
       }
       
+      const calendarRepository = new CalendarRepository();
+      
       // Get the current release data to log the change
-      const { data: currentRelease, error: fetchError } = await supabase
-        .from("releases")
-        .select("name, target_date")
-        .eq("id", releaseId)
-        .single();
-
-      if (fetchError) {
-        console.error("Error fetching current release data:", fetchError);
-        throw fetchError;
-      }
-
+      const currentRelease = await calendarRepository.getReleaseById(releaseId);
       const oldDate = currentRelease.target_date;
       
-      const { error } = await supabase
-        .from("releases")
-        .update({ target_date: newDate })
-        .eq("id", releaseId);
-
-      if (error) {
-        console.error("Database error:", error);
-        throw error;
-      }
+      // Update the release date
+      await calendarRepository.updateReleaseDate(releaseId, newDate);
 
       // Log activity: release date changed via calendar
       if (oldDate !== newDate) {
         // Fetch the member record for the current user
-        const { data: member, error: memberError } = await supabase
-          .from('members')
-          .select('id')
-          .eq('email', user.email)
-          .eq('project_id', selectedProject.id)
-          .single();
-
-        if (memberError || !member) {
-          console.error("No member record found for user", memberError);
+        if (!user.email) {
+          console.error("No user email found");
           return;
         }
+        const member = await calendarRepository.getMemberByEmail(user.email, selectedProject.id);
 
-        const { error: activityError } = await supabase.from("activity_log").insert({
+        await calendarRepository.logActivity({
           release_id: releaseId,
           member_id: member.id,
           project_id: selectedProject.id,
@@ -412,11 +322,6 @@ export default function CalendarPage() {
             method: "calendar_drag_drop"
           },
         });
-        if (activityError) {
-          console.error("Failed to log release date change activity:", activityError, JSON.stringify(activityError, null, 2));
-        } else {
-          // console.log("Successfully logged release date change activity");
-        }
       }
 
       // Update local state

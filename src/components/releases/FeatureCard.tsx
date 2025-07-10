@@ -154,7 +154,7 @@ export default function FeatureCard({ feature, user, memberId, updatingFeature, 
             <DialogTitle>Delete Feature</DialogTitle>
           </DialogHeader>
           <div className="py-4">
-            <p>Are you sure you want to delete the feature "{feature.name}"?</p>
+            <p>Are you sure you want to delete the feature &quot;{feature.name}&quot;?</p>
             <p className="text-sm text-muted-foreground mt-2">
               This action cannot be undone. All feature data, comments, and readiness status will be permanently deleted.
             </p>

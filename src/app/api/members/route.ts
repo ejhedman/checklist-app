@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { MembersRepository } from '@/lib/repository';
 
 // Create a server-side Supabase client with service role key
 const supabase = createClient(
@@ -9,10 +10,10 @@ const supabase = createClient(
 
 export async function POST(request: NextRequest) {
   try {
-    const { full_name, email, password, nickname, role } = await request.json();
+    const { full_name, email, password, nickname, role, project_id } = await request.json();
 
     // Validate required fields
-    if (!full_name || !email || !password) {
+    if (!full_name || !email || !password || !project_id) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -51,19 +52,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Add member to our members table
-    const { error: dbError } = await supabase
-      .from("members")
-      .insert({
+    // Add member to our members table using repository
+    const membersRepository = new MembersRepository();
+    try {
+      await membersRepository.createMember({
         id: authData.user.id,
         user_id: authData.user.id,
         email,
         full_name,
         nickname: nickname || null,
         role: role || 'member',
+        project_id,
       });
-
-    if (dbError) {
+    } catch (dbError: any) {
       // If database insertion fails, we should clean up the auth user
       await supabase.auth.admin.deleteUser(authData.user.id);
       
