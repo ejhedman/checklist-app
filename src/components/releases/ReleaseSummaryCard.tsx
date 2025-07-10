@@ -678,7 +678,7 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
             <MiniCard title="Release">
               <div className="flex flex-row w-full gap-2">
                 <div className="flex flex-col justify-between flex-1">
-                  <span className="text-xs font-medium text-muted-foreground">Platform</span>
+                  <span className="text-xs font-medium text-muted-foreground pb-6">Platform</span>
                   <span className="text-xs font-medium text-muted-foreground">Config</span>
                 </div>
                 <div className="flex flex-col justify-between flex-1 items-end">
