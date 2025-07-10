@@ -1,7 +1,6 @@
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Clock, Target, ArrowRight } from 'lucide-react';
+import { Clock, Target } from 'lucide-react';
 import Link from 'next/link';
 
 export default function MyUpcomingMilestonesCard({ milestones }: { milestones: any[] }) {

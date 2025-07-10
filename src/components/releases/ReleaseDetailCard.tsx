@@ -1,32 +1,24 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Users, CheckCircle, AlertTriangle, Clock, Calendar, Pencil, FileText } from "lucide-react";
-import { Checkbox } from "@/components/ui/checkbox";
-// import { FeatureReadyDialog } from "@/components/releases/FeatureReadyDialog";
 import { createClient } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
-import FeatureCard from "./FeatureCard";
 import { CreateReleaseDialog } from "./CreateReleaseDialog";
-import { AddFeatureDialog } from "./AddFeatureDialog";
 import { ReleaseSummaryCard } from "./ReleaseSummaryCard";
-import { ReleaseDetailBottomContent } from "./ReleaseDetailBottomContent";
-import { getStateBackgroundColor, getStatePaleBackgroundColor, getStateIcon, ReleaseState } from "@/lib/state-colors";
+import { getStateIcon, ReleaseState } from "@/lib/state-colors";
 import { LoadingSpinner } from "@/components/ui/loading";
 
 // Helper to calculate days until target date
-function getDaysUntil(dateString: string) {
-  const [year, month, day] = dateString.split('-').map(Number);
-  const today = new Date();
-  const target = new Date(year, month - 1, day);
-  today.setHours(0,0,0,0);
-  target.setHours(0,0,0,0);
-  const diffTime = target.getTime() - today.getTime();
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  return diffDays;
-}
+// function getDaysUntil(dateString: string) {
+//   const [year, month, day] = dateString.split('-').map(Number);
+//   const today = new Date();
+//   const target = new Date(year, month - 1, day);
+//   today.setHours(0,0,0,0);
+//   target.setHours(0,0,0,0);
+//   const diffTime = target.getTime() - today.getTime();
+//   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+//   return diffDays;
+// }
 
 // Wrapper function to convert string to ReleaseState
 function getStateIconWrapper(state: string) {
@@ -39,14 +31,14 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onRele
   onReleaseUpdated: () => void,
 }) {
   const { user, memberId, selectedProject } = useAuth();
-  const [readyDialogOpen, setReadyDialogOpen] = useState(false);
-  const [selectedFeature, setSelectedFeature] = useState<any>(null);
+  // const [readyDialogOpen, setReadyDialogOpen] = useState(false);
+  // const [selectedFeature, setSelectedFeature] = useState<any>(null);
   const [updatingFeature, setUpdatingFeature] = useState(false);
   const [isArchived, setIsArchived] = useState(release.is_archived);
-  const [archiving, setArchiving] = useState(false);
+  // const [archiving, setArchiving] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [features, setFeatures] = useState(release.features);
-  const [expanded, setExpanded] = useState(true); // Always expanded for detail page
+  // const [expanded, setExpanded] = useState(true); // Always expanded for detail page
   const [expandedReleaseDetail, setExpandedReleaseDetail] = useState<any>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
@@ -242,30 +234,30 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onRele
     return <div className="flex items-center justify-center py-12 text-red-600">{detailError}</div>;
   }
 
-  const handleArchiveChange = async (checked: boolean) => {
-    setArchiving(true);
-    setIsArchived(checked);
-    const supabase = createClient();
-    const { error } = await supabase
-      .from("releases")
-      .update({ is_archived: checked })
-      .eq("id", release.id);
-    if (error) {
-      console.error('Failed to update is_archived:', error);
-      // Optionally, show a toast or error message to the user
-    } else {
-      // console.log('is_archived updated successfully');
-    }
-    setArchiving(false);
-    // Optionally, handle error or refresh data
-  };
+  // const handleArchiveChange = async (checked: boolean) => {
+  //   setArchiving(true);
+  //   setIsArchived(checked);
+  //   const supabase = createClient();
+  //   const { error } = await supabase
+  //     .from("releases")
+  //     .update({ is_archived: checked })
+  //     .eq("id", release.id);
+  //   if (error) {
+  //     console.error('Failed to update is_archived:', error);
+  //     // Optionally, show a toast or error message to the user
+  //   } else {
+  //     // console.log('is_archived updated successfully');
+  //   }
+  //   setArchiving(false);
+  //   // Optionally, handle error or refresh data
+  // };
 
-  const handleFeatureReadyChange = async (feature: any, isReady: boolean) => {
-    if (!user || !feature.dri_member || memberId !== feature.dri_member.id) {
-      return;
-    }
-    await updateFeatureReady(feature.id, isReady, "");
-  };
+  // const handleFeatureReadyChange = async (feature: any, isReady: boolean) => {
+  //   if (!user || !feature.dri_member || memberId !== feature.dri_member.id) {
+  //     return;
+  //   }
+  //   await updateFeatureReady(feature.id, isReady, "");
+  // };
 
   const updateFeatureReady = async (featureId: string, isReady: boolean, comments: string) => {
     setUpdatingFeature(true);
@@ -289,129 +281,129 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onRele
     setUpdatingFeature(false);
   };
 
-  const handleReadyDialogConfirm = async (comments: string) => {
-    if (selectedFeature) {
-      await updateFeatureReady(selectedFeature.id, true, comments);
-      // Log activity: DRI marked feature ready
-      if (user?.id) {
-        const supabase = createClient();
-        console.log("Logging feature_ready activity for release_id:", release.id, "feature_id:", selectedFeature.id, "release name:", release.name, "feature name:", selectedFeature.name);
-        const { error: activityError } = await supabase.from("activity_log").insert({
-          release_id: release.id,
-          feature_id: selectedFeature.id,
-          member_id: memberId,
-          project_id: release.project?.id || "",
-          activity_type: "feature_ready",
-          activity_details: { comments, releaseName: release.name, featureName: selectedFeature.name },
-        });
-        if (activityError) {
-          console.error("Failed to log feature ready activity:", activityError);
-        } else {
-          // console.log("Successfully logged feature ready activity");
-        }
-      }
-      setReadyDialogOpen(false);
-      setSelectedFeature(null);
-    }
-  };
+  // const handleReadyDialogConfirm = async (comments: string) => {
+  //   if (selectedFeature) {
+  //     await updateFeatureReady(selectedFeature.id, true, comments);
+  //     // Log activity: DRI marked feature ready
+  //     if (user?.id) {
+  //       const supabase = createClient();
+  //       console.log("Logging feature_ready activity for release_id:", release.id, "feature_id:", selectedFeature.id, "release name:", release.name, "feature name:", selectedFeature.name);
+  //       const { error: activityError } = await supabase.from("activity_log").insert({
+  //         release_id: release.id,
+  //         feature_id: selectedFeature.id,
+  //         member_id: memberId,
+  //         project_id: release.project?.id || "",
+  //         activity_type: "feature_ready",
+  //         activity_details: { comments, releaseName: release.name, featureName: selectedFeature.name },
+  //       });
+  //       if (activityError) {
+  //         console.error("Failed to log feature ready activity:", activityError);
+  //       } else {
+  //         // console.log("Successfully logged feature ready activity");
+  //       }
+  //     }
+  //     setReadyDialogOpen(false);
+  //     setSelectedFeature(null);
+  //   }
+  // };
 
-  const handleReadyDialogCancel = () => {
-    setReadyDialogOpen(false);
-    setSelectedFeature(null);
-  };
+  // const handleReadyDialogCancel = () => {
+  //   setReadyDialogOpen(false);
+  //   setSelectedFeature(null);
+  // };
 
-  const updateMemberReady = async (releaseId: string, memberId: string, isReady: boolean) => {
-    const supabase = createClient();
-    let memberProjectId = null;
-    if (release && release.teams) {
-      for (const team of release.teams) {
-        const member = team.members?.find((m: any) => m.id === memberId);
-        if (member) {
-          memberProjectId = member.project_id;
-          break;
-        }
-      }
-    }
-    if (!memberProjectId && release?.project?.id) {
-      memberProjectId = release.project.id;
-    }
-    const { error } = await supabase
-      .from("member_release_state")
-      .upsert({
-        release_id: releaseId,
-        member_id: memberId,
-        project_id: memberProjectId,
-        is_ready: isReady,
-      });
-    if (error) {
-      console.error("Error updating member ready state:", error);
-    } else {
-      setAllMembers((prev: any[]) =>
-        prev.map((m: any) =>
-          m.id === memberId ? { ...m, is_ready: isReady } : m
-        )
-      );
-      // Log activity: member ready state change
-      if (user?.id) {
-        console.log("Logging member_ready activity for release_id:", releaseId, "member_id:", memberId, "release name:", release.name);
-        const { error: activityError } = await supabase.from("activity_log").insert({
-          release_id: releaseId,
-          member_id: memberId,
-          project_id: memberProjectId,
-          activity_type: "member_ready",
-          activity_details: { isReady, releaseName: release.name },
-        });
-        if (activityError) {
-          console.error("Failed to log member ready activity:", activityError);
-        } else {
-          // console.log("Successfully logged member ready activity");
-        }
-      }
-    }
-  };
+  // const updateMemberReady = async (releaseId: string, memberId: string, isReady: boolean) => {
+  //   const supabase = createClient();
+  //   let memberProjectId = null;
+  //   if (release && release.teams) {
+  //     for (const team of release.teams) {
+  //       const member = team.members?.find((m: any) => m.id === memberId);
+  //       if (member) {
+  //         memberProjectId = member.project_id;
+  //         break;
+  //       }
+  //     }
+  //   }
+  //   if (!memberProjectId && release?.project?.id) {
+  //     memberProjectId = release.project.id;
+  //   }
+  //   const { error } = await supabase
+  //     .from("member_release_state")
+  //     .upsert({
+  //       release_id: releaseId,
+  //       member_id: memberId,
+  //       project_id: memberProjectId,
+  //       is_ready: isReady,
+  //     });
+  //   if (error) {
+  //     console.error("Error updating member ready state:", error);
+  //   } else {
+  //     setAllMembers((prev: any[]) =>
+  //       prev.map((m: any) =>
+  //         m.id === memberId ? { ...m, is_ready: isReady } : m
+  //       )
+  //     );
+  //     // Log activity: member ready state change
+  //     if (user?.id) {
+  //       console.log("Logging member_ready activity for release_id:", releaseId, "member_id:", memberId, "release name:", release.name);
+  //       const { error: activityError } = await supabase.from("activity_log").insert({
+  //         release_id: releaseId,
+  //         member_id: memberId,
+  //         project_id: memberProjectId,
+  //         activity_type: "member_ready",
+  //         activity_details: { isReady, releaseName: release.name },
+  //       });
+  //       if (activityError) {
+  //         console.error("Failed to log member ready activity:", activityError);
+  //       } else {
+  //         // console.log("Successfully logged member ready activity");
+  //       }
+  //     }
+  //   }
+  // };
 
-  const handleStateChange = async (newState: string) => {
-    if (release.state === newState) return;
-    const supabase = createClient();
-    console.log("Logging activity for release_id:", release.id, "release name:", release.name);
-    const { error } = await supabase
-      .from("releases")
-      .update({ state: newState })
-      .eq("id", release.id);
-    if (!error) {
-      // Log activity: release state change
-      if (user?.id) {
-        const supabase = createClient();
-        const { error: activityError } = await supabase.from("activity_log").insert({
-          release_id: release.id,
-          member_id: memberId,
-          project_id: release.project?.id || "",
-          activity_type: "release_state_change",
-          activity_details: { oldState: release.state, newState, releaseName: release.name },
-        });
-        if (activityError) {
-          console.error("Failed to log release state change activity:", activityError);
-        } else {
-          // console.log("Successfully logged release state change activity");
-        }
-      }
-      // Optionally refresh or notify parent
-      onReleaseUpdated?.();
-    }
-  };
+  // const handleStateChange = async (newState: string) => {
+  //   if (release.state === newState) return;
+  //   const supabase = createClient();
+  //   console.log("Logging activity for release_id:", release.id, "release name:", release.name);
+  //   const { error } = await supabase
+  //     .from("releases")
+  //     .update({ state: newState })
+  //     .eq("id", release.id);
+  //   if (!error) {
+  //     // Log activity: release state change
+  //     if (user?.id) {
+  //       const supabase = createClient();
+  //       const { error: activityError } = await supabase.from("activity_log").insert({
+  //         release_id: release.id,
+  //         member_id: memberId,
+  //         project_id: release.project?.id || "",
+  //         activity_type: "release_state_change",
+  //         activity_details: { oldState: release.state, newState, releaseName: release.name },
+  //       });
+  //       if (activityError) {
+  //         console.error("Failed to log release state change activity:", activityError);
+  //       } else {
+  //         // console.log("Successfully logged release state change activity");
+  //       }
+  //     }
+  //     // Optionally refresh or notify parent
+  //     onReleaseUpdated?.();
+  //   }
+  // };
 
-  // Check if the current user is a DRI on any features
-  const isUserDRI = () => {
-    if (!memberId || !release.features) return false;
-    return release.features.some((feature: any) => feature.dri_member_id === memberId);
-  };
-  // Check if the current user is a member of any teams in this release
-  const isUserMember = () => {
-    if (!memberId || !release.teams) return false;
-    return release.teams.some((team: any) =>
-      team.members?.some((member: any) => member.id === memberId)
-    );
-  };
+  // // Check if the current user is a DRI on any features
+  // const isUserDRI = () => {
+  //   if (!memberId || !release.features) return false;
+  //   return release.features.some((feature: any) => feature.dri_member_id === memberId);
+  // };
+  // // Check if the current user is a member of any teams in this release
+  // const isUserMember = () => {
+  //   if (!memberId || !release.teams) return false;
+  //   return release.teams.some((team: any) =>
+  //     team.members?.some((member: any) => member.id === memberId)
+  //   );
+  // };
 
   return (
     <div className="flex flex-col">
@@ -422,24 +414,6 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onRele
         collapsible={false}
         initialExpanded={true}
       />
-      {/* <ReleaseDetailBottomContent
-        release={release}
-        user={user}
-        memberId={memberId ?? ""}
-        features={features}
-        allMembers={allMembers}
-        updatingFeature={updatingFeature}
-        handleFeatureReadyChange={handleFeatureReadyChange}
-        updateMemberReady={updateMemberReady}
-        onFeatureUpdated={() => onReleaseUpdated?.(undefined)}
-      /> */}
-      {/* <FeatureReadyDialog
-        open={readyDialogOpen}
-        onOpenChange={handleReadyDialogCancel}
-        featureName={(selectedFeature?.name ?? '') as string}
-        onConfirm={handleReadyDialogConfirm}
-        loading={updatingFeature}
-      /> */}
       <CreateReleaseDialog
         open={editOpen}
         onOpenChange={setEditOpen}

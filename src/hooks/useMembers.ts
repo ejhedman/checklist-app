@@ -2,19 +2,19 @@ import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 
-interface MemberWithTeams {
-  id: string;
-  full_name: string;
-  email: string;
-  nickname: string | null;
-  member_role: 'member' | 'release_manager' | 'admin';
-  created_at: string;
-  team_members?: Array<{
-    teams: {
-      name: string;
-    };
-  }>;
-}
+// interface MemberWithTeams {
+//   id: string;
+//   full_name: string;
+//   email: string;
+//   nickname: string | null;
+//   member_role: 'member' | 'release_manager' | 'admin';
+//   created_at: string;
+//   team_members?: Array<{
+//     teams: {
+//       name: string;
+//     };
+//   }>;
+// }
 
 interface TransformedMember {
   id: string;

@@ -1,12 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import { FileText, Users } from "lucide-react";
-import FeatureCard from "./FeatureCard";
-import { AddFeatureDialog } from "./AddFeatureDialog";
-import { AddTeamDialog } from "./AddTeamDialog";
 import React from "react";
-import { TeamMemberCard } from "./TeamMemberCard";
 import { FeaturesCard } from "./FeaturesCard";
 import { TeamMembersCard } from "./TeamMembersCard";
 import { useAuth } from "@/contexts/AuthContext";

@@ -1,6 +1,18 @@
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { EditFeatureDialog } from "./EditFeatureDialog";
+import { Trash2 } from "lucide-react";
+import { useState } from "react";
+import { createClient } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 interface FeatureCardProps {
   feature: any;
@@ -15,6 +27,10 @@ interface FeatureCardProps {
 }
 
 export default function FeatureCard({ feature, user, memberId, updatingFeature, handleFeatureReadyChange, onFeatureUpdated, releaseName, daysUntilRelease, onFeatureEdited }: FeatureCardProps) {
+  const { is_release_manager } = useAuth();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  
   const isDri = memberId && feature.dri_member && memberId === feature.dri_member.id;
   // Only the logged-in user who is the DRI can check the box (by memberId)
   const canMarkReady = memberId && feature.dri_member && memberId === feature.dri_member.id;
@@ -22,16 +38,54 @@ export default function FeatureCard({ feature, user, memberId, updatingFeature, 
   const notReadyClass = daysUntilRelease !== undefined && daysUntilRelease < 3
     ? 'bg-red-100 text-red-800 border-red-200'
     : 'bg-amber-100 text-amber-800 border-amber-200';
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("features")
+        .delete()
+        .eq("id", feature.id);
+
+      if (error) {
+        console.error('Failed to delete feature:', error);
+        return;
+      }
+
+      setDeleteDialogOpen(false);
+      // Call the callback to refresh the parent component
+      onFeatureUpdated?.();
+    } catch (error) {
+      console.error('Error deleting feature:', error);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <div className={`p-3 border rounded-lg relative ${isDri ? 'bg-blue-50 border-blue-200' : ''}`}>
-      {/* Edit button in top right corner */}
-      <div className="absolute top-2 right-2">
+      {/* Edit and Delete buttons in top right corner */}
+      <div className="absolute top-2 right-2 flex items-center space-x-1">
         <EditFeatureDialog 
           feature={feature} 
           releaseName={releaseName || "this release"} 
           onFeatureUpdated={onFeatureUpdated || (() => {})} 
           onFeatureChanged={onFeatureEdited}
         />
+        {is_release_manager && (
+          <button
+            type="button"
+            aria-label="Delete Feature"
+            className="p-1 rounded hover:bg-red-100 transition-colors"
+            onClick={(e) => {
+              e.stopPropagation();
+              setDeleteDialogOpen(true);
+            }}
+          >
+            <Trash2 className="h-4 w-4 text-red-500 hover:text-red-700 transition-colors" />
+          </button>
+        )}
       </div>
       
       {/* Top row: Platform/Config badges (left), Feature name: description (right) */}
@@ -44,7 +98,7 @@ export default function FeatureCard({ feature, user, memberId, updatingFeature, 
             <Badge variant="outline" className="text-xs">Config</Badge>
           )}
         </div>
-        <p className="text-sm text-muted-foreground flex-1 min-w-0 truncate">
+        <p className="text-sm text-muted-foreground flex-1 min-w-0 truncate pr-6">
           {feature.name}{feature.description ? `: ${feature.description}` : ''}
         </p>
       </div>
@@ -92,6 +146,29 @@ export default function FeatureCard({ feature, user, memberId, updatingFeature, 
           </Badge>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Feature</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p>Are you sure you want to delete the feature "{feature.name}"?</p>
+            <p className="text-sm text-muted-foreground mt-2">
+              This action cannot be undone. All feature data, comments, and readiness status will be permanently deleted.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} disabled={deleting}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+              {deleting ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 } 

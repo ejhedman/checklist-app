@@ -1,21 +1,14 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Home, Users, Calendar, User, CalendarDays, Pencil, Briefcase, Shield, Building, Book, Target } from "lucide-react";
+import { Home, Users, Calendar, User, CalendarDays, Pencil, Briefcase, Shield, Book, Target } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 
 export function Sidebar() {
   const { userRole, user, loading, selectedProject } = useAuth();
   const isAdmin = userRole === 'admin';
-  
-  // Debug logging
-  // console.log('Sidebar - loading:', loading);
-  // console.log('Sidebar - userRole:', userRole);
-  // console.log('Sidebar - isAdmin:', isAdmin);
-  // console.log('Sidebar - current user ID:', user?.id);
-  // console.log('Sidebar - current user email:', user?.email);
-
+ 
   // Don't render admin features until we're sure about the user's role
   if (loading) {
     return (

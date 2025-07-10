@@ -1,6 +1,5 @@
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { CheckCircle } from 'lucide-react';
-import Link from 'next/link';
 import { ActivityIcon } from '@/components/ui/activity-icon';
 
 export default function RecentActivityCard({ activity }: { activity: any[] }) {

@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { User, Mail, Edit, Trash2, Clock, Shield } from "lucide-react";
+import { User, Mail, Trash2, Clock, Shield } from "lucide-react";
 import { EditUserDialog } from "./EditUserDialog";
 import { UpdatePasswordDialog } from "./UpdatePasswordDialog";
 import { Button } from "@/components/ui/button";
@@ -40,13 +40,6 @@ export function UserCard({ user, onUserUpdated }: { user: User; onUserUpdated: (
   
   // Check if current user has admin role (only when not loading)
   const isAdmin = !loading && userRole === 'admin';
-  
-  // Debug logging
-  // console.log('UserCard - loading:', loading);
-  // console.log('UserCard - userRole:', userRole);
-  // console.log('UserCard - isAdmin:', isAdmin);
-  // console.log('UserCard - currentUser email:', currentUser?.email);
-  // console.log('UserCard - user email:', user.email);
 
   const formatLastLogin = (lastSignInAt?: string) => {
     if (!lastSignInAt) {

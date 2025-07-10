@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ExternalLink, FileText, ChevronDown, ChevronUp, Pencil } from "lucide-react";
-import Link from "next/link";
+import { ExternalLink, FileText, ChevronDown, ChevronUp, Pencil, Trash2 } from "lucide-react";
 import React from "react";
 import { createClient } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -11,10 +10,16 @@ import { StateBadge } from "@/components/ui/state-icons";
 import { getStatePaleBackgroundColor } from "@/lib/state-colors";
 import { useRouter } from "next/navigation";
 import { ReleaseDetailBottomContent } from "./ReleaseDetailBottomContent";
-import ReleaseDetailCard from "./ReleaseDetailCard";
-import { LoadingSpinner } from "@/components/ui/loading";
 import { CreateReleaseDialog } from "./CreateReleaseDialog";
 import { Skeleton } from "@/components/ui/Skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 export interface ReleaseSummaryCardProps {
   release: {
@@ -112,15 +117,8 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
   const [summaryReadyFeatures, setSummaryReadyFeatures] = useState(release.ready_features);
   const [summaryFeatureCount, setSummaryFeatureCount] = useState(release.feature_count);
   const [summaryState, setSummaryState] = useState(release.state);
-
-  // Debug: Log features and user
-  // console.log('ReleaseSummaryCard:', {
-  //   releaseName: release.name,
-  //   features: release.features,
-  //   userId: user?.id,
-  //   memberId,
-  //   driIds: release.features?.map(f => f.dri_member_id)
-  // });
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     setIsArchived(release.is_archived);
@@ -317,6 +315,30 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
       onReleaseUpdated?.();
     }
     setArchiving(false);
+  };
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("releases")
+        .delete()
+        .eq("id", release.id);
+
+      if (error) {
+        console.error('Failed to delete release:', error);
+        return;
+      }
+
+      setDeleteDialogOpen(false);
+      // Call the callback to refresh the parent component
+      onReleaseUpdated?.();
+    } catch (error) {
+      console.error('Error deleting release:', error);
+    } finally {
+      setDeleting(false);
+    }
   };
 
   // Check if the current user is a DRI on any features
@@ -661,18 +683,33 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
                   </label>
                 </div>
               )}
-              {expanded && is_release_manager && (
-                <button
-                  type="button"
-                  aria-label="Edit Release"
-                  className="p-2 rounded hover:bg-gray-100 transition-colors"
-                  onClick={e => {
-                    e.stopPropagation();
-                    setEditOpen(true);
-                  }}
-                >
-                  <Pencil className="h-5 w-5 text-muted-foreground hover:text-foreground transition-colors" />
-                </button>
+              {is_release_manager && (
+                <>
+                  {expanded && (
+                    <button
+                      type="button"
+                      aria-label="Edit Release"
+                      className="p-2 rounded hover:bg-gray-100 transition-colors"
+                      onClick={e => {
+                        e.stopPropagation();
+                        setEditOpen(true);
+                      }}
+                    >
+                      <Pencil className="h-5 w-5 text-muted-foreground hover:text-foreground transition-colors" />
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    aria-label="Delete Release"
+                    className="p-2 rounded hover:bg-red-100 transition-colors"
+                    onClick={e => {
+                      e.stopPropagation();
+                      setDeleteDialogOpen(true);
+                    }}
+                  >
+                    <Trash2 className="h-5 w-5 text-red-500 hover:text-red-700 transition-colors" />
+                  </button>
+                </>
               )}
             </div>
           </div>
@@ -823,6 +860,27 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
         onReleaseSaved={() => onReleaseUpdated?.()}
         isEdit={true}
       />
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Release</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p>Are you sure you want to delete the release "{release.name}"?</p>
+            <p className="text-sm text-muted-foreground mt-2">
+              This action cannot be undone. All release data, features, and team assignments will be permanently deleted.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} disabled={deleting}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+              {deleting ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }; 

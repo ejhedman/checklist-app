@@ -3,7 +3,6 @@ import { Badge } from "@/components/ui/badge";
 import { Users, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { EditTeamDialog } from "./EditTeamDialog";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 
 export interface Team {
