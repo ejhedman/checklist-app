@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ExternalLink, FileText, ChevronDown, ChevronUp, Pencil, Trash2 } from "lucide-react";
-import React from "react";
+import { ExternalLink, FileText, ChevronDown, ChevronUp, Pencil, Trash2, Check } from "lucide-react";
+import MiniCard from "./MiniCard";
 import { createClient } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { StateBadge } from "@/components/ui/state-icons";
@@ -674,21 +674,26 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-6 gap-4 pb-2">
-            <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Platform</p>
-              <Badge variant={release.platform_update ? "default" : "secondary"}>
-                {release.platform_update ? "Yes" : "No"}
-              </Badge>
-            </div>
-            <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Config</p>
-              <Badge variant={release.config_update ? "default" : "secondary"}>
-                {release.config_update ? "Yes" : "No"}
-              </Badge>
-            </div>
-            <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Targets</p>
-              <div className="flex flex-wrap gap-1 mt-1">
+            {/* Platform/Config mini-card on the left with 'Release' header */}
+            <MiniCard title="Release">
+              <div className="flex flex-row w-full gap-2">
+                <div className="flex flex-col justify-between flex-1">
+                  <span className="text-xs font-medium text-muted-foreground">Platform</span>
+                  <span className="text-xs font-medium text-muted-foreground">Config</span>
+                </div>
+                <div className="flex flex-col justify-between flex-1 items-end">
+                  <Badge className={release.platform_update ? 'bg-green-100 text-green-800 border-green-200' : 'bg-gray-100 text-gray-800 border-gray-200'} variant="outline">
+                    {release.platform_update ? 'Yes' : 'No'}
+                  </Badge>
+                  <Badge className={release.config_update ? 'bg-green-100 text-green-800 border-green-200' : 'bg-gray-100 text-gray-800 border-gray-200'} variant="outline">
+                    {release.config_update ? 'Yes' : 'No'}
+                  </Badge>
+                </div>
+              </div>
+            </MiniCard>
+            {/* Targets mini-card */}
+            <MiniCard title="Targets">
+              <div className="flex flex-wrap gap-1 mt-1 justify-center w-full">
                 {release.targets && release.targets.length > 0 ? (
                   release.targets.map((target: string, index: number) => (
                     <Badge key={index} variant="outline" className="text-xs">
@@ -696,14 +701,15 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
                     </Badge>
                   ))
                 ) : (
-                  <span className="text-muted-foreground text-sm">No specific targets</span>
+                  <span className="text-muted-foreground text-sm"></span>
                 )}
               </div>
-            </div>
+            </MiniCard>
+
+            {/* Teams mini-card */}
             {selectedProject?.is_manage_members && (
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Teams</p>
-                <div className="flex flex-wrap gap-1 mt-1">
+              <MiniCard title="Teams">
+                <div className="flex flex-wrap gap-1 mt-1 justify-center w-full">
                   {teamNames.length > 0 ? (
                     teamNames.map((team) => (
                       <Badge key={team} variant="secondary" className="text-xs">
@@ -711,63 +717,119 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
                       </Badge>
                     ))
                   ) : (
-                    <span className="text-muted-foreground text-sm">No teams</span>
+                    <span className="text-muted-foreground text-sm"></span>
                   )}
                 </div>
-              </div>
+              </MiniCard>
             )}
-            {(!expanded) && (
-              <>
-                {/** Key Feature Readiness coloring logic */}
-                {selectedProject?.is_manage_features && (() => {
-                  const isFeatureComplete = summaryReadyFeatures === summaryFeatureCount && summaryFeatureCount > 0;
-                  return (
-                    <div className="space-y-1">
-                      <p className={`text-sm ${
-                        isFeatureComplete
-                          ? 'text-green-600 font-bold'
-                          : isUserDRI()
-                            ? 'text-blue-600 font-bold'
-                            : 'text-muted-foreground'
-                      }`}>Key Feature Readiness</p>
-                      <p className={`text-lg font-semibold ${
-                        isFeatureComplete
-                          ? 'text-green-600'
-                          : isUserDRI()
-                            ? 'text-blue-600'
-                            : ''
-                      }`}>
-                        {summaryReadyFeatures}/{summaryFeatureCount}
-                      </p>
-                    </div>
-                  );
-                })()}
-                {/** Team Readiness coloring logic */}
-                {selectedProject?.is_manage_members && (() => {
-                  const isTeamComplete = summaryReadyMembers === summaryTotalMembers && summaryTotalMembers > 0;
-                  return (
-                    <div className="space-y-1">
-                      <p className={`text-sm ${
-                        isTeamComplete
-                          ? 'text-green-600 font-bold'
-                          : isUserMember()
-                            ? 'text-blue-600 font-bold'
-                            : 'text-muted-foreground'
-                      }`}>Team Readiness</p>
-                      <p className={`text-lg font-semibold ${
-                        isTeamComplete
-                          ? 'text-green-600'
-                          : isUserMember()
-                            ? 'text-blue-600'
-                            : ''
-                      }`}>
-                        {summaryReadyMembers}/{summaryTotalMembers}
-                      </p>
-                    </div>
-                  );
-                })()}
-              </>
-            )}
+
+            {/** Team Readiness coloring logic */}
+            {selectedProject?.is_manage_members && (() => {
+              const isTeamComplete = summaryReadyMembers === summaryTotalMembers && summaryTotalMembers > 0;
+              return (
+                <MiniCard title="Team Ready" wide>
+                  <div className="flex items-center justify-center w-16 h-16">
+                    {summaryTotalMembers > 0 ? (
+                      <svg width="64" height="64" viewBox="0 0 64 64">
+                        <circle
+                          cx="32"
+                          cy="32"
+                          r="28"
+                          fill="none"
+                          stroke="#e5e7eb" // Tailwind gray-200
+                          strokeWidth="8"
+                        />
+                        <circle
+                          cx="32"
+                          cy="32"
+                          r="28"
+                          fill="none"
+                          stroke="#3b82f6" // Tailwind blue-500
+                          strokeWidth="8"
+                          strokeDasharray={2 * Math.PI * 28}
+                          strokeDashoffset={2 * Math.PI * 28 * (1 - summaryReadyMembers / summaryTotalMembers)}
+                          strokeLinecap="round"
+                          style={{ transition: 'stroke-dashoffset 0.5s' }}
+                        />
+                        {isTeamComplete ? (
+                          <g>
+                            <circle cx="32" cy="32" r="18" fill="#3b82f6" opacity="0.15" />
+                            <Check x={20} y={20} width={24} height={24} color="#3b82f6" strokeWidth={3} />
+                          </g>
+                        ) : (
+                          <text
+                            x="32"
+                            y="38"
+                            textAnchor="middle"
+                            fontSize="18"
+                            fill="#374151" // Tailwind gray-700
+                            fontWeight="bold"
+                          >
+                            {`${summaryReadyMembers}/${summaryTotalMembers}`}
+                          </text>
+                        )}
+                      </svg>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">No members</span>
+                    )}
+                  </div>
+                </MiniCard>
+              );
+            })()}            
+            
+            {/** Key Feature Readiness Donut Chart as a mini-card */}
+            {selectedProject?.is_manage_features && (() => {
+                return (
+                <MiniCard title="Features Ready" wide>
+                  <div className="flex items-center justify-center w-16 h-16">
+                    {summaryFeatureCount > 0 ? (
+                      <svg width="64" height="64" viewBox="0 0 64 64">
+                        <circle
+                          cx="32"
+                          cy="32"
+                          r="28"
+                          fill="none"
+                          stroke="#e5e7eb" // Tailwind gray-200
+                          strokeWidth="8"
+                        />
+                        <circle
+                          cx="32"
+                          cy="32"
+                          r="28"
+                          fill="none"
+                          stroke="#22c55e" // Tailwind green-500
+                          strokeWidth="8"
+                          strokeDasharray={2 * Math.PI * 28}
+                          strokeDashoffset={2 * Math.PI * 28 * (1 - summaryReadyFeatures / summaryFeatureCount)}
+                          strokeLinecap="round"
+                          style={{ transition: 'stroke-dashoffset 0.5s' }}
+                        />
+                        {summaryReadyFeatures === summaryFeatureCount ? (
+                          <g>
+                            <circle cx="32" cy="32" r="18" fill="#22c55e" opacity="0.15" />
+                            <Check x={20} y={20} width={24} height={24} color="#22c55e" strokeWidth={3} />
+                          </g>
+                        ) : (
+                          <text
+                            x="32"
+                            y="38"
+                            textAnchor="middle"
+                            fontSize="18"
+                            fill="#374151" // Tailwind gray-700
+                            fontWeight="bold"
+                          >
+                            {`${summaryReadyFeatures}/${summaryFeatureCount}`}
+                          </text>
+                        )}
+                      </svg>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">No features</span>
+                    )}
+                  </div>
+                </MiniCard>                );
+            })()}
+
+
           </div>
         </CardContent>
       </Card>
