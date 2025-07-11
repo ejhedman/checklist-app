@@ -260,10 +260,11 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
             id,
             name,
             target_date,
-            state,
             platform_update,
             config_update,
             is_archived,
+            is_deployed,
+            is_cancelled,
             targets,
             created_at,
             project_id,
@@ -905,7 +906,7 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
                   
                 </div>
               </div>
-              <div className="flex-1 flex justify-center">
+              <div className="flex-1 flex justify-center items-center space-x-4">
                 <CardDescription className="m-0">
                   {(() => {
                     const label = isPast ? "Release Date" : "Target Date";
@@ -916,6 +917,24 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
                       : `${label}: ${dateStr} (${days} days)`;
                   })()}
                 </CardDescription>
+                
+                {/* Archive checkbox for release managers - only show when release is past due or cancelled */}
+                {is_release_manager && (dynamicState === 'past_due' || dynamicState === 'cancelled') && (
+                  <div className="flex items-center space-x-2 bg-white p-2 rounded hover:bg-gray-100 transition-colors shadow-sm ml-4">
+                    <label 
+                      htmlFor={`archive-${release.id}`} 
+                      className="text-xs text-muted-foreground cursor-pointer select-none"
+                    >
+                      Archive
+                    </label>
+                    <Checkbox
+                      checked={isArchived}
+                      onCheckedChange={handleArchiveChange}
+                      disabled={archiving}
+                      id={`archive-${release.id}`}
+                    />
+                  </div>
+                )}
               </div>
             </div>
             {/* Move link and release notes buttons to the right side */}
@@ -946,24 +965,6 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
               >
                 <FileText className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
               </button>
-
-              {/* Archive checkbox for release managers - only show when release is past due or cancelled */}
-              {is_release_manager && (dynamicState === 'past_due' || dynamicState === 'cancelled') && (
-                <div className="flex items-center space-x-2 bg-white p-2 rounded hover:bg-gray-100 transition-colors shadow-sm">
-                  <label 
-                    htmlFor={`archive-${release.id}`} 
-                    className="text-xs text-muted-foreground cursor-pointer select-none"
-                  >
-                    Archive
-                  </label>
-                  <Checkbox
-                    checked={isArchived}
-                    onCheckedChange={handleArchiveChange}
-                    disabled={archiving}
-                    id={`archive-${release.id}`}
-                  />
-                </div>
-              )}
 
               {/* Deploy button for release managers - always show but disable based on state */}
               {is_release_manager && (

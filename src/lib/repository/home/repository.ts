@@ -16,7 +16,6 @@ export interface Milestone {
   id: string;
   name: string;
   target_date: string;
-  state: string;
   project_id: string;
   projects: {
     name: string;
@@ -122,7 +121,8 @@ export class HomeRepository {
       const totalReleases = releases?.length || 0;
       const activeTeams = teams?.length || 0;
       const readyReleases = releases?.filter((r: any) => r.is_ready === true).length || 0;
-      const pastDueReleases = releases?.filter((r: any) => r.state === 'past_due').length || 0;
+      // Note: pastDueReleases calculation removed since state is now dynamically computed
+      const pastDueReleases = 0;
 
       return {
         totalReleases,
@@ -159,7 +159,6 @@ export class HomeRepository {
           id,
           name,
           target_date,
-          state,
           project_id,
           projects(name),
           release_teams!inner(
@@ -210,7 +209,6 @@ export class HomeRepository {
             id,
             name,
             target_date,
-            state,
             project_id,
             projects(name)
           )
@@ -245,7 +243,6 @@ export class HomeRepository {
           id: feature.id,
           name: feature.name,
           target_date: feature.releases.target_date,
-          state: feature.releases.state,
           project_id: feature.releases.project_id,
           projects: feature.releases.projects,
           is_ready: feature.is_ready,

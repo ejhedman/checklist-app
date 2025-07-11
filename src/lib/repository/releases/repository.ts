@@ -7,7 +7,6 @@ export interface Release {
   id: string;
   name: string;
   target_date: string;
-  state: string;
   platform_update: boolean;
   config_update: boolean;
   is_archived: boolean;
@@ -44,7 +43,6 @@ export class ReleasesRepository {
       id,
       name,
       target_date,
-      state,
       platform_update,
       config_update,
       is_archived,
@@ -126,7 +124,6 @@ export class ReleasesRepository {
         id,
         name,
         target_date,
-        state,
         platform_update,
         config_update,
         is_archived,
@@ -196,7 +193,6 @@ export class ReleasesRepository {
         id,
         name,
         target_date,
-        state,
         platform_update,
         config_update,
         is_archived,
@@ -293,7 +289,6 @@ export class ReleasesRepository {
   async updateRelease(releaseId: string, updateData: {
     name?: string;
     target_date?: string;
-    state?: string;
     platform_update?: boolean;
     config_update?: boolean;
     is_archived?: boolean;

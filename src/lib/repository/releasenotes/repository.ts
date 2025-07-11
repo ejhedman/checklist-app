@@ -7,7 +7,6 @@ export interface ReleaseNote {
   id: string;
   name: string;
   target_date: string;
-  state: string;
   platform_update: string | null;
   config_update: string | null;
   projects: {
@@ -30,7 +29,6 @@ export class ReleaseNotesRepository {
         id,
         name,
         target_date,
-        state,
         platform_update,
         config_update,
         projects(name)
@@ -55,7 +53,6 @@ export class ReleaseNotesRepository {
         id,
         name,
         target_date,
-        state,
         platform_update,
         config_update,
         project_id,

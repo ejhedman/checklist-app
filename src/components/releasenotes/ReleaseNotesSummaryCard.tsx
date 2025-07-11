@@ -11,7 +11,6 @@ interface ReleaseNotesSummaryCardProps {
     name: string;
     target_date?: string;
     release_summary?: string;
-    state?: string;
   };
 }
 
@@ -34,15 +33,9 @@ export function ReleaseNotesSummaryCard({ release }: ReleaseNotesSummaryCardProp
     return `${Number(month)}/${Number(day)}/${year}`;
   };
 
-  // Color conventions based on state
-  const getHeaderBg = (state?: string) => {
-    const validState = (state || "pending") as ReleaseState;
-    return getStatePaleBackgroundColor(validState);
-  };
-
   return (
     <Card className="overflow-hidden rounded-lg">
-      <CardHeader className={`border-b border-border rounded-none px-4 py-3 ${getHeaderBg(release.state)}`}>
+      <CardHeader className="border-b border-border rounded-none px-4 py-3 bg-gray-50">
         <div className="flex items-center justify-between w-full">
           {/* Release Name (left) */}
           <div className="flex-1 min-w-0 flex items-center">

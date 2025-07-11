@@ -141,7 +141,6 @@ export class FeaturesRepository {
           id,
           name,
           target_date,
-          state,
           project_id,
           projects(name)
         ).order('target_date', { ascending: true })

@@ -91,7 +91,6 @@ interface Release {
   id: string;
   name: string;
   target_date: string;
-  state: 'pending' | 'next' | 'past_due' | 'cancelled' | 'deployed';
   is_archived?: boolean;
   is_cancelled?: boolean;
   is_deployed?: boolean;
@@ -354,7 +353,16 @@ export default function CalendarPage() {
       }
       
       const calendarRepository = new CalendarRepository();
-      const releases = await calendarRepository.getReleases(selectedProject.id);
+      const calendarReleases = await calendarRepository.getReleases(selectedProject.id);
+      // Convert CalendarRelease to Release format
+      const releases: Release[] = calendarReleases.map(release => ({
+        id: release.id,
+        name: release.name,
+        target_date: release.target_date,
+        is_archived: release.is_archived,
+        is_cancelled: release.is_cancelled,
+        is_deployed: release.is_deployed,
+      }));
       setReleases(releases);
     } catch (error) {
       console.error("Error fetching releases:", error);

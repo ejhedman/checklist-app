@@ -7,7 +7,9 @@ export interface CalendarRelease {
   id: string;
   name: string;
   target_date: string;
-  state: 'pending' | 'next' | 'past_due' | 'cancelled' | 'deployed';
+  is_archived?: boolean;
+  is_cancelled?: boolean;
+  is_deployed?: boolean;
 }
 
 export interface UserInvolvement {
@@ -101,7 +103,7 @@ export class CalendarRepository {
   async getReleases(projectId: string): Promise<CalendarRelease[]> {
     const { data, error } = await this.supabase
       .from("releases")
-      .select("id, name, target_date, state, is_archived, is_cancelled, is_deployed")
+      .select("id, name, target_date, is_archived, is_cancelled, is_deployed")
       .eq("project_id", projectId)
       .eq("is_archived", false)
       .order("target_date");
@@ -131,7 +133,7 @@ export class CalendarRepository {
   async getReleaseById(releaseId: string): Promise<CalendarRelease> {
     const { data, error } = await this.supabase
       .from("releases")
-      .select("id, name, target_date, state")
+      .select("id, name, target_date")
       .eq("id", releaseId)
       .single();
 

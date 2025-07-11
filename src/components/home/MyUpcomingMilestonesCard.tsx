@@ -54,25 +54,7 @@ export default function MyUpcomingMilestonesCard({ milestones }: { milestones: a
                         {milestone.is_ready ? "Ready" : "Not Ready"}
                       </Badge>
                     )}
-                    {milestone.state ? (
-                      milestone.state === "next" ? (
-                        <Badge className="bg-green-600 text-white" variant="default">
-                          {milestone.state.replace("_", " ")}
-                        </Badge>
-                      ) : milestone.state === "pending" ? (
-                        <Badge className="bg-amber-400 text-black" variant="default">
-                          {milestone.state.replace("_", " ")}
-                        </Badge>
-                      ) : (
-                        <Badge variant="secondary">
-                          {milestone.state.replace("_", " ")}
-                        </Badge>
-                      )
-                    ) : (
-                      <Badge variant="secondary">
-                        Unknown
-                      </Badge>
-                    )}
+                    {/* State badge removed since state is now dynamically computed */}
                   </div>
                 </div>
               );

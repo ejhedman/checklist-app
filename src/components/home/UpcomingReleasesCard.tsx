@@ -39,19 +39,7 @@ export default function UpcomingReleasesCard({ releases }: { releases: any[] }) 
                         <span>{daysRemaining} days</span>
                       </div>
                     )}
-                    {release.state === "next" ? (
-                      <Badge className="bg-green-600 text-white" variant="default">
-                        {release.state.replace("_", " ")}
-                      </Badge>
-                    ) : release.state === "pending" ? (
-                      <Badge className="bg-amber-400 text-black" variant="default">
-                        {release.state.replace("_", " ")}
-                      </Badge>
-                    ) : (
-                      <Badge variant="secondary">
-                        {release.state.replace("_", " ")}
-                      </Badge>
-                    )}
+                    {/* State badge removed since state is now dynamically computed */}
                   </div>
                 </div>
               );

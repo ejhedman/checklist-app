@@ -7,7 +7,6 @@ interface Milestone {
   type: 'team_member' | 'dri';
   title: string;
   target_date: string;
-  state: string;
   project_name?: string;
   is_ready: boolean;
   release_id: string;
@@ -45,7 +44,6 @@ export function useUserMilestones() {
             type: 'team_member',
             title: milestone.name,
             target_date: milestone.target_date,
-            state: milestone.state,
             project_name: milestone.projects?.name,
             is_ready: milestone.is_ready || false,
             release_id: milestone.id
@@ -60,7 +58,6 @@ export function useUserMilestones() {
               type: 'dri',
               title: milestone.name,
               target_date: release.target_date,
-              state: release.state,
               project_name: release.projects?.name,
               is_ready: milestone.is_ready,
               release_id: release.id,

@@ -8,6 +8,7 @@ interface TransformedRelease extends Release {
   ready_features: number;
   total_members: number;
   ready_members: number;
+  state: string; // Dynamically computed state
   project?: {
     id: string;
     name: string;
@@ -51,6 +52,23 @@ export function useReleases(options: UseReleasesOptions = {}) {
         return memberReadyState?.is_ready;
       }).length;
 
+      // Calculate dynamic state
+      let state = "pending";
+      if (release.is_cancelled) {
+        state = "cancelled";
+      } else if (release.is_deployed) {
+        state = "deployed";
+      } else {
+        const daysUntil = Math.ceil(
+          (new Date(release.target_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+        );
+        if (daysUntil < 0) {
+          state = "past_due";
+        } else if (daysUntil <= 7) {
+          state = "next";
+        }
+      }
+
       return {
         ...release,
         team_count: release.release_teams?.length || 0,
@@ -58,6 +76,7 @@ export function useReleases(options: UseReleasesOptions = {}) {
         ready_features: release.features?.filter((f: any) => f.is_ready)?.length || 0,
         total_members,
         ready_members,
+        state,
         features: release.features || [],
         project: release.projects,
       };
