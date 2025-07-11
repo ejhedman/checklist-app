@@ -141,7 +141,9 @@ export default function FeatureCard({ feature, user, memberId, updatingFeature, 
             </>
           )}
           <Badge
-            className={`text-xs ml-2 ${feature.is_ready ? 'bg-green-100 text-green-800 border-green-200' : notReadyClass}`}
+            className={`text-xs ml-2 ${feature.is_ready ? 'bg-green-100 text-green-800 border-green-200' : notReadyClass} ${canMarkReady ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}`}
+            onClick={canMarkReady ? () => handleFeatureReadyChange(feature, !feature.is_ready) : undefined}
+            style={{ cursor: canMarkReady ? 'pointer' : 'default' }}
           >
             {feature.is_ready ? "Ready" : "Not Ready"}
           </Badge>

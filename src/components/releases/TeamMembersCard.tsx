@@ -32,10 +32,19 @@ export function TeamMembersCard({
 
   // Track previous state to only notify on actual changes
   const prevIsReadyRef = useRef<boolean | null>(null);
+  const hasReportedInitialState = useRef<boolean>(false);
 
-  // Notify parent when internal is_ready state changes (but not on initial load)
+  // Notify parent when internal is_ready state changes (including initial state)
   useEffect(() => {
-    // Only call callback if we have a previous state (not initial load) and the state actually changed
+    // Report initial state immediately upon mounting
+    if (!hasReportedInitialState.current) {
+      onTeamsReadyStateChange?.(isReady);
+      hasReportedInitialState.current = true;
+      prevIsReadyRef.current = isReady;
+      return;
+    }
+
+    // Only call callback if the state actually changed (not on initial load)
     if (prevIsReadyRef.current !== null && prevIsReadyRef.current !== isReady) {
       onTeamsReadyStateChange?.(isReady);
     }

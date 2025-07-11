@@ -198,6 +198,13 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
   const [featuresReadyState, setFeaturesReadyState] = useState<boolean | null>(null);
   const [teamsReadyState, setTeamsReadyState] = useState<boolean | null>(null);
 
+  // Centralized function to calculate release ready state
+  const calculateReleaseReadyState = (features: any[], members: any[]) => {
+    const allFeaturesReady = features.length > 0 && features.every(f => f.is_ready);
+    const allMembersReady = members.length > 0 && members.every(m => m.is_ready);
+    return allFeaturesReady && allMembersReady;
+  };
+
   // Update dynamic state when release or allReleases changes
   useEffect(() => {
     const newState = calculateDynamicState(release, allReleases);
@@ -498,16 +505,21 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
       console.log('No user, cannot mark ready');
       return;
     }
+    
     // Allow DRI or release manager
-    if (!feature.dri_member) {
-      console.log('No DRI member on feature, cannot mark ready');
+    // For DRI: must have a DRI assigned and be the DRI
+    // For release manager: can mark ready regardless of DRI status
+    if (memberId && feature.dri_member && memberId === feature.dri_member.id) {
+      // User is the DRI - allow
+      console.log('User is DRI, marking feature ready', { featureId: feature.id, isReady });
+    } else if (is_release_manager) {
+      // User is release manager - allow regardless of DRI status
+      console.log('User is release manager, marking feature ready', { featureId: feature.id, isReady });
+    } else {
+      console.log('Not DRI or release manager, cannot mark ready', { memberId, dri: feature.dri_member?.id, is_release_manager });
       return;
     }
-    if (memberId !== feature.dri_member.id && !is_release_manager) {
-      console.log('Not DRI or release manager, cannot mark ready', { memberId, dri: feature.dri_member.id, is_release_manager });
-      return;
-    }
-    console.log('Marking feature ready', { featureId: feature.id, isReady, memberId, is_release_manager });
+    
     await updateFeatureReady(feature.id, isReady, "");
   };
 
@@ -533,11 +545,8 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
       const readyFeatures = updatedFeatures.filter((f: any) => f.is_ready).length;
       setSummaryReadyFeatures(readyFeatures);
       setSummaryFeatureCount(updatedFeatures.length);
-      // Recalculate is_ready locally
-      const allFeaturesReady = updatedFeatures.length > 0 && readyFeatures === updatedFeatures.length;
-      const allMembersReady = summaryTotalMembers > 0 && summaryReadyMembers === summaryTotalMembers;
-      const isReadyLocal = allFeaturesReady && allMembersReady;
-      // Update expandedReleaseDetail and trigger ready state recalculation
+      
+      // Update expandedReleaseDetail
       if (expandedReleaseDetail) {
         const updatedDetail = {
           ...expandedReleaseDetail,
@@ -546,9 +555,10 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
           features: updatedFeatures,
         };
         setExpandedReleaseDetail(updatedDetail);
-        // Trigger the new ready state update system
-        updateReleaseReadyState();
       }
+      
+      // Update release ready state after feature state change
+      updateReleaseReadyState();
     }
     setUpdatingFeature(false);
   };
@@ -588,11 +598,8 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
       const readyMembers = updatedUniqueMembers.filter((m: any) => m.is_ready).length;
       setSummaryReadyMembers(readyMembers);
       setSummaryTotalMembers(updatedUniqueMembers.length);
-      // Recalculate is_ready locally
-      const allFeaturesReady = summaryFeatureCount > 0 && summaryReadyFeatures === summaryFeatureCount;
-      const allMembersReady = updatedUniqueMembers.length > 0 && readyMembers === updatedUniqueMembers.length;
-      const isReadyLocal = allFeaturesReady && allMembersReady;
-      // Update expandedReleaseDetail and trigger ready state recalculation
+      
+      // Update expandedReleaseDetail
       if (expandedReleaseDetail) {
         const updatedDetail = {
           ...expandedReleaseDetail,
@@ -601,9 +608,10 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
           teams: expandedReleaseDetail.teams,
         };
         setExpandedReleaseDetail(updatedDetail);
-        // Trigger the new ready state update system
-        updateReleaseReadyState();
       }
+      
+      // Update release ready state after member state change
+      updateReleaseReadyState();
     }
   };
 
@@ -741,13 +749,19 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
 
   // Update release ready state in database based on child component states
   const updateReleaseReadyState = async () => {
-    // Don't update during initialization - wait for both child components to report
-    if (featuresReadyState === null || teamsReadyState === null) {
-      return;
-    }
-
+    // Calculate release ready state based on current local state
+    // Use the current features and members arrays to calculate the state
+    const currentFeatures = features || [];
+    const currentMembers = uniqueMembers || [];
+    
+    // Calculate if all features are ready
+    const allFeaturesReady = currentFeatures.length > 0 && currentFeatures.every(f => f.is_ready);
+    
+    // Calculate if all members are ready
+    const allMembersReady = currentMembers.length > 0 && currentMembers.every(m => m.is_ready);
+    
     // Calculate overall release ready state (both features and teams must be ready)
-    const isReleaseReady = featuresReadyState && teamsReadyState;
+    const isReleaseReady = allFeaturesReady && allMembersReady;
     
     // Only update if the state actually changed
     const currentIsReady = expandedReleaseDetail?.is_ready ?? release.is_ready ?? false;
@@ -761,9 +775,19 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
       if (error) {
         console.error('Error updating release is_ready:', error);
       } else {
-        // Update local state
+        // Update local state immediately
         if (expandedReleaseDetail) {
           setExpandedReleaseDetail((prev: any) => prev ? { ...prev, is_ready: isReleaseReady } : null);
+        }
+        
+        // Also update the release prop locally for immediate UI update
+        // This ensures the badge updates immediately
+        if (release.is_ready !== isReleaseReady) {
+          // Create a new release object with updated is_ready
+          const updatedRelease = { ...release, is_ready: isReleaseReady };
+          // Force a re-render by updating the local state
+          // Note: This is a workaround since we can't directly modify the prop
+          // The parent component should refresh the data after this update
         }
         
         // Log activity for is_ready change
@@ -776,9 +800,9 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
             activity_details: { 
               oldIsReady: currentIsReady, 
               newIsReady: isReleaseReady,
-              reason: "child_component_state_change",
-              featuresReady: featuresReadyState,
-              teamsReady: teamsReadyState,
+              reason: "local_state_calculation",
+              featuresReady: allFeaturesReady,
+              teamsReady: allMembersReady,
               releaseName: expandedReleaseDetail?.name || release.name
             },
           });
@@ -790,9 +814,38 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
     }
   };
 
+  // Sync local state with database state when expanded
+  useEffect(() => {
+    if (expanded && expandedReleaseDetail) {
+      // Ensure the local is_ready state matches the database state
+      const databaseIsReady = release.is_ready ?? false;
+      if (expandedReleaseDetail.is_ready !== databaseIsReady) {
+        setExpandedReleaseDetail((prev: any) => prev ? { ...prev, is_ready: databaseIsReady } : null);
+      }
+    }
+  }, [expanded, expandedReleaseDetail, release.is_ready]);
+
   // Helper to calculate days until target date
   const days = getDaysUntil(release.target_date);
   const isPast = days < 0;
+
+  // Get the current release ready state for display (calculate from current local state)
+  const getCurrentReleaseReadyState = () => {
+    // Calculate based on current local state for immediate updates
+    const currentFeatures = features || [];
+    const currentMembers = uniqueMembers || [];
+    
+    const allFeaturesReady = currentFeatures.length > 0 && currentFeatures.every(f => f.is_ready);
+    const allMembersReady = currentMembers.length > 0 && currentMembers.every(m => m.is_ready);
+    
+    // Use calculated state if we have local data, otherwise fall back to database state
+    if (currentFeatures.length > 0 || currentMembers.length > 0) {
+      return allFeaturesReady && allMembersReady;
+    }
+    
+    // Fall back to database state
+    return expandedReleaseDetail?.is_ready ?? release.is_ready ?? false;
+  };
 
   return (
     <>
@@ -836,7 +889,7 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
                   {/* Release Readiness Badge: only show if state is 'next' or 'pending' */}
                   {['next', 'pending'].includes(dynamicState) && (() => {
                     // Always use the database state for the badge
-                    const isReleaseReady = expandedReleaseDetail?.is_ready ?? release.is_ready ?? false;
+                    const isReleaseReady = getCurrentReleaseReadyState();
                     const notReadyClass = days < 3
                       ? 'bg-red-100 text-red-800 border-red-200'
                       : 'bg-amber-100 text-amber-800 border-amber-200';
@@ -894,11 +947,13 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
                 <FileText className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
               </button>
 
-
-             {/* Archive checkbox for release managers */}
+              {/* Archive checkbox for release managers - only show when release is past due or cancelled */}
               {is_release_manager && (dynamicState === 'past_due' || dynamicState === 'cancelled') && (
                 <div className="flex items-center space-x-2 bg-white p-2 rounded hover:bg-gray-100 transition-colors shadow-sm">
-                  <label htmlFor={`archive-${release.id}`} className="text-xs text-muted-foreground cursor-pointer select-none">
+                  <label 
+                    htmlFor={`archive-${release.id}`} 
+                    className="text-xs text-muted-foreground cursor-pointer select-none"
+                  >
                     Archive
                   </label>
                   <Checkbox
@@ -909,77 +964,141 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
                   />
                 </div>
               )}
-              {/* Deploy button for release managers when release is ready but not deployed */}
-              {is_release_manager && (() => {
-                const isReleaseReady = expandedReleaseDetail?.is_ready || release.is_ready;
-                const isDeployed = expandedReleaseDetail?.is_deployed || release.is_deployed;
-                return isReleaseReady && !isDeployed ? (
-                  <button
-                    type="button"
-                    aria-label="Mark as Deployed"
-                    title="Mark as deployed"
-                    className="bg-white p-2 rounded hover:bg-green-100 transition-colors shadow-sm hover:border-green-200"
-                    onClick={e => {
-                      e.stopPropagation();
-                      handleDeployToggle();
-                    }}
-                  >
-                    <CheckSquare className="h-4 w-4 text-green-500 hover:text-green-600 transition-colors" />
-                  </button>
-                ) : null;
-              })()}
-              {/* Cancel button for release managers when release is not deployed */}
-              {is_release_manager && (() => {
-                const isDeployed = expandedReleaseDetail?.is_deployed || release.is_deployed;
-                return !isDeployed ? (
-                  <button
-                    type="button"
-                    aria-label="Cancel Release"
-                    title="Cancel this release"
-                    className="bg-white p-2 rounded hover:bg-red-100 transition-colors shadow-sm hover:border-red-200"
-                    onClick={e => {
-                      e.stopPropagation();
-                      handleCancelRelease();
-                    }}
-                  >
-                    <X className="h-4 w-4 text-red-500 hover:text-red-600 transition-colors" />
-                  </button>
-                ) : null;
-              })()}
-              {/* Edit and Delete buttons for release managers */}
+
+              {/* Deploy button for release managers - always show but disable based on state */}
               {is_release_manager && (
-                <>
-                  <button
-                    type="button"
-                    aria-label="Edit Release"
-                    title="Edit release"
-                    className="bg-white p-2 rounded hover:bg-gray-100 transition-colors shadow-sm"
-                    onClick={e => {
-                      e.stopPropagation();
-                      setEditOpen(true);
-                    }}
-                  >
-                    <Pencil className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
-                  </button>
-                  </>
+                <button
+                  type="button"
+                  aria-label="Mark as Deployed"
+                  title={(() => {
+                    const isReleaseReady = getCurrentReleaseReadyState();
+                    const isDeployed = expandedReleaseDetail?.is_deployed || release.is_deployed;
+                    if (isDeployed) return "Already deployed";
+                    if (!isReleaseReady) return "Release not ready for deployment";
+                    return "Mark as deployed";
+                  })()}
+                  className={`p-2 rounded shadow-sm transition-colors ${
+                    (() => {
+                      const isReleaseReady = getCurrentReleaseReadyState();
+                      const isDeployed = expandedReleaseDetail?.is_deployed || release.is_deployed;
+                      return isReleaseReady && !isDeployed && ['pending', 'next'].includes(dynamicState)
+                        ? 'bg-white hover:bg-green-100 hover:border-green-200'
+                        : 'bg-gray-50 opacity-50 cursor-not-allowed';
+                    })()
+                  }`}
+                  onClick={e => {
+                    e.stopPropagation();
+                    const isReleaseReady = getCurrentReleaseReadyState();
+                    const isDeployed = expandedReleaseDetail?.is_deployed || release.is_deployed;
+                    if (isReleaseReady && !isDeployed && ['pending', 'next'].includes(dynamicState)) {
+                      handleDeployToggle();
+                    }
+                  }}
+                  disabled={(() => {
+                    const isReleaseReady = getCurrentReleaseReadyState();
+                    const isDeployed = expandedReleaseDetail?.is_deployed || release.is_deployed;
+                    return !(isReleaseReady && !isDeployed && ['pending', 'next'].includes(dynamicState));
+                  })()}
+                >
+                  <CheckSquare className={`h-4 w-4 transition-colors ${
+                    (() => {
+                      const isReleaseReady = getCurrentReleaseReadyState();
+                      const isDeployed = expandedReleaseDetail?.is_deployed || release.is_deployed;
+                      return isReleaseReady && !isDeployed && ['pending', 'next'].includes(dynamicState)
+                        ? 'text-green-500 hover:text-green-600'
+                        : 'text-gray-400';
+                    })()
+                  }`} />
+                </button>
               )}
-               {is_release_manager && (
-                <>
-                  <button
-                    type="button"
-                    aria-label="Delete Release"
-                    title="Delete release"
-                    className="bg-white p-2 rounded hover:bg-red-100 transition-colors shadow-sm hover:border-red-200"
-                    onClick={e => {
-                      e.stopPropagation();
-                      setDeleteDialogOpen(true);
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4 text-red-500 hover:text-red-600 transition-colors" />
-                  </button>
 
+              {/* Cancel button for release managers - always show but disable based on state */}
+              {is_release_manager && (
+                <button
+                  type="button"
+                  aria-label="Cancel Release"
+                  title={(() => {
+                    const isDeployed = expandedReleaseDetail?.is_deployed || release.is_deployed;
+                    if (isDeployed) return "Cannot cancel deployed release";
+                    return "Cancel this release";
+                  })()}
+                  className={`p-2 rounded shadow-sm transition-colors ${
+                    (() => {
+                      const isDeployed = expandedReleaseDetail?.is_deployed || release.is_deployed;
+                      return !isDeployed && ['pending', 'next'].includes(dynamicState)
+                        ? 'bg-white hover:bg-red-100 hover:border-red-200'
+                        : 'bg-gray-50 opacity-50 cursor-not-allowed';
+                    })()
+                  }`}
+                  onClick={e => {
+                    e.stopPropagation();
+                    const isDeployed = expandedReleaseDetail?.is_deployed || release.is_deployed;
+                    if (!isDeployed && ['pending', 'next'].includes(dynamicState)) {
+                      handleCancelRelease();
+                    }
+                  }}
+                  disabled={(() => {
+                    const isDeployed = expandedReleaseDetail?.is_deployed || release.is_deployed;
+                    return !(!isDeployed && ['pending', 'next'].includes(dynamicState));
+                  })()}
+                >
+                  <X className={`h-4 w-4 transition-colors ${
+                    (() => {
+                      const isDeployed = expandedReleaseDetail?.is_deployed || release.is_deployed;
+                      return !isDeployed && ['pending', 'next'].includes(dynamicState)
+                        ? 'text-red-500 hover:text-red-600'
+                        : 'text-gray-400';
+                    })()
+                  }`} />
+                </button>
+              )}
 
-                </>
+              {/* Edit button for release managers - always show but disable based on state */}
+              {is_release_manager && (
+                <button
+                  type="button"
+                  aria-label="Edit Release"
+                  title={(() => {
+                    if (!['pending', 'next'].includes(dynamicState)) {
+                      return "Cannot edit release in current state";
+                    }
+                    return "Edit release";
+                  })()}
+                  className={`p-2 rounded shadow-sm transition-colors ${
+                    ['pending', 'next'].includes(dynamicState)
+                      ? 'bg-white hover:bg-gray-100'
+                      : 'bg-gray-50 opacity-50 cursor-not-allowed'
+                  }`}
+                  onClick={e => {
+                    e.stopPropagation();
+                    if (['pending', 'next'].includes(dynamicState)) {
+                      setEditOpen(true);
+                    }
+                  }}
+                  disabled={!['pending', 'next'].includes(dynamicState)}
+                >
+                  <Pencil className={`h-4 w-4 transition-colors ${
+                    ['pending', 'next'].includes(dynamicState)
+                      ? 'text-muted-foreground hover:text-foreground'
+                      : 'text-gray-400'
+                  }`} />
+                </button>
+              )}
+
+              {/* Delete button for release managers - always show */}
+              {is_release_manager && (
+                <button
+                  type="button"
+                  aria-label="Delete Release"
+                  title="Delete release"
+                  className="bg-white p-2 rounded hover:bg-red-100 transition-colors shadow-sm hover:border-red-200"
+                  onClick={e => {
+                    e.stopPropagation();
+                    setDeleteDialogOpen(true);
+                  }}
+                >
+                  <Trash2 className="h-4 w-4 text-red-500 hover:text-red-600 transition-colors" />
+                </button>
               )}
             </div>
           </div>
