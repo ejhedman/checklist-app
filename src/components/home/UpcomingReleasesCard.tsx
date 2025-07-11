@@ -47,10 +47,6 @@ export default function UpcomingReleasesCard({ releases }: { releases: any[] }) 
                       <Badge className="bg-amber-400 text-black" variant="default">
                         {release.state.replace("_", " ")}
                       </Badge>
-                    ) : release.state === "past_due" ? (
-                      <Badge className="bg-red-500 text-white" variant="default">
-                        {release.state.replace("_", " ")}
-                      </Badge>
                     ) : (
                       <Badge variant="secondary">
                         {release.state.replace("_", " ")}

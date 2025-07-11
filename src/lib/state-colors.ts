@@ -11,11 +11,11 @@ const stateColorConfig = {
     badgeVariant: "destructive" as const
   },
   next: {
-    background: "bg-green-500",
-    backgroundPale: "bg-green-50",
+    background: "bg-blue-600",
+    backgroundPale: "bg-blue-50",
     text: "text-white",
-    icon: "text-green-500",
-    badge: "bg-green-600 text-white",
+    icon: "text-blue-600",
+    badge: "bg-blue-600 text-white",
     badgeVariant: "default" as const
   },
   pending: {
@@ -24,6 +24,22 @@ const stateColorConfig = {
     text: "text-black",
     icon: "text-amber-500",
     badge: "bg-amber-400 text-black",
+    badgeVariant: "default" as const
+  },
+  cancelled: {
+    background: "bg-red-600",
+    backgroundPale: "bg-red-50",
+    text: "text-white",
+    icon: "text-red-600",
+    badge: "bg-red-600 text-white",
+    badgeVariant: "default" as const
+  },
+  deployed: {
+    background: "bg-green-600",
+    backgroundPale: "bg-green-50",
+    text: "text-white",
+    icon: "text-green-600",
+    badge: "bg-green-600 text-white",
     badgeVariant: "default" as const
   }
 };
@@ -57,14 +73,6 @@ export function getStatePaleBackgroundColor(state: ReleaseState, isArchived?: bo
   return config.backgroundPale;
 }
 
-/**
- * Get the icon color for a state
- * Used for state icons
- */
-export function getStateIconColor(state: ReleaseState): string {
-  const config = stateColorConfig[state] || stateColorConfig.pending;
-  return config.icon;
-}
 
 /**
  * Get the badge configuration for a state

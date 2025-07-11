@@ -10,6 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 export default function ReleaseDetailPage({ params }: { params: Promise<{ name: string }> }) {
   const [release, setRelease] = useState<any>(null);
+  const [allReleases, setAllReleases] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -20,6 +21,31 @@ export default function ReleaseDetailPage({ params }: { params: Promise<{ name: 
   
   // Decode the URL parameter
   const decodedName = decodeURIComponent(resolvedParams.name);
+
+  const fetchAllReleases = async () => {
+    if (!selectedProject) return;
+    
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from("releases")
+      .select(`
+        id,
+        name,
+        target_date,
+        is_cancelled,
+        is_deployed
+      `)
+      .eq("project_id", selectedProject.id)
+      .eq("is_archived", false)
+      .order("target_date", { ascending: true });
+
+    if (error) {
+      console.error("Error fetching all releases:", error);
+      return;
+    }
+
+    setAllReleases(data || []);
+  };
 
   const fetchRelease = async () => {
     setLoading(true);
@@ -216,6 +242,7 @@ export default function ReleaseDetailPage({ params }: { params: Promise<{ name: 
 
   useEffect(() => {
     if (selectedProject) {
+      fetchAllReleases(); // Fetch all releases when project is selected
       fetchRelease();
     }
   }, [decodedName, selectedProject]);
@@ -246,6 +273,7 @@ export default function ReleaseDetailPage({ params }: { params: Promise<{ name: 
         release={release} 
         onMemberReadyChange={handleMemberReadyChange}
         onReleaseUpdated={fetchRelease}
+        allReleases={allReleases} // Pass allReleases to the card
       />
     </div>
   );

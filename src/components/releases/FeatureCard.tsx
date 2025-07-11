@@ -64,7 +64,7 @@ export default function FeatureCard({ feature, user, memberId, updatingFeature, 
   };
 
   return (
-    <div className={`p-3 border rounded-lg relative bg-white ${isDri ? 'border-blue-200' : ''}`}>
+    <div className={`p-3 border rounded-lg relative ${isDri ? 'bg-blue-50 border-blue-200' : 'bg-white'}`}>
       {/* Edit and Delete buttons in top right corner */}
       <div className="absolute top-2 right-2 flex items-center space-x-1">
         <EditFeatureDialog 

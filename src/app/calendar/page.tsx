@@ -13,11 +13,88 @@ function getStateColorWrapper(state: string) {
   return getStateColor(state as ReleaseState);
 }
 
+// Helper to calculate days until target date
+function getDaysUntil(dateString: string) {
+  const [year, month, day] = dateString.split('-').map(Number);
+  const target = new Date(year, month - 1, day);
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  target.setHours(0,0,0,0);
+  const diffTime = target.getTime() - today.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays;
+}
+
+// Helper to calculate dynamic state based on today's date and database fields
+function calculateDynamicState(
+  release: {
+    id: string;
+    target_date: string;
+    is_cancelled?: boolean;
+    is_deployed?: boolean;
+  },
+  allReleases: Array<{
+    id: string;
+    target_date: string;
+    is_cancelled?: boolean;
+    is_deployed?: boolean;
+  }> = []
+): string {
+  // If cancelled, state is "cancelled"
+  if (release.is_cancelled) {
+    return "cancelled";
+  }
+  
+  // If deployed, state is "deployed"
+  if (release.is_deployed) {
+    return "deployed";
+  }
+  
+  // Calculate days until target date
+  const daysUntil = getDaysUntil(release.target_date);
+  
+  // If past due (before today's date)
+  if (daysUntil < 0) {
+    return "past_due";
+  }
+  
+  // Find the next release on or after today's date
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const futureReleases = allReleases
+    .filter(r => !r.is_cancelled && !r.is_deployed)
+    .filter(r => {
+      const [year, month, day] = r.target_date.split('-').map(Number);
+      const releaseDate = new Date(year, month - 1, day);
+      releaseDate.setHours(0, 0, 0, 0);
+      return releaseDate >= today;
+    })
+    .sort((a, b) => {
+      const [yearA, monthA, dayA] = a.target_date.split('-').map(Number);
+      const [yearB, monthB, dayB] = b.target_date.split('-').map(Number);
+      const dateA = new Date(yearA, monthA - 1, dayA);
+      const dateB = new Date(yearB, monthB - 1, dayB);
+      return dateA.getTime() - dateB.getTime();
+    });
+  
+  // If this is the next release (first in sorted list)
+  if (futureReleases.length > 0 && futureReleases[0].id === release.id) {
+    return "next";
+  }
+  
+  // Otherwise, it's pending
+  return "pending";
+}
+
 interface Release {
   id: string;
   name: string;
   target_date: string;
-  state: 'pending' | 'next' | 'past_due';
+  state: 'pending' | 'next' | 'past_due' | 'cancelled' | 'deployed';
+  is_archived?: boolean;
+  is_cancelled?: boolean;
+  is_deployed?: boolean;
 }
 
 interface CalendarDay {
@@ -208,12 +285,15 @@ function CalendarGrid({
                   String(day.date.getMonth() + 1).padStart(2, '0') + '/' + String(day.date.getDate()).padStart(2, '0')
                 }</div>
                 {day.releases.map((release) => {
+                  // Calculate dynamic state for this release
+                  const dynamicState = calculateDynamicState(release, releases);
+                  
                   return (
                     <div
                       key={release.id}
                       className={`
                         w-full px-1 py-0.5 mb-0.5 rounded text-xs truncate cursor-grab active:cursor-grabbing
-                        ${getStateColorWrapper(release.state)}
+                        ${getStateColorWrapper(dynamicState)}
                         ${dragState.isDragging && dragState.releaseId === release.id ? 'opacity-50' : ''}
                       `}
                       title={release.name}

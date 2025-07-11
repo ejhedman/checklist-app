@@ -79,6 +79,13 @@ export interface ReleaseSummaryCardProps {
   onReleaseUpdated?: () => void;
   initialExpanded?: boolean;
   collapsible?: boolean;
+  allReleases?: Array<{
+    id: string;
+    name: string;
+    target_date: string;
+    is_cancelled?: boolean;
+    is_deployed?: boolean;
+  }>;
 }
 
 // Helper to calculate days until target date
@@ -93,11 +100,74 @@ function getDaysUntil(dateString: string) {
   return diffDays;
 }
 
+// Helper to calculate dynamic state based on today's date and database fields
+function calculateDynamicState(
+  release: {
+    id: string;
+    target_date: string;
+    is_cancelled?: boolean;
+    is_deployed?: boolean;
+  },
+  allReleases: Array<{
+    id: string;
+    target_date: string;
+    is_cancelled?: boolean;
+    is_deployed?: boolean;
+  }> = []
+): string {
+  // If cancelled, state is "cancelled"
+  if (release.is_cancelled) {
+    return "cancelled";
+  }
+  
+  // If deployed, state is "deployed"
+  if (release.is_deployed) {
+    return "deployed";
+  }
+  
+  // Calculate days until target date
+  const daysUntil = getDaysUntil(release.target_date);
+  
+  // If past due (before today's date)
+  if (daysUntil < 0) {
+    return "past_due";
+  }
+  
+  // Find the next release on or after today's date
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const futureReleases = allReleases
+    .filter(r => !r.is_cancelled && !r.is_deployed)
+    .filter(r => {
+      const [year, month, day] = r.target_date.split('-').map(Number);
+      const releaseDate = new Date(year, month - 1, day);
+      releaseDate.setHours(0, 0, 0, 0);
+      return releaseDate >= today;
+    })
+    .sort((a, b) => {
+      const [yearA, monthA, dayA] = a.target_date.split('-').map(Number);
+      const [yearB, monthB, dayB] = b.target_date.split('-').map(Number);
+      const dateA = new Date(yearA, monthA - 1, dayA);
+      const dateB = new Date(yearB, monthB - 1, dayB);
+      return dateA.getTime() - dateB.getTime();
+    });
+  
+  // If this is the next release (first in sorted list)
+  if (futureReleases.length > 0 && futureReleases[0].id === release.id) {
+    return "next";
+  }
+  
+  // Otherwise, it's pending
+  return "pending";
+}
+
 export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
   release,
   onReleaseUpdated,
   initialExpanded = false,
   collapsible = false,
+  allReleases = [],
 }) => {
   const [teamNames, setTeamNames] = useState<string[]>([]);
   const [isArchived, setIsArchived] = useState(release.is_archived);
@@ -117,13 +187,22 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
   const [summaryTotalMembers, setSummaryTotalMembers] = useState(release.total_members);
   const [summaryReadyFeatures, setSummaryReadyFeatures] = useState(release.ready_features);
   const [summaryFeatureCount, setSummaryFeatureCount] = useState(release.feature_count);
-  const [summaryState, setSummaryState] = useState(release.state);
+  // Calculate dynamic state instead of using database state
+  const [dynamicState, setDynamicState] = useState(() => 
+    calculateDynamicState(release, allReleases)
+  );
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   
   // Track internal ready states from child components
   const [featuresReadyState, setFeaturesReadyState] = useState<boolean | null>(null);
   const [teamsReadyState, setTeamsReadyState] = useState<boolean | null>(null);
+
+  // Update dynamic state when release or allReleases changes
+  useEffect(() => {
+    const newState = calculateDynamicState(release, allReleases);
+    setDynamicState(newState);
+  }, [release, allReleases]);
 
   useEffect(() => {
     setIsArchived(release.is_archived);
@@ -318,7 +397,6 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
       setSummaryTotalMembers(expandedReleaseDetail.total_members);
       setSummaryReadyFeatures(expandedReleaseDetail.ready_features);
       setSummaryFeatureCount(expandedReleaseDetail.feature_count);
-      setSummaryState(expandedReleaseDetail.state);
     }
   }, [expandedReleaseDetail]);
 
@@ -732,7 +810,7 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
         }
         style={{ cursor: collapsible && !expanded ? 'pointer' : 'default' }}
       >
-        <CardHeader className={`flex flex-row items-center justify-between px-4 py-3 rounded-t-lg ${collapsible && expanded ? '' : collapsible ? 'border-b border-border' : ''} ${getStatePaleBackgroundColor(summaryState as any, release.is_archived)}`}>
+        <CardHeader className={`flex flex-row items-center justify-between px-4 py-3 rounded-t-lg ${collapsible && expanded ? '' : collapsible ? 'border-b border-border' : ''} ${getStatePaleBackgroundColor(dynamicState as any, release.is_archived)}`}>
           <div className="flex items-center w-full justify-between">
             <div className="flex items-center flex-1 min-w-0 rounded px-1 py-0.5 transition-colors">
               <div className="flex items-center space-x-3 min-w-0">
@@ -754,9 +832,9 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
                   <span className="font-semibold truncate">
                     {release.project?.name ? `${release.project.name}: ` : ''}{release.name}
                   </span>
-                  <StateBadge state={summaryState as any} />
-                  {/* Release Readiness Badge */}
-                  {(() => {
+                  <StateBadge state={dynamicState as any} />
+                  {/* Release Readiness Badge: only show if state is 'next' or 'pending' */}
+                  {['next', 'pending'].includes(dynamicState) && (() => {
                     // Always use the database state for the badge
                     const isReleaseReady = expandedReleaseDetail?.is_ready ?? release.is_ready ?? false;
                     const notReadyClass = days < 3
@@ -817,6 +895,20 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
               </button>
 
 
+             {/* Archive checkbox for release managers */}
+              {is_release_manager && (dynamicState === 'past_due' || dynamicState === 'cancelled') && (
+                <div className="flex items-center space-x-2 bg-white p-2 rounded hover:bg-gray-100 transition-colors shadow-sm">
+                  <label htmlFor={`archive-${release.id}`} className="text-xs text-muted-foreground cursor-pointer select-none">
+                    Archive
+                  </label>
+                  <Checkbox
+                    checked={isArchived}
+                    onCheckedChange={handleArchiveChange}
+                    disabled={archiving}
+                    id={`archive-${release.id}`}
+                  />
+                </div>
+              )}
               {/* Deploy button for release managers when release is ready but not deployed */}
               {is_release_manager && (() => {
                 const isReleaseReady = expandedReleaseDetail?.is_ready || release.is_ready;
@@ -871,7 +963,7 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
                   </button>
                   </>
               )}
-              {is_release_manager && (
+               {is_release_manager && (
                 <>
                   <button
                     type="button"

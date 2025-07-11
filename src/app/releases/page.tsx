@@ -42,6 +42,7 @@ export default function ReleasesPage() {
                 onReleaseUpdated={refetch}
                 collapsible={true}
                 initialExpanded={false}
+                allReleases={releases}
               />
             </div>
           ))}

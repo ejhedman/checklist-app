@@ -9,10 +9,17 @@ import { ReleaseState } from "@/lib/state-colors";
 import { LoadingSpinner } from "@/components/ui/loading";
 import { ReleaseDetailBottomContent } from "./ReleaseDetailBottomContent";
 
-export default function ReleaseDetailCard({ release, onMemberReadyChange, onReleaseUpdated } : {
+export default function ReleaseDetailCard({ release, onMemberReadyChange, onReleaseUpdated, allReleases = [] } : {
   release: any,
   onMemberReadyChange?: (releaseId: string, userId: string, isReady: boolean) => void,
   onReleaseUpdated: () => void,
+  allReleases?: Array<{
+    id: string;
+    name: string;
+    target_date: string;
+    is_cancelled?: boolean;
+    is_deployed?: boolean;
+  }>,
 }) {
   const { user, memberId, selectedProject, is_release_manager } = useAuth();
   // const [readyDialogOpen, setReadyDialogOpen] = useState(false);
@@ -402,6 +409,7 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onRele
         onReleaseUpdated={() => onReleaseUpdated?.()}
         collapsible={false}
         initialExpanded={true}
+        allReleases={allReleases}
       />
       <CreateReleaseDialog
         open={editOpen}
