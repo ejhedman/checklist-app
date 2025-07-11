@@ -3,23 +3,19 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Calendar, Clock, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
+import { formatTargetDate, getDaysUntil } from '@/lib/utils';
 
 export default function UpcomingReleasesCard({ releases }: { releases: any[] }) {
   return (
     <Card className="hover:shadow-md transition-shadow">
       <CardHeader className="pb-4">
         <CardTitle>Upcoming Releases</CardTitle>
-        <CardDescription>
-          Next releases that need attention
-        </CardDescription>
       </CardHeader>
       <CardContent className="pt-0 pb-4">
         <div className="space-y-4">
           {releases.length > 0 ? (
             releases.map((release) => {
-              const daysRemaining = Math.ceil(
-                (new Date(release.target_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
-              );
+              const daysRemaining = release.target_date ? getDaysUntil(release.target_date) : 0;
               return (
                 <div key={release.id} className="flex items-center justify-between">
                   <div>
@@ -29,7 +25,7 @@ export default function UpcomingReleasesCard({ releases }: { releases: any[] }) 
                       </Link>
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                      Target: {new Date(release.target_date).toLocaleDateString()}
+                      Target: {release.target_date ? formatTargetDate(release.target_date) : 'No target date'}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">

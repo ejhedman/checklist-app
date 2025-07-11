@@ -1,6 +1,6 @@
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Target, AlertCircle, CheckCircle } from 'lucide-react';
+import { Clock, AlertCircle, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 import { formatTargetDate, getDaysUntil } from '@/lib/utils';
 
@@ -19,20 +19,20 @@ function getNextReleaseId(allReleases: any[]): string | null {
   return future.length > 0 ? future[0].id : null;
 }
 
-export default function MyUpcomingMilestonesCard({ milestones, allReleases = [] }: { milestones: any[], allReleases?: any[] }) {
+export default function NagListCard({ nagMilestones, allReleases = [] }: { nagMilestones: any[], allReleases?: any[] }) {
   const nextReleaseId = getNextReleaseId(allReleases);
   return (
     <Card className="hover:shadow-md transition-shadow">
       <CardHeader className="pb-4">
-        <CardTitle>My Upcoming Milestones</CardTitle>
+        <CardTitle>Nag List</CardTitle>
         <CardDescription>
-          Releases and features that need your attention
+          People who need to take action for the next release.
         </CardDescription>
       </CardHeader>
       <CardContent className="pt-0 pb-4">
         <div className="space-y-4">
-          {milestones.length > 0 ? (
-            milestones.map((milestone) => {
+          {nagMilestones.length > 0 ? (
+            nagMilestones.map((milestone) => {
               const daysRemaining = milestone.target_date ? getDaysUntil(milestone.target_date) : 0;
               const isNext = milestone.release_id === nextReleaseId;
               return (
@@ -70,6 +70,9 @@ export default function MyUpcomingMilestonesCard({ milestones, allReleases = [] 
                         </>
                       )}
                     </p>
+                    <p className="text-xs text-muted-foreground">
+                      {milestone.member_nickname ? milestone.member_nickname : milestone.member_name}
+                    </p>
                   </div>
                   <div className="flex items-center gap-2">
                     {isNext && (
@@ -96,8 +99,8 @@ export default function MyUpcomingMilestonesCard({ milestones, allReleases = [] 
           ) : (
             <div className="text-center py-4 text-muted-foreground">
               <CheckCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p>No pending milestones</p>
-              <p className="text-xs">You're all caught up!</p>
+              <p>No pending actions for others</p>
+              <p className="text-xs">Everyone is caught up!</p>
             </div>
           )}
         </div>

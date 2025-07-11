@@ -10,14 +10,16 @@ import ReadyReleasesCard from '@/components/home/ReadyReleasesCard';
 import PastDueCard from '@/components/home/PastDueCard';
 import { useAuth } from "@/contexts/AuthContext";
 import { useDashboardData } from "@/hooks/useDashboardData";
-import { useUserMilestones } from "@/hooks/useUserMilestones";
+import { useUserMilestones, useNagMilestones } from "@/hooks/useUserMilestones";
 import { PageLoadingState } from "@/components/ui/loading";
+import NagListCard from '@/components/home/NagListCard';
 
 export default function HomePage() {
   const [showAllProjects, setShowAllProjects] = useState(false);
   const { selectedProject } = useAuth();
   const { data, loading: dashboardLoading, error: dashboardError } = useDashboardData();
   const { milestones: userMilestones, loading: milestonesLoading, error: milestonesError } = useUserMilestones();
+  const { nagMilestones, loading: nagLoading, error: nagError } = useNagMilestones();
 
   const loading = dashboardLoading || milestonesLoading;
 
@@ -55,8 +57,9 @@ export default function HomePage() {
           <RecentActivityCard activity={data.recentActivity} />
         </div>
         {/* Right column: My Upcoming Milestones (spans full height) */}
-        <div className="h-full flex flex-col">
-          <MyUpcomingMilestonesCard milestones={userMilestones} />
+        <div className="h-full flex flex-col gap-6">
+          <MyUpcomingMilestonesCard milestones={userMilestones} allReleases={data.upcomingReleases} />
+          <NagListCard nagMilestones={nagMilestones} allReleases={data.upcomingReleases} />
         </div>
       </div>
     </div>

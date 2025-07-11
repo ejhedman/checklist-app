@@ -2,7 +2,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { FileText } from "lucide-react";
 import { AddFeatureDialog } from "./AddFeatureDialog";
 import FeatureCard from "./FeatureCard";
-import { useMemo, useEffect, useRef } from "react";
+import { useMemo, useEffect, useRef, useState } from "react";
 
 interface FeaturesCardProps {
   features: any[];
@@ -33,10 +33,23 @@ export function FeaturesCard({
   onFeatureEdited,
   onFeaturesReadyStateChange
 }: FeaturesCardProps) {
+  const [localFeatures, setLocalFeatures] = useState(features);
+
+  useEffect(() => {
+    setLocalFeatures(features);
+  }, [features]);
+
+  const handleFeatureEdited = (updatedFeature: any) => {
+    setLocalFeatures((prev) =>
+      prev.map((f) => (f.id === updatedFeature.id ? updatedFeature : f))
+    );
+    if (onFeatureEdited) onFeatureEdited(updatedFeature);
+  };
+
   // Calculate internal is_ready state - all features must be ready (AND operation)
   const isReady = useMemo(() => {
-    return features.length > 0 && features.every(feature => feature.is_ready);
-  }, [features]);
+    return localFeatures.length > 0 && localFeatures.every(feature => feature.is_ready);
+  }, [localFeatures]);
 
   // Track previous state to only notify on actual changes
   const prevIsReadyRef = useRef<boolean | null>(null);
@@ -75,10 +88,10 @@ export function FeaturesCard({
       </CardHeader>
       <CardContent className="pb-4">
         <div className="space-y-2">
-          {features.length === 0 ? (
+          {localFeatures.length === 0 ? (
             <p className="text-sm text-muted-foreground">No features added yet.</p>
           ) : (
-            [...features]
+            [...localFeatures]
               .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
               .map((feature: any) => (
                 <FeatureCard
@@ -91,7 +104,7 @@ export function FeaturesCard({
                   onFeatureUpdated={onFeatureUpdated}
                   releaseName={releaseName}
                   daysUntilRelease={daysUntilRelease}
-                  onFeatureEdited={onFeatureEdited}
+                  onFeatureEdited={handleFeatureEdited}
                 />
               ))
           )}

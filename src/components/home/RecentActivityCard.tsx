@@ -34,6 +34,10 @@ export default function RecentActivityCard({ activity }: { activity: any[] }) {
                           return `${memberName} added team "${activity.teams?.name || ''}" to release: ${activity.releases?.name || ''}`;
                         case 'release_state_change':
                           return `${memberName} changed release: "${activity.activity_details?.releaseName || ''}" state to "${activity.activity_details?.newState || ''}"`;
+                        case 'release_ready_change':
+                          const oldStatus = activity.activity_details?.oldIsReady ? 'ready' : 'not ready';
+                          const newStatus = activity.activity_details?.newIsReady ? 'ready' : 'not ready';
+                          return `${memberName} changed release "${activity.activity_details?.releaseName || ''}" from ${oldStatus} to ${newStatus}`;
                         case 'release_updated':
                           const releaseChanges = activity.activity_details?.changes || [];
                           if (releaseChanges.length > 0) {

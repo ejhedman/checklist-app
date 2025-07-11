@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -748,8 +748,12 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
     updateReleaseReadyState();
   };
 
+  // Lock to prevent duplicate ready state updates/logs
+  const isUpdatingReleaseReadyState = useRef(false);
   // Update release ready state in database based on child component states
   const updateReleaseReadyState = async () => {
+    if (isUpdatingReleaseReadyState.current) return;
+    isUpdatingReleaseReadyState.current = true;
     // Calculate release ready state based on current local state
     // Use the current features and members arrays to calculate the state
     const currentFeatures = features || [];
@@ -813,6 +817,7 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
         }
       }
     }
+    isUpdatingReleaseReadyState.current = false;
   };
 
   // Sync local state with database state when expanded

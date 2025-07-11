@@ -193,12 +193,17 @@ export function EditFeatureDialog({ feature, releaseName, onFeatureUpdated, onFe
 
       setOpen(false);
       if (onFeatureChanged) {
+        let driMemberObj = null;
+        if (formData.driMemberId) {
+          driMemberObj = members.find(m => m.id === formData.driMemberId) || null;
+        }
         onFeatureChanged({
           ...feature,
           name: formData.name,
           description: formData.description,
           jira_ticket: formData.jiraTicket,
           dri_member_id: formData.driMemberId,
+          dri_member: driMemberObj,
           is_platform: formData.isPlatform,
           is_config: formData.isConfig,
           comments: formData.comments,
@@ -223,7 +228,7 @@ export function EditFeatureDialog({ feature, releaseName, onFeatureUpdated, onFe
           </Button>
         </DialogTrigger>
       )}
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[720px]">
         <DialogHeader>
           <DialogTitle>Edit Feature</DialogTitle>
           <DialogDescription>
