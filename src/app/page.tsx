@@ -1,8 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import UpcomingReleasesCard from '@/components/home/UpcomingReleasesCard';
 import MyUpcomingMilestonesCard from '@/components/home/MyUpcomingMilestonesCard';
 import RecentActivityCard from '@/components/home/RecentActivityCard';
@@ -39,17 +37,6 @@ export default function HomePage() {
         <h1 className="text-2xl font-bold">
           {selectedProject ? `Project: ${selectedProject.name}` : 'No Project Selected'}
         </h1>
-        {/* <div className="flex items-center space-x-2">
-          <Checkbox
-            id="showAllProjects"
-            checked={showAllProjects}
-            onCheckedChange={(checked) => setShowAllProjects(checked as boolean)}
-            disabled={!selectedProject || availableProjects.length <= 1}
-          />
-          <Label htmlFor="showAllProjects" className="text-sm">
-            Show all of my Projects
-          </Label>
-        </div> */}
       </div>
 
       {/* Top row: Four stat cards */}

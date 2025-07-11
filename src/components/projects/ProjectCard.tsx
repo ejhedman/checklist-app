@@ -71,8 +71,9 @@ export function ProjectCard({ project, onProjectUpdated }: ProjectCardProps) {
               size="sm" 
               onClick={handleDelete}
               disabled={deleting}
+              className="hover:bg-red-100 hover:text-red-600"
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-4 w-4 text-red-500" />
             </Button>
           </div>
         </div>

@@ -20,9 +20,7 @@ export function ReleaseStateIcon({ state, className, size = 16 }: ReleaseStateIc
   const iconConfig = {
     past_due: { icon: AlertTriangle },
     next: { icon: CheckCircle },
-    pending: { icon: Clock },
-    deployed: { icon: CheckCircle },
-    cancelled: { icon: Calendar }
+    pending: { icon: Clock }
   };
 
   const config = iconConfig[state] || iconConfig.pending;

@@ -47,8 +47,8 @@ export function TeamCard({ team, expanded, onToggleExpand, onTeamUpdated }: Team
           </CardTitle>
           <div className="flex items-center space-x-1">
             <EditTeamDialog team={team} onTeamUpdated={onTeamUpdated} />
-            <Button variant="ghost" size="sm">
-              <Trash2 className="h-4 w-4" />
+            <Button variant="ghost" size="sm" className="hover:bg-red-100 hover:text-red-600">
+              <Trash2 className="h-4 w-4 text-red-500" />
             </Button>
           </div>
         </div>

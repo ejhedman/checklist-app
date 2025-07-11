@@ -36,6 +36,7 @@ export class ReleaseNotesRepository {
         projects(name)
       `)
       .eq('is_archived', false)
+      .eq('is_deployed', true)
       .order("target_date", { ascending: false });
 
     if (error) {

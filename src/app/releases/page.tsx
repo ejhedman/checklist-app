@@ -3,19 +3,13 @@
 import { useState } from "react";
 import { CreateReleaseDialog } from "@/components/releases/CreateReleaseDialog";
 import { ReleaseSummaryCard } from "@/components/releases/ReleaseSummaryCard";
-import { useAuth } from "@/contexts/AuthContext";
 import { useReleases } from "@/hooks/useReleases";
 import { LoadingSpinner } from "@/components/ui/loading";
-import { getStateIcon } from "@/lib/state-colors";
 
 export default function ReleasesPage() {
   const [showArchived, setShowArchived] = useState(false);
-  const { selectedProject } = useAuth();
+  // const { selectedProject } = useAuth();
   const { releases, loading, error, refetch } = useReleases({ showArchived });
-
-  const getStateIconWrapper = (state: string) => {
-    return getStateIcon(state as any);
-  };
 
   return (
     <div className="space-y-6">
@@ -45,7 +39,6 @@ export default function ReleasesPage() {
               <ReleaseSummaryCard
                 key={release.id}
                 release={release}
-                getStateIcon={getStateIconWrapper}
                 onReleaseUpdated={refetch}
                 collapsible={true}
                 initialExpanded={false}

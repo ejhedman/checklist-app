@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus, Loader2, SquarePlus } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -189,9 +189,8 @@ export function AddFeatureDialog({ releaseId, releaseName, onFeatureAdded, onFea
     <Dialog open={open} onOpenChange={handleOpenChange}>
       {is_release_manager && (
         <DialogTrigger asChild>
-          <Button size="sm" variant="outline">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Feature
+          <Button size="sm" variant="outline" title="Add Feature" aria-label="Add Feature">
+            <SquarePlus className="h-5 w-5" />
           </Button>
         </DialogTrigger>
       )}

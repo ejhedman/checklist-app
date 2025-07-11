@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface TeamMemberCardProps {
   member: any;
@@ -10,6 +11,7 @@ interface TeamMemberCardProps {
 }
 
 export function TeamMemberCard({ member, user, release, daysUntilRelease, updateMemberReady }: TeamMemberCardProps) {
+  const { is_release_manager } = useAuth();
   // Find all teams this member belongs to
   const memberTeams = Array.isArray(release.teams)
     ? release.teams.filter((team: any) =>
@@ -39,8 +41,8 @@ export function TeamMemberCard({ member, user, release, daysUntilRelease, update
       </div>
       {/* Ready state/checkbox (right, right-aligned) */}
       <div className="flex items-center space-x-2 justify-end">
-        {/* Only show the Ready label and checkbox for the logged-in user */}
-        {user && member.email === user.email && (
+        {/* Only show the Ready label and checkbox for the logged-in user OR release managers */}
+        {(user && member.email === user.email) || is_release_manager ? (
           <>
             <label htmlFor={`member-ready-${member.id}`} className="text-xs text-muted-foreground cursor-pointer select-none">Ready</label>
             <Checkbox
@@ -51,7 +53,7 @@ export function TeamMemberCard({ member, user, release, daysUntilRelease, update
               id={`member-ready-${member.id}`}
             />
           </>
-        )}
+        ) : null}
         {/* Always show the Ready/Not Ready badge */}
         <Badge
           variant={member.is_ready ? "default" : "secondary"}

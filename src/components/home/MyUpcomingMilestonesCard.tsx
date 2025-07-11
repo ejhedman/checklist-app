@@ -67,10 +67,6 @@ export default function MyUpcomingMilestonesCard({ milestones }: { milestones: a
                         <Badge className="bg-red-500 text-white" variant="default">
                           {milestone.state.replace("_", " ")}
                         </Badge>
-                      ) : milestone.state === "deployed" ? (
-                        <Badge className="bg-blue-500 text-white" variant="default">
-                          {milestone.state.replace("_", " ")}
-                        </Badge>
                       ) : (
                         <Badge variant="secondary">
                           {milestone.state.replace("_", " ")}

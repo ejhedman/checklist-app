@@ -135,7 +135,7 @@ export interface Database {
           target_date: string
           platform_update: boolean
           config_update: boolean
-          state: 'pending' | 'next' | 'past_due' | 'deployed' | 'cancelled'
+          state: 'pending' | 'next' | 'past_due'
           project_id: string
           created_at: string
           updated_at: string
@@ -144,6 +144,8 @@ export interface Database {
           is_archived: boolean
           targets: string[]
           is_ready: boolean
+          is_deployed: boolean
+          is_cancelled: boolean
         }
         Insert: {
           id?: string
@@ -151,7 +153,7 @@ export interface Database {
           target_date: string
           platform_update?: boolean
           config_update?: boolean
-          state?: 'pending' | 'next' | 'past_due' | 'deployed' | 'cancelled'
+          state?: 'pending' | 'next' | 'past_due'
           project_id: string
           created_at?: string
           updated_at?: string
@@ -160,6 +162,8 @@ export interface Database {
           is_archived?: boolean
           targets?: string[]
           is_ready?: boolean
+          is_deployed: boolean
+          is_cancelled: boolean
         }
         Update: {
           id?: string
@@ -167,7 +171,7 @@ export interface Database {
           target_date?: string
           platform_update?: boolean
           config_update?: boolean
-          state?: 'pending' | 'next' | 'past_due' | 'deployed' | 'cancelled'
+          state?: 'pending' | 'next' | 'past_due'
           project_id?: string
           created_at?: string
           updated_at?: string
@@ -176,6 +180,8 @@ export interface Database {
           is_archived?: boolean
           targets?: string[]
           is_ready?: boolean
+          is_deployed: boolean
+          is_cancelled: boolean
         }
       }
       release_teams: {

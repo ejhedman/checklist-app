@@ -72,8 +72,8 @@ export function MemberCard({ member, onMemberUpdated }: { member: Member; onMemb
           <EditMemberDialog member={member} onMemberUpdated={onMemberUpdated} />
           <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
             <DialogTrigger asChild>
-              <Button variant="ghost" size="sm" className="p-2">
-                <Trash2 className="h-4 w-4" />
+              <Button variant="ghost" size="sm" className="p-2 hover:bg-red-100 hover:text-red-600">
+                <Trash2 className="h-4 w-4 text-red-500" />
               </Button>
             </DialogTrigger>
             <DialogContent>

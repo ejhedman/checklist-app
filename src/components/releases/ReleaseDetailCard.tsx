@@ -5,32 +5,16 @@ import { createClient } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { CreateReleaseDialog } from "./CreateReleaseDialog";
 import { ReleaseSummaryCard } from "./ReleaseSummaryCard";
-import { getStateIcon, ReleaseState } from "@/lib/state-colors";
+import { ReleaseState } from "@/lib/state-colors";
 import { LoadingSpinner } from "@/components/ui/loading";
-
-// Helper to calculate days until target date
-// function getDaysUntil(dateString: string) {
-//   const [year, month, day] = dateString.split('-').map(Number);
-//   const today = new Date();
-//   const target = new Date(year, month - 1, day);
-//   today.setHours(0,0,0,0);
-//   target.setHours(0,0,0,0);
-//   const diffTime = target.getTime() - today.getTime();
-//   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-//   return diffDays;
-// }
-
-// Wrapper function to convert string to ReleaseState
-function getStateIconWrapper(state: string) {
-  return getStateIcon(state as ReleaseState);
-}
+import { ReleaseDetailBottomContent } from "./ReleaseDetailBottomContent";
 
 export default function ReleaseDetailCard({ release, onMemberReadyChange, onReleaseUpdated } : {
   release: any,
   onMemberReadyChange?: (releaseId: string, userId: string, isReady: boolean) => void,
   onReleaseUpdated: () => void,
 }) {
-  const { user, memberId, selectedProject } = useAuth();
+  const { user, memberId, selectedProject, is_release_manager } = useAuth();
   // const [readyDialogOpen, setReadyDialogOpen] = useState(false);
   // const [selectedFeature, setSelectedFeature] = useState<any>(null);
   const [updatingFeature, setUpdatingFeature] = useState(false);
@@ -102,6 +86,8 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onRele
           config_update,
           is_archived,
           is_ready,
+          is_deployed,
+          is_cancelled,
           targets,
           created_at,
           project_id,
@@ -252,12 +238,14 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onRele
   //   // Optionally, handle error or refresh data
   // };
 
-  // const handleFeatureReadyChange = async (feature: any, isReady: boolean) => {
-  //   if (!user || !feature.dri_member || memberId !== feature.dri_member.id) {
-  //     return;
-  //   }
-  //   await updateFeatureReady(feature.id, isReady, "");
-  // };
+  // Allow DRI or release manager to mark feature ready
+  const handleFeatureReadyChange = async (feature: any, isReady: boolean) => {
+    if (!user) return;
+    if (!feature.dri_member || (memberId !== feature.dri_member.id && !is_release_manager)) {
+      return;
+    }
+    await updateFeatureReady(feature.id, isReady, "");
+  };
 
   const updateFeatureReady = async (featureId: string, isReady: boolean, comments: string) => {
     setUpdatingFeature(true);
@@ -277,6 +265,8 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onRele
           f.id === featureId ? { ...f, is_ready: isReady, comments } : f
         )
       );
+      // Update summary counts
+      setReadyFeatures((prev: number) => prev + (isReady ? 1 : -1));
     }
     setUpdatingFeature(false);
   };
@@ -409,7 +399,6 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onRele
     <div className="flex flex-col">
       <ReleaseSummaryCard
         release={expandedReleaseDetail || release}
-        getStateIcon={getStateIconWrapper}
         onReleaseUpdated={() => onReleaseUpdated?.()}
         collapsible={false}
         initialExpanded={true}

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { getStateIcon, getStatePaleBackgroundColor, ReleaseState } from "@/lib/state-colors";
+import { getStatePaleBackgroundColor, ReleaseState } from "@/lib/state-colors";
 
 interface ReleaseNotesSummaryCardProps {
   release: {
@@ -13,11 +13,6 @@ interface ReleaseNotesSummaryCardProps {
     release_summary?: string;
     state?: string;
   };
-}
-
-function getStateIconWrapper(state?: string) {
-  const validState = (state || "pending") as ReleaseState;
-  return getStateIcon(validState);
 }
 
 export function ReleaseNotesSummaryCard({ release }: ReleaseNotesSummaryCardProps) {
@@ -51,8 +46,7 @@ export function ReleaseNotesSummaryCard({ release }: ReleaseNotesSummaryCardProp
         <div className="flex items-center justify-between w-full">
           {/* Release Name (left) */}
           <div className="flex-1 min-w-0 flex items-center">
-            {getStateIconWrapper(release.state)}
-            <CardTitle className="truncate ml-2">{release.name}</CardTitle>
+            <CardTitle className="truncate">{release.name}</CardTitle>
           </div>
           {/* Date (center) */}
           <div className="flex-1 flex justify-center">

@@ -32,8 +32,8 @@ export default function FeatureCard({ feature, user, memberId, updatingFeature, 
   const [deleting, setDeleting] = useState(false);
   
   const isDri = memberId && feature.dri_member && memberId === feature.dri_member.id;
-  // Only the logged-in user who is the DRI can check the box (by memberId)
-  const canMarkReady = memberId && feature.dri_member && memberId === feature.dri_member.id;
+  // Only the logged-in user who is the DRI OR a release manager can check the box
+  const canMarkReady = (memberId && feature.dri_member && memberId === feature.dri_member.id) || is_release_manager;
   // Determine badge color for not ready
   const notReadyClass = daysUntilRelease !== undefined && daysUntilRelease < 3
     ? 'bg-red-100 text-red-800 border-red-200'
@@ -64,7 +64,7 @@ export default function FeatureCard({ feature, user, memberId, updatingFeature, 
   };
 
   return (
-    <div className={`p-3 border rounded-lg relative ${isDri ? 'bg-blue-50 border-blue-200' : ''}`}>
+    <div className={`p-3 border rounded-lg relative bg-white ${isDri ? 'border-blue-200' : ''}`}>
       {/* Edit and Delete buttons in top right corner */}
       <div className="absolute top-2 right-2 flex items-center space-x-1">
         <EditFeatureDialog 
@@ -77,6 +77,7 @@ export default function FeatureCard({ feature, user, memberId, updatingFeature, 
           <button
             type="button"
             aria-label="Delete Feature"
+            title="Delete feature"
             className="p-1 rounded hover:bg-red-100 transition-colors"
             onClick={(e) => {
               e.stopPropagation();

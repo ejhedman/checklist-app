@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus, Loader2, SquarePlus } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -196,9 +196,8 @@ export function AddTeamDialog({ releaseId, releaseName, onTeamsUpdated, currentT
     <Dialog open={open} onOpenChange={handleOpenChange}>
       {is_release_manager && (
         <DialogTrigger asChild>
-          <Button size="sm" variant="outline">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Team
+          <Button size="sm" variant="outline" title="Add Team" aria-label="Add Team">
+            <SquarePlus className="h-5 w-5" />
           </Button>
         </DialogTrigger>
       )}

@@ -86,7 +86,8 @@ export class HomeRepository {
           )
         `)
         .eq('is_archived', false)
-        .not('state', 'in', '(deployed,cancelled)')
+        .eq('is_deployed', false)
+        .eq('is_cancelled', false)
         .order('target_date', { ascending: true })
         .limit(3);
       
@@ -170,7 +171,8 @@ export class HomeRepository {
           )
         `)
         .eq('is_archived', false)
-        .not('state', 'in', '(deployed,cancelled)')
+        .eq('is_deployed', false)
+        .eq('is_cancelled', false)
         .eq('release_teams.team.team_members.member_id', member.id)
         .order('target_date', { ascending: true })
         .limit(10);
@@ -215,7 +217,8 @@ export class HomeRepository {
         `)
         .eq('dri_member_id', member.id)
         .eq('releases.is_archived', false)
-        .not('releases.state', 'in', '(deployed,cancelled)')
+        .eq('releases.is_deployed', false)
+        .eq('releases.is_cancelled', false)
         .limit(10);
       
       if (projectIds.length > 0) {

@@ -120,7 +120,7 @@ export function UserCard({ user, onUserUpdated }: { user: User; onUserUpdated: (
               <UpdatePasswordDialog user={user} onPasswordUpdated={onUserUpdated} />
               <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="ghost" size="sm" className="p-2">
+                  <Button variant="ghost" size="sm" className="p-2 hover:bg-red-100 hover:text-red-600">
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </DialogTrigger>

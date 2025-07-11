@@ -7,7 +7,7 @@ export interface CalendarRelease {
   id: string;
   name: string;
   target_date: string;
-  state: 'pending' | 'next' | 'past_due' | 'deployed' | 'cancelled';
+  state: 'pending' | 'next' | 'past_due';
 }
 
 export interface UserInvolvement {

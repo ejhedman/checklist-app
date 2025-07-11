@@ -25,7 +25,9 @@ export function ReleaseDetailBottomContent({
   onFeatureUpdated,
   onTeamsChanged,
   onFeatureChanged,
-  onFeatureEdited
+  onFeatureEdited,
+  onFeaturesReadyStateChange,
+  onTeamsReadyStateChange
 }: {
   release: any,
   user: any,
@@ -38,7 +40,9 @@ export function ReleaseDetailBottomContent({
   onFeatureUpdated: () => void,
   onTeamsChanged?: (addedTeams: string[], removedTeams: string[]) => void,
   onFeatureChanged?: (newFeature: any) => void,
-  onFeatureEdited?: (updatedFeature: any) => void
+  onFeatureEdited?: (updatedFeature: any) => void,
+  onFeaturesReadyStateChange?: (isReady: boolean) => void,
+  onTeamsReadyStateChange?: (isReady: boolean) => void
 }) {
   const daysUntilRelease = getDaysUntilRelease(release.target_date);
   const { selectedProject } = useAuth();
@@ -59,6 +63,7 @@ export function ReleaseDetailBottomContent({
           releaseId={release.id}
           onFeatureChanged={onFeatureChanged}
           onFeatureEdited={onFeatureEdited}
+          onFeaturesReadyStateChange={onFeaturesReadyStateChange}
         />
       )}
       {/* Teams Card */}
@@ -71,6 +76,7 @@ export function ReleaseDetailBottomContent({
           updateMemberReady={updateMemberReady}
           onTeamsUpdated={onFeatureUpdated}
           onTeamsChanged={onTeamsChanged}
+          onTeamsReadyStateChange={onTeamsReadyStateChange}
         />
       )}
     </div>

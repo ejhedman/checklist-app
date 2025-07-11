@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ExternalLink, FileText, ChevronDown, ChevronUp, Pencil, Trash2, Check } from "lucide-react";
+import { ExternalLink, FileText, ChevronDown, ChevronUp, Pencil, Trash2, Check, CheckSquare, X } from "lucide-react";
 import MiniCard from "./MiniCard";
 import { createClient } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
+
 export interface ReleaseSummaryCardProps {
   release: {
     id: string;
@@ -37,6 +38,8 @@ export interface ReleaseSummaryCardProps {
     ready_members: number;
     is_archived?: boolean;
     is_ready?: boolean;
+    is_deployed?: boolean;
+    is_cancelled?: boolean;
     targets?: string[];
     project?: {
       id: string;
@@ -73,7 +76,6 @@ export interface ReleaseSummaryCardProps {
       };
     }>;
   };
-  getStateIcon: (state: string) => React.ReactNode;
   onReleaseUpdated?: () => void;
   initialExpanded?: boolean;
   collapsible?: boolean;
@@ -93,7 +95,6 @@ function getDaysUntil(dateString: string) {
 
 export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
   release,
-  getStateIcon,
   onReleaseUpdated,
   initialExpanded = false,
   collapsible = false,
@@ -119,10 +120,33 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
   const [summaryState, setSummaryState] = useState(release.state);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  
+  // Track internal ready states from child components
+  const [featuresReadyState, setFeaturesReadyState] = useState<boolean | null>(null);
+  const [teamsReadyState, setTeamsReadyState] = useState<boolean | null>(null);
 
   useEffect(() => {
     setIsArchived(release.is_archived);
   }, [release.is_archived]);
+
+  // Initialize ready states when expanded release detail is loaded
+  useEffect(() => {
+    if (expandedReleaseDetail) {
+      // Calculate initial features ready state
+      const isFeaturesReady = expandedReleaseDetail.feature_count > 0 && 
+        expandedReleaseDetail.ready_features === expandedReleaseDetail.feature_count;
+      setFeaturesReadyState(isFeaturesReady);
+      
+      // Calculate initial teams ready state
+      const isTeamsReady = expandedReleaseDetail.total_members > 0 && 
+        expandedReleaseDetail.ready_members === expandedReleaseDetail.total_members;
+      setTeamsReadyState(isTeamsReady);
+    } else {
+      // Reset states when detail is unloaded
+      setFeaturesReadyState(null);
+      setTeamsReadyState(null);
+    }
+  }, [expandedReleaseDetail]);
 
   useEffect(() => {
     const fetchTeams = async () => {
@@ -341,6 +365,38 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
     }
   };
 
+  const handleDeployToggle = async () => {
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("releases")
+      .update({ is_deployed: true })
+      .eq("id", release.id);
+
+    if (error) {
+      console.error('Failed to update deployment status:', error);
+      return;
+    }
+
+    // Call the callback to refresh the parent component
+    onReleaseUpdated?.();
+  };
+
+  const handleCancelRelease = async () => {
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("releases")
+      .update({ is_cancelled: true })
+      .eq("id", release.id);
+
+    if (error) {
+      console.error('Failed to cancel release:', error);
+      return;
+    }
+
+    // Call the callback to refresh the parent component
+    onReleaseUpdated?.();
+  };
+
   // Check if the current user is a DRI on any features
   const isUserDRI = () => {
     if (!memberId || !release.features) return false;
@@ -360,9 +416,20 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
   };
 
   const handleFeatureReadyChange = async (feature: any, isReady: boolean) => {
-    if (!user || !feature.dri_member || memberId !== feature.dri_member.id) {
+    if (!user) {
+      console.log('No user, cannot mark ready');
       return;
     }
+    // Allow DRI or release manager
+    if (!feature.dri_member) {
+      console.log('No DRI member on feature, cannot mark ready');
+      return;
+    }
+    if (memberId !== feature.dri_member.id && !is_release_manager) {
+      console.log('Not DRI or release manager, cannot mark ready', { memberId, dri: feature.dri_member.id, is_release_manager });
+      return;
+    }
+    console.log('Marking feature ready', { featureId: feature.id, isReady, memberId, is_release_manager });
     await updateFeatureReady(feature.id, isReady, "");
   };
 
@@ -379,25 +446,30 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
     if (error) {
       console.error('Error updating feature ready state:', error);
     } else {
-      setFeatures((prev: any[]) =>
-        prev.map((f: any) =>
-          f.id === featureId ? { ...f, is_ready: isReady, comments } : f
-        )
+      // Update local features state
+      const updatedFeatures = features.map((f: any) =>
+        f.id === featureId ? { ...f, is_ready: isReady, comments } : f
       );
-      
-      // Update the release summary counts
+      setFeatures(updatedFeatures);
+      // Recalculate summary counts
+      const readyFeatures = updatedFeatures.filter((f: any) => f.is_ready).length;
+      setSummaryReadyFeatures(readyFeatures);
+      setSummaryFeatureCount(updatedFeatures.length);
+      // Recalculate is_ready locally
+      const allFeaturesReady = updatedFeatures.length > 0 && readyFeatures === updatedFeatures.length;
+      const allMembersReady = summaryTotalMembers > 0 && summaryReadyMembers === summaryTotalMembers;
+      const isReadyLocal = allFeaturesReady && allMembersReady;
+      // Update expandedReleaseDetail and trigger ready state recalculation
       if (expandedReleaseDetail) {
-        const oldFeature = features.find((f: any) => f.id === featureId);
-        const readyFeaturesChange = oldFeature && oldFeature.is_ready !== isReady ? (isReady ? 1 : -1) : 0;
-        
         const updatedDetail = {
           ...expandedReleaseDetail,
-          ready_features: expandedReleaseDetail.ready_features + readyFeaturesChange
+          ready_features: readyFeatures,
+          feature_count: updatedFeatures.length,
+          features: updatedFeatures,
         };
         setExpandedReleaseDetail(updatedDetail);
-        
-        // Check if release state should automatically change
-        await checkAndUpdateReleaseState(updatedDetail, uniqueMembers);
+        // Trigger the new ready state update system
+        updateReleaseReadyState();
       }
     }
     setUpdatingFeature(false);
@@ -434,18 +506,25 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
         m.id === memberId ? { ...m, is_ready: isReady } : m
       );
       setUniqueMembers(updatedUniqueMembers);
-      
-      // Update the release summary counts
+      // Recalculate summary counts
+      const readyMembers = updatedUniqueMembers.filter((m: any) => m.is_ready).length;
+      setSummaryReadyMembers(readyMembers);
+      setSummaryTotalMembers(updatedUniqueMembers.length);
+      // Recalculate is_ready locally
+      const allFeaturesReady = summaryFeatureCount > 0 && summaryReadyFeatures === summaryFeatureCount;
+      const allMembersReady = updatedUniqueMembers.length > 0 && readyMembers === updatedUniqueMembers.length;
+      const isReadyLocal = allFeaturesReady && allMembersReady;
+      // Update expandedReleaseDetail and trigger ready state recalculation
       if (expandedReleaseDetail) {
-        const updatedReadyMembers = updatedUniqueMembers.filter((m: any) => m.is_ready).length;
         const updatedDetail = {
           ...expandedReleaseDetail,
-          ready_members: updatedReadyMembers
+          ready_members: readyMembers,
+          total_members: updatedUniqueMembers.length,
+          teams: expandedReleaseDetail.teams,
         };
         setExpandedReleaseDetail(updatedDetail);
-        
-        // Check if release state should automatically change using the updated members array
-        await checkAndUpdateReleaseState(updatedDetail, updatedUniqueMembers);
+        // Trigger the new ready state update system
+        updateReleaseReadyState();
       }
     }
   };
@@ -539,8 +618,8 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
       };
       setExpandedReleaseDetail(updatedDetail);
       
-              // Check if release state should automatically change
-        checkAndUpdateReleaseState(updatedDetail, uniqueMembers);
+      // Trigger the new ready state update system
+      updateReleaseReadyState();
     }
   };
 
@@ -564,8 +643,71 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
         };
         setExpandedReleaseDetail(updatedDetail);
         
-        // Check if release state should automatically change
-        checkAndUpdateReleaseState(updatedDetail, uniqueMembers);
+        // Trigger the new ready state update system
+        updateReleaseReadyState();
+      }
+    }
+  };
+
+  // Handle features ready state change from FeaturesCard
+  const handleFeaturesReadyStateChange = (isReady: boolean) => {
+    setFeaturesReadyState(isReady);
+    updateReleaseReadyState();
+  };
+
+  // Handle teams ready state change from TeamMembersCard
+  const handleTeamsReadyStateChange = (isReady: boolean) => {
+    setTeamsReadyState(isReady);
+    updateReleaseReadyState();
+  };
+
+  // Update release ready state in database based on child component states
+  const updateReleaseReadyState = async () => {
+    // Don't update during initialization - wait for both child components to report
+    if (featuresReadyState === null || teamsReadyState === null) {
+      return;
+    }
+
+    // Calculate overall release ready state (both features and teams must be ready)
+    const isReleaseReady = featuresReadyState && teamsReadyState;
+    
+    // Only update if the state actually changed
+    const currentIsReady = expandedReleaseDetail?.is_ready ?? release.is_ready ?? false;
+    if (isReleaseReady !== currentIsReady) {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("releases")
+        .update({ is_ready: isReleaseReady })
+        .eq("id", release.id);
+      
+      if (error) {
+        console.error('Error updating release is_ready:', error);
+      } else {
+        // Update local state
+        if (expandedReleaseDetail) {
+          setExpandedReleaseDetail((prev: any) => prev ? { ...prev, is_ready: isReleaseReady } : null);
+        }
+        
+        // Log activity for is_ready change
+        if (user?.id) {
+          const { error: activityError } = await supabase.from("activity_log").insert({
+            release_id: release.id,
+            member_id: memberId,
+            project_id: expandedReleaseDetail?.project?.id || release.project?.id || "",
+            activity_type: "release_ready_change",
+            activity_details: { 
+              oldIsReady: currentIsReady, 
+              newIsReady: isReleaseReady,
+              reason: "child_component_state_change",
+              featuresReady: featuresReadyState,
+              teamsReady: teamsReadyState,
+              releaseName: expandedReleaseDetail?.name || release.name
+            },
+          });
+          if (activityError) {
+            console.error("Failed to log release ready change activity:", activityError);
+          }
+        }
       }
     }
   };
@@ -598,6 +740,7 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
                   <button
                     type="button"
                     aria-label={expanded ? "Collapse details" : "Expand details"}
+                    title={expanded ? "Collapse details" : "Expand details"}
                     className="p-2 rounded hover:bg-gray-100 transition-colors"
                     onClick={e => {
                       e.stopPropagation();
@@ -607,7 +750,6 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
                     {expanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
                   </button>
                 )}
-                {getStateIcon(summaryState)}
                 <div className="flex items-center gap-3 min-w-0">
                   <span className="font-semibold truncate">
                     {release.project?.name ? `${release.project.name}: ` : ''}{release.name}
@@ -615,7 +757,8 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
                   <StateBadge state={summaryState as any} />
                   {/* Release Readiness Badge */}
                   {(() => {
-                    const isReleaseReady = expandedReleaseDetail?.is_ready || release.is_ready;
+                    // Always use the database state for the badge
+                    const isReleaseReady = expandedReleaseDetail?.is_ready ?? release.is_ready ?? false;
                     const notReadyClass = days < 3
                       ? 'bg-red-100 text-red-800 border-red-200'
                       : 'bg-amber-100 text-amber-800 border-amber-200';
@@ -628,6 +771,7 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
                       </Badge>
                     );
                   })()}
+                  
                 </div>
               </div>
               <div className="flex-1 flex justify-center">
@@ -649,6 +793,7 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
                 <button
                   type="button"
                   aria-label="View Release Detail"
+                  title="View release detail page"
                   className="bg-white p-2 rounded hover:bg-gray-100 transition-colors shadow-sm"
                   onClick={e => {
                     e.stopPropagation();
@@ -661,6 +806,7 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
               <button
                 type="button"
                 aria-label="View Release Notes"
+                title="View release notes"
                 className="bg-white p-2 rounded hover:bg-gray-100 transition-colors shadow-sm"
                 onClick={e => {
                   e.stopPropagation();
@@ -669,6 +815,80 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
               >
                 <FileText className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
               </button>
+
+
+              {/* Deploy button for release managers when release is ready but not deployed */}
+              {is_release_manager && (() => {
+                const isReleaseReady = expandedReleaseDetail?.is_ready || release.is_ready;
+                const isDeployed = expandedReleaseDetail?.is_deployed || release.is_deployed;
+                return isReleaseReady && !isDeployed ? (
+                  <button
+                    type="button"
+                    aria-label="Mark as Deployed"
+                    title="Mark as deployed"
+                    className="bg-white p-2 rounded hover:bg-green-100 transition-colors shadow-sm hover:border-green-200"
+                    onClick={e => {
+                      e.stopPropagation();
+                      handleDeployToggle();
+                    }}
+                  >
+                    <CheckSquare className="h-4 w-4 text-green-500 hover:text-green-600 transition-colors" />
+                  </button>
+                ) : null;
+              })()}
+              {/* Cancel button for release managers when release is not deployed */}
+              {is_release_manager && (() => {
+                const isDeployed = expandedReleaseDetail?.is_deployed || release.is_deployed;
+                return !isDeployed ? (
+                  <button
+                    type="button"
+                    aria-label="Cancel Release"
+                    title="Cancel this release"
+                    className="bg-white p-2 rounded hover:bg-red-100 transition-colors shadow-sm hover:border-red-200"
+                    onClick={e => {
+                      e.stopPropagation();
+                      handleCancelRelease();
+                    }}
+                  >
+                    <X className="h-4 w-4 text-red-500 hover:text-red-600 transition-colors" />
+                  </button>
+                ) : null;
+              })()}
+              {/* Edit and Delete buttons for release managers */}
+              {is_release_manager && (
+                <>
+                  <button
+                    type="button"
+                    aria-label="Edit Release"
+                    title="Edit release"
+                    className="bg-white p-2 rounded hover:bg-gray-100 transition-colors shadow-sm"
+                    onClick={e => {
+                      e.stopPropagation();
+                      setEditOpen(true);
+                    }}
+                  >
+                    <Pencil className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
+                  </button>
+                  </>
+              )}
+              {is_release_manager && (
+                <>
+                  <button
+                    type="button"
+                    aria-label="Delete Release"
+                    title="Delete release"
+                    className="bg-white p-2 rounded hover:bg-red-100 transition-colors shadow-sm hover:border-red-200"
+                    onClick={e => {
+                      e.stopPropagation();
+                      setDeleteDialogOpen(true);
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4 text-red-500 hover:text-red-600 transition-colors" />
+                  </button>
+
+
+                </>
+              )}
             </div>
           </div>
         </CardHeader>
@@ -705,81 +925,31 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
                 )}
               </div>
             </MiniCard>
-
-            {/* Teams mini-card */}
-            {selectedProject?.is_manage_members && (
-              <MiniCard title="Teams">
-                <div className="flex flex-wrap gap-1 mt-1 justify-center w-full">
-                  {teamNames.length > 0 ? (
-                    teamNames.map((team) => (
-                      <Badge key={team} variant="secondary" className="text-xs">
-                        {team}
-                      </Badge>
-                    ))
-                  ) : (
-                    <span className="text-muted-foreground text-sm"></span>
-                  )}
-                </div>
-              </MiniCard>
-            )}
-
-            {/** Team Readiness coloring logic */}
-            {selectedProject?.is_manage_members && (() => {
-              const isTeamComplete = summaryReadyMembers === summaryTotalMembers && summaryTotalMembers > 0;
-              return (
-                <MiniCard title="Team Ready" wide>
-                  <div className="flex items-center justify-center w-16 h-16">
-                    {summaryTotalMembers > 0 ? (
-                      <svg width="64" height="64" viewBox="0 0 64 64">
-                        <circle
-                          cx="32"
-                          cy="32"
-                          r="28"
-                          fill="none"
-                          stroke="#e5e7eb" // Tailwind gray-200
-                          strokeWidth="8"
-                        />
-                        <circle
-                          cx="32"
-                          cy="32"
-                          r="28"
-                          fill="none"
-                          stroke="#3b82f6" // Tailwind blue-500
-                          strokeWidth="8"
-                          strokeDasharray={2 * Math.PI * 28}
-                          strokeDashoffset={2 * Math.PI * 28 * (1 - summaryReadyMembers / summaryTotalMembers)}
-                          strokeLinecap="round"
-                          style={{ transition: 'stroke-dashoffset 0.5s' }}
-                        />
-                        {isTeamComplete ? (
-                          <g>
-                            <circle cx="32" cy="32" r="18" fill="#3b82f6" opacity="0.15" />
-                            <Check x={20} y={20} width={24} height={24} color="#3b82f6" strokeWidth={3} />
-                          </g>
-                        ) : (
-                          <text
-                            x="32"
-                            y="38"
-                            textAnchor="middle"
-                            fontSize="18"
-                            fill="#374151" // Tailwind gray-700
-                            fontWeight="bold"
-                          >
-                            {`${summaryReadyMembers}/${summaryTotalMembers}`}
-                          </text>
-                        )}
-                      </svg>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">No members</span>
-                    )}
-                  </div>
-                </MiniCard>
-              );
-            })()}            
-            
+           
             {/** Key Feature Readiness Donut Chart as a mini-card */}
             {selectedProject?.is_manage_features && (() => {
-                return (
+              // Calculate internal is_ready state for features
+              const isFeaturesReady = summaryFeatureCount > 0 && summaryReadyFeatures === summaryFeatureCount;
+              
+              // Calculate days until release
+              const daysUntilRelease = getDaysUntil(release.target_date);
+              
+              // Determine if user has unready features (is DRI of any feature that's not ready)
+              const userHasUnreadyFeatures = memberId && features.some(feature => 
+                feature.dri_member_id === memberId && !feature.is_ready
+              );
+              
+              // Determine donut color based on new logic
+              let donutColor = "#22c55e"; // Default green
+              if (isFeaturesReady) {
+                donutColor = "#22c55e"; // Green when all features ready
+              } else if (daysUntilRelease < 3 && userHasUnreadyFeatures) {
+                donutColor = "#ef4444"; // Red when < 3 days and user has unready features
+              } else if (isUserDRI()) {
+                donutColor = "#3b82f6"; // Blue when user is DRI and features not ready
+              }
+              
+              return (
                 <MiniCard title="Features Ready" wide>
                   <div className="flex items-center justify-center w-16 h-16">
                     {summaryFeatureCount > 0 ? (
@@ -797,7 +967,7 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
                           cy="32"
                           r="28"
                           fill="none"
-                          stroke="#22c55e" // Tailwind green-500
+                          stroke={donutColor}
                           strokeWidth="8"
                           strokeDasharray={2 * Math.PI * 28}
                           strokeDashoffset={2 * Math.PI * 28 * (1 - summaryReadyFeatures / summaryFeatureCount)}
@@ -806,8 +976,8 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
                         />
                         {summaryReadyFeatures === summaryFeatureCount ? (
                           <g>
-                            <circle cx="32" cy="32" r="18" fill="#22c55e" opacity="0.15" />
-                            <Check x={20} y={20} width={24} height={24} color="#22c55e" strokeWidth={3} />
+                            <circle cx="32" cy="32" r="18" fill={donutColor} opacity="0.15" />
+                            <Check x={20} y={20} width={24} height={24} color={donutColor} strokeWidth={3} />
                           </g>
                         ) : (
                           <text
@@ -828,6 +998,132 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
                   </div>
                 </MiniCard>                );
             })()}
+
+            {/* Teams mini-card */}
+            {selectedProject?.is_manage_members && (
+              <MiniCard title="Teams">
+                <div className="flex flex-wrap gap-1 mt-1 justify-center w-full">
+                  {teamNames.length > 0 ? (
+                    teamNames.map((team) => (
+                      <Badge key={team} variant="secondary" className="text-xs">
+                        {team}
+                      </Badge>
+                    ))
+                  ) : (
+                    <span className="text-muted-foreground text-sm"></span>
+                  )}
+                </div>
+              </MiniCard>
+            )}
+ 
+            {/** Team Readiness coloring logic */}
+            {selectedProject?.is_manage_members && (() => {
+              // Calculate internal is_ready state for teams
+              const isTeamsReady = summaryTotalMembers > 0 && summaryReadyMembers === summaryTotalMembers;
+              
+              // Calculate days until release
+              const daysUntilRelease = getDaysUntil(release.target_date);
+              
+              // Determine if user has unready items (is a member but not ready)
+              const userHasUnreadyItems = memberId && uniqueMembers.some(member => 
+                member.id === memberId && !member.is_ready
+              );
+              
+              // Determine donut color based on new logic
+              let donutColor = "#22c55e"; // Default green
+              if (isTeamsReady) {
+                donutColor = "#22c55e"; // Green when all teams ready
+              } else if (daysUntilRelease < 3 && userHasUnreadyItems) {
+                donutColor = "#ef4444"; // Red when < 3 days and user has unready items
+              } else if (isUserMember()) {
+                donutColor = "#3b82f6"; // Blue when user is member and teams not ready
+              }
+              
+              return (
+                <MiniCard title="Team Ready" wide>
+                  <div className="flex items-center justify-center w-16 h-16">
+                    {summaryTotalMembers > 0 ? (
+                      <svg width="64" height="64" viewBox="0 0 64 64">
+                        <circle
+                          cx="32"
+                          cy="32"
+                          r="28"
+                          fill="none"
+                          stroke="#e5e7eb" // Tailwind gray-200
+                          strokeWidth="8"
+                        />
+                        <circle
+                          cx="32"
+                          cy="32"
+                          r="28"
+                          fill="none"
+                          stroke={donutColor}
+                          strokeWidth="8"
+                          strokeDasharray={2 * Math.PI * 28}
+                          strokeDashoffset={2 * Math.PI * 28 * (1 - summaryReadyMembers / summaryTotalMembers)}
+                          strokeLinecap="round"
+                          style={{ transition: 'stroke-dashoffset 0.5s' }}
+                        />
+                        {isTeamsReady ? (
+                          <g>
+                            <circle cx="32" cy="32" r="18" fill={donutColor} opacity="0.15" />
+                            <Check x={20} y={20} width={24} height={24} color={donutColor} strokeWidth={3} />
+                          </g>
+                        ) : (
+                          <text
+                            x="32"
+                            y="38"
+                            textAnchor="middle"
+                            fontSize="18"
+                            fill="#374151" // Tailwind gray-700
+                            fontWeight="bold"
+                          >
+                            {`${summaryReadyMembers}/${summaryTotalMembers}`}
+                          </text>
+                        )}
+                      </svg>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">No members</span>
+                    )}
+                  </div>
+                </MiniCard>
+              );
+            })()}
+
+            {/* Deployment mini-card */}
+            <MiniCard title="Deployed" wide>
+              <div className="flex items-center justify-center w-16 h-16">
+                <svg width="64" height="64" viewBox="0 0 64 64">
+                  <circle
+                    cx="32"
+                    cy="32"
+                    r="28"
+                    fill="none"
+                    stroke="#e5e7eb" // Tailwind gray-200
+                    strokeWidth="8"
+                  />
+                  {(expandedReleaseDetail?.is_deployed || release.is_deployed) ? (
+                    <>
+                      <circle
+                        cx="32"
+                        cy="32"
+                        r="28"
+                        fill="none"
+                        stroke="#22c55e" // Tailwind green-500
+                        strokeWidth="8"
+                        strokeDasharray={2 * Math.PI * 28}
+                        strokeDashoffset="0"
+                        strokeLinecap="round"
+                      />
+                      <g>
+                        <circle cx="32" cy="32" r="18" fill="#22c55e" opacity="0.15" />
+                        <Check x={20} y={20} width={24} height={24} color="#22c55e" strokeWidth={3} />
+                      </g>
+                    </>
+                  ) : null}
+                </svg>
+              </div>
+            </MiniCard>
 
 
           </div>
@@ -867,6 +1163,8 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
                   onTeamsChanged={handleTeamsChanged}
                   onFeatureChanged={handleFeatureChanged}
                   onFeatureEdited={handleFeatureEdited}
+                  onFeaturesReadyStateChange={handleFeaturesReadyStateChange}
+                  onTeamsReadyStateChange={handleTeamsReadyStateChange}
                 />
               </CardContent>
             </Card>

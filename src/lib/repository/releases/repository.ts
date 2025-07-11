@@ -12,6 +12,8 @@ export interface Release {
   config_update: boolean;
   is_archived: boolean;
   is_ready: boolean;
+  is_deployed: boolean;
+  is_cancelled: boolean;
   targets: string[];
   created_at: string;
   project_id: string;
@@ -47,6 +49,8 @@ export class ReleasesRepository {
       config_update,
       is_archived,
       is_ready,
+      is_deployed,
+      is_cancelled,
       targets,
       created_at,
       project_id,
@@ -197,6 +201,8 @@ export class ReleasesRepository {
         config_update,
         is_archived,
         is_ready,
+        is_deployed,
+        is_cancelled,
         targets,
         created_at,
         project_id,
@@ -292,6 +298,8 @@ export class ReleasesRepository {
     config_update?: boolean;
     is_archived?: boolean;
     is_ready?: boolean;
+    is_deployed?: boolean;
+    is_cancelled?: boolean;
     targets?: string[];
   }) {
     const { error } = await this.supabase

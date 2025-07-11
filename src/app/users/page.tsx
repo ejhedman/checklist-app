@@ -2,10 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader2, Plus } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { AddUserDialog } from "@/components/users/AddUserDialog";
 import { UserCard, User } from "@/components/users/UserCard";
-import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 

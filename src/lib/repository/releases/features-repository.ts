@@ -148,7 +148,8 @@ export class FeaturesRepository {
       `)
       .eq('dri_member_id', memberId)
       .eq('releases.is_archived', false)
-      .not('releases.state', 'in', '(deployed,cancelled)')
+      .eq('releases.is_deployed', false)
+      .eq('releases.is_cancelled', false)
       .limit(10);
     
     if (projectIds.length > 0) {

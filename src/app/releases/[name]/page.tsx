@@ -50,6 +50,8 @@ export default function ReleaseDetailPage({ params }: { params: Promise<{ name: 
         platform_update,
         config_update,
         is_archived,
+        is_deployed,
+        is_cancelled,
         targets,
         created_at,
         project_id,

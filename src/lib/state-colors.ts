@@ -1,4 +1,4 @@
-export type ReleaseState = "past_due" | "next" | "pending" | "deployed" | "cancelled";
+export type ReleaseState = "past_due" | "next" | "pending";
 
 // Color configurations for different use cases
 const stateColorConfig = {
@@ -25,22 +25,6 @@ const stateColorConfig = {
     icon: "text-amber-500",
     badge: "bg-amber-400 text-black",
     badgeVariant: "default" as const
-  },
-  deployed: {
-    background: "bg-blue-500",
-    backgroundPale: "bg-blue-50",
-    text: "text-white",
-    icon: "text-blue-500",
-    badge: "bg-blue-500 text-white",
-    badgeVariant: "default" as const
-  },
-  cancelled: {
-    background: "bg-gray-500",
-    backgroundPale: "bg-gray-50",
-    text: "text-white",
-    icon: "text-gray-500",
-    badge: "bg-gray-500 text-white",
-    badgeVariant: "secondary" as const
   }
 };
 
@@ -107,20 +91,3 @@ export function getStateDisplayText(state: ReleaseState): string {
 
 import React from "react";
 import { AlertTriangle, CheckCircle, Clock, Calendar } from "lucide-react";
-
-/**
- * Get the React icon component for a state
- * Returns the appropriate Lucide icon component
- */
-export function getStateIcon(state: ReleaseState): React.ReactNode {
-  const iconConfig = {
-    past_due: AlertTriangle,
-    next: CheckCircle,
-    pending: Clock,
-    deployed: CheckCircle,
-    cancelled: Calendar
-  };
-  
-  const IconComponent = iconConfig[state] || iconConfig.pending;
-  return React.createElement(IconComponent, { className: "h-4 w-4" });
-} 
