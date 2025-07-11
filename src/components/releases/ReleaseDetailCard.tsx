@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { CreateReleaseDialog } from "./CreateReleaseDialog";
@@ -41,7 +41,7 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onRele
   const [featureCount, setFeatureCount] = useState(release.feature_count);
 
   // Collect all unique members from all teams (move this to state)
-  const getAllMembers = () => {
+  const getAllMembers = useCallback(() => {
     const memberMap = new Map();
     release.teams.forEach((team: any) => {
       team.members.forEach((member: any) => {
@@ -51,11 +51,11 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onRele
       });
     });
     return Array.from(memberMap.values());
-  };
+  }, [release.teams]);
   const [allMembers, setAllMembers] = useState(getAllMembers());
   useEffect(() => {
     setAllMembers(getAllMembers());
-  }, [release.teams]);
+  }, [getAllMembers]);
 
   useEffect(() => {
     setIsArchived(release.is_archived);

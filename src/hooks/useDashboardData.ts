@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { HomeRepository, DashboardData } from "@/lib/repository";
 
@@ -14,9 +14,12 @@ export function useDashboardData() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { selectedProject, user } = useAuth();
-  const homeRepository = new HomeRepository();
+  
+  // Memoize the repository to prevent recreation on every render
+  const homeRepository = useMemo(() => new HomeRepository(), []);
 
-  const getDashboardData = async (projectIds: string[]): Promise<DashboardData> => {
+  // Memoize the getDashboardData function
+  const getDashboardData = useCallback(async (projectIds: string[]): Promise<DashboardData> => {
     try {
       if (!user) {
         console.error("No authenticated user found");
@@ -55,9 +58,9 @@ export function useDashboardData() {
         recentActivity: []
       };
     }
-  };
+  }, [homeRepository, user]);
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     setLoading(true);
     setError(null);
     
@@ -84,11 +87,11 @@ export function useDashboardData() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedProject, getDashboardData]);
 
   useEffect(() => {
     fetchDashboardData();
-  }, [selectedProject, user]);
+  }, [fetchDashboardData]);
 
   return {
     data,

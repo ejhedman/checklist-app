@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -47,7 +47,7 @@ export function AddTeamDialog({ onTeamAdded }: AddTeamDialogProps) {
   };
 
   // Check if team name is unique within the project
-  const checkNameUniqueness = async (name: string) => {
+  const checkNameUniqueness = useCallback(async (name: string) => {
     if (!name.trim() || !selectedProject) {
       setNameError("");
       return;
@@ -75,7 +75,7 @@ export function AddTeamDialog({ onTeamAdded }: AddTeamDialogProps) {
     } finally {
       setIsCheckingName(false);
     }
-  };
+  }, [selectedProject]);
   // Debounced name validation
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -86,7 +86,7 @@ export function AddTeamDialog({ onTeamAdded }: AddTeamDialogProps) {
       }
     }, 500);
     return () => clearTimeout(timeoutId);
-  }, [formData.name, selectedProject]);
+  }, [formData.name, checkNameUniqueness]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

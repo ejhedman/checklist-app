@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -49,7 +49,7 @@ export function EditTargetDialog({ target, onTargetUpdated }: EditTargetDialogPr
   };
 
   // Check if target name is unique (excluding this target)
-  const checkNameUniqueness = async (name: string) => {
+  const checkNameUniqueness = useCallback(async (name: string) => {
     if (!name.trim()) {
       setNameError("");
       return;
@@ -77,7 +77,7 @@ export function EditTargetDialog({ target, onTargetUpdated }: EditTargetDialogPr
     } finally {
       setIsCheckingName(false);
     }
-  };
+  }, [target.id]);
   // Debounced name validation
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -88,7 +88,7 @@ export function EditTargetDialog({ target, onTargetUpdated }: EditTargetDialogPr
       }
     }, 500);
     return () => clearTimeout(timeoutId);
-  }, [formData.name, target.id]);
+  }, [formData.name, checkNameUniqueness]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

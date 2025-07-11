@@ -100,7 +100,7 @@ export function ProjectCard({ project, onProjectUpdated }: ProjectCardProps) {
             <div className="space-y-1 pl-4">
               {project.users.map((user) => (
                 <div key={user.id} className="text-sm text-muted-foreground">
-                  {user.email} ({user.full_name})
+                  {user.email}
                 </div>
               ))}
             </div>

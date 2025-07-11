@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { use } from "react";
 import { useRouter } from "next/navigation";
 import ReleaseDetailCard from "@/components/releases/ReleaseDetailCard";
@@ -22,7 +22,7 @@ export default function ReleaseDetailPage({ params }: { params: Promise<{ name: 
   // Decode the URL parameter
   const decodedName = decodeURIComponent(resolvedParams.name);
 
-  const fetchAllReleases = async () => {
+  const fetchAllReleases = useCallback(async () => {
     if (!selectedProject) return;
     
     const supabase = createClient();
@@ -45,9 +45,9 @@ export default function ReleaseDetailPage({ params }: { params: Promise<{ name: 
     }
 
     setAllReleases(data || []);
-  };
+  }, [selectedProject]);
 
-  const fetchRelease = async () => {
+  const fetchRelease = useCallback(async () => {
     setLoading(true);
     setError(null);
     
@@ -201,7 +201,7 @@ export default function ReleaseDetailPage({ params }: { params: Promise<{ name: 
 
     setRelease(transformedRelease);
     setLoading(false);
-  };
+  }, [selectedProject, user, decodedName, router]);
 
   const handleMemberReadyChange = async (releaseId: string, memberId: string, isReady: boolean) => {
     const supabase = createClient();
@@ -241,11 +241,11 @@ export default function ReleaseDetailPage({ params }: { params: Promise<{ name: 
   };
 
   useEffect(() => {
-    if (selectedProject) {
-      fetchAllReleases(); // Fetch all releases when project is selected
+    if (selectedProject && user) {
+      fetchAllReleases();
       fetchRelease();
     }
-  }, [decodedName, selectedProject]);
+  }, [fetchAllReleases, fetchRelease, selectedProject, user]);
 
   if (loading) {
     return (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { ReleaseNotesSummaryCard } from "@/components/releasenotes/ReleaseNotesSummaryCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { ReleaseNotesRepository } from "@/lib/repository";
@@ -9,36 +9,31 @@ export default function ReleaseNotesListPage() {
   const [releases, setReleases] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const { selectedProject } = useAuth();
-  const releaseNotesRepository = new ReleaseNotesRepository();
+  // Memoize the repository
+  const releaseNotesRepository = useMemo(() => new ReleaseNotesRepository(), []);
 
-  useEffect(() => {
-    const fetchReleases = async () => {
-      setLoading(true);
-      
-      if (!selectedProject) {
-        console.error("No project selected");
-        setReleases([]);
-        setLoading(false);
-        return;
-      }
-      
-      try {
-        const releases = await releaseNotesRepository.getReleasesForNotes();
-        setReleases(releases);
-      } catch (error) {
-        console.error("Error fetching releases:", error);
-        setReleases([]);
-      }
-      setLoading(false);
-    };
-    
-    if (selectedProject) {
-      fetchReleases();
-    } else {
+  // Memoize the fetch function
+  const fetchReleases = useCallback(async () => {
+    setLoading(true);
+    if (!selectedProject) {
+      console.error("No project selected");
       setReleases([]);
       setLoading(false);
+      return;
     }
-  }, [selectedProject]);
+    try {
+      const releases = await releaseNotesRepository.getReleasesForNotes();
+      setReleases(releases);
+    } catch (error) {
+      console.error("Error fetching releases:", error);
+      setReleases([]);
+    }
+    setLoading(false);
+  }, [selectedProject, releaseNotesRepository]);
+
+  useEffect(() => {
+    fetchReleases();
+  }, [fetchReleases]);
 
   if (loading) {
     return <div className="p-8 text-center text-muted-foreground">Loading release notes...</div>;

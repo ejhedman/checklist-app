@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { AddProjectDialog } from "@/components/projects/AddProjectDialog";
 import { ProjectCard, Project } from "@/components/projects/ProjectCard";
 import { ProjectsRepository } from "@/lib/repository";
@@ -8,9 +8,11 @@ import { ProjectsRepository } from "@/lib/repository";
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
-  const projectsRepository = new ProjectsRepository();
+  
+  // Memoize the repository to prevent recreation on every render
+  const projectsRepository = useMemo(() => new ProjectsRepository(), []);
 
-  const fetchProjects = async () => {
+  const fetchProjects = useCallback(async () => {
     setLoading(true);
     
     try {
@@ -21,11 +23,11 @@ export default function ProjectsPage() {
     }
     
     setLoading(false);
-  };
+  }, [projectsRepository]);
 
   useEffect(() => {
     fetchProjects();
-  }, []);
+  }, [fetchProjects]);
 
   return (
     <div className="space-y-6">

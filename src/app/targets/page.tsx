@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { AddTargetDialog } from "@/components/targets/AddTargetDialog";
 import { TargetCard, Target } from "@/components/targets/TargetCard";
 import { useAuth } from "@/contexts/AuthContext";
@@ -10,9 +10,11 @@ export default function TargetsPage() {
   const [targets, setTargets] = useState<Target[]>([]);
   const [loading, setLoading] = useState(true);
   const { selectedProject } = useAuth();
-  const targetsRepository = new TargetsRepository();
+  
+  // Memoize the repository to prevent recreation on every render
+  const targetsRepository = useMemo(() => new TargetsRepository(), []);
 
-  const fetchTargets = async () => {
+  const fetchTargets = useCallback(async () => {
     setLoading(true);
     
     if (!selectedProject) {
@@ -30,16 +32,11 @@ export default function TargetsPage() {
     }
     
     setLoading(false);
-  };
+  }, [selectedProject, targetsRepository]);
 
   useEffect(() => {
-    if (selectedProject) {
-      fetchTargets();
-    } else {
-      setTargets([]);
-      setLoading(false);
-    }
-  }, [selectedProject]);
+    fetchTargets();
+  }, [fetchTargets]);
 
   return (
     <div className="space-y-6">

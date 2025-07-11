@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -63,7 +63,7 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
   };
 
   // Fetch targets when dialog opens
-  const fetchTargets = async () => {
+  const fetchTargets = useCallback(async () => {
     const supabase = createClient();
     let projectId = null;
     if (isEdit && initialRelease?.project?.id) {
@@ -85,7 +85,7 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
     } else {
       setTargets([]);
     }
-  };
+  }, [isEdit, initialRelease?.project?.id, selectedProject]);
 
   useEffect(() => {
     if (controlledOpen !== undefined) setOpen(controlledOpen);
@@ -97,7 +97,7 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
       console.log("Dialog opened, fetching targets...");
       fetchTargets();
     }
-  }, [open]);
+  }, [open, fetchTargets]);
 
   const handleOpenChange = (newOpen: boolean) => {
     setOpen(newOpen);

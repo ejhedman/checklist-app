@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -61,7 +61,7 @@ export function EditProjectDialog({ project, onProjectUpdated }: EditProjectDial
   };
 
   // Check if project name is unique (excluding this project)
-  const checkNameUniqueness = async (name: string) => {
+  const checkNameUniqueness = useCallback(async (name: string) => {
     if (!name.trim()) {
       setNameError("");
       return;
@@ -89,7 +89,7 @@ export function EditProjectDialog({ project, onProjectUpdated }: EditProjectDial
     } finally {
       setIsCheckingName(false);
     }
-  };
+  }, [project.id]);
 
   // Debounced name validation
   useEffect(() => {
@@ -101,7 +101,7 @@ export function EditProjectDialog({ project, onProjectUpdated }: EditProjectDial
       }
     }, 500);
     return () => clearTimeout(timeoutId);
-  }, [formData.name, project.id]);
+  }, [formData.name, checkNameUniqueness]);
 
   const fetchAvailableUsers = async () => {
     const supabase = createClient();

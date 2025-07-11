@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, useRef } from "react";
+import { createContext, useContext, useEffect, useState, useRef, useCallback } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase";
 
@@ -48,7 +48,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const supabase = createClient();
 
-  const fetchUserProjects = async (userId: string): Promise<Project[]> => {
+  // Memoize fetchUserProjects to prevent recreation on every render
+  const fetchUserProjects = useCallback(async (userId: string): Promise<Project[]> => {
     try {
       const { data, error } = await supabase
         .from('members')
@@ -78,9 +79,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error('Error fetching user projects:', error);
       return [];
     }
-  };
+  }, [supabase]);
 
-  const fetchUserRole = async (userId: string, retryCount = 0): Promise<'admin' | 'user'> => {
+  const fetchUserRole = useCallback(async (userId: string, retryCount = 0): Promise<'admin' | 'user'> => {
     // console.log('🔍 FETCHING USER ROLE - User ID:', userId, retryCount > 0 ? `(retry ${retryCount})` : '');
     
     // If we're already fetching for this user, return the existing promise
@@ -150,9 +151,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     return roleFetchPromise.current;
-  };
+  }, [supabase]);
 
-  const fetchMemberInfo = async (userId: string, projectId: string | null) => {
+  const fetchMemberInfo = useCallback(async (userId: string, projectId: string | null) => {
     if (!projectId) {
       setMemberId(null);
       setMemberRole(null);
@@ -185,7 +186,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setMemberRole(null);
       setIsReleaseManager(false);
     }
-  };
+  }, [supabase]);
 
   const signOut = async () => {
     try {
@@ -232,8 +233,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Handle project selection
-  const handleProjectSelection = (project: Project | null) => {
+  // Memoize handleProjectSelection to prevent recreation on every render
+  const handleProjectSelection = useCallback((project: Project | null) => {
     setSelectedProject(project);
     if (user && project) {
       fetchMemberInfo(user.id, project.id);
@@ -241,7 +242,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setMemberId(null);
       setMemberRole(null);
     }
-  };
+  }, [user, fetchMemberInfo]);
 
   useEffect(() => {
     // console.log('🚀 AUTH CONTEXT INITIALIZING...');
@@ -330,7 +331,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       subscription.unsubscribe();
       isInitializing.current = false;
     };
-  }, []);
+  }, [fetchUserRole, supabase.auth]);
 
   useEffect(() => {
     if (user) {
@@ -363,7 +364,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsReleaseManager(false);
       setProjectLoading(false);
     }
-  }, [user]);
+  }, [user, fetchUserProjects, handleProjectSelection]);
 
   const value = {
     user,

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { ReleasesRepository, Release } from "@/lib/repository";
 
@@ -26,9 +26,11 @@ export function useReleases(options: UseReleasesOptions = {}) {
   const [error, setError] = useState<string | null>(null);
   const { selectedProject } = useAuth();
   const { showArchived = false, includeDetails = true } = options;
-  const releasesRepository = new ReleasesRepository();
+  
+  // Memoize the repository to prevent recreation on every render
+  const releasesRepository = useMemo(() => new ReleasesRepository(), []);
 
-  const transformReleaseData = (data: Release[]): TransformedRelease[] => {
+  const transformReleaseData = useCallback((data: Release[]): TransformedRelease[] => {
     return data.map((release) => {
       // Aggregate all members from all teams
       const allMembers: any[] = [];
@@ -81,9 +83,10 @@ export function useReleases(options: UseReleasesOptions = {}) {
         project: release.projects,
       };
     });
-  };
+  }, []);
 
-  const fetchReleases = async (): Promise<void> => {
+  // Memoize the fetchReleases function
+  const fetchReleases = useCallback(async (): Promise<void> => {
     setLoading(true);
     setError(null);
     
@@ -107,7 +110,7 @@ export function useReleases(options: UseReleasesOptions = {}) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedProject, releasesRepository, includeDetails, showArchived, transformReleaseData]);
 
   useEffect(() => {
     if (selectedProject) {
@@ -116,7 +119,7 @@ export function useReleases(options: UseReleasesOptions = {}) {
       setReleases([]);
       setLoading(false);
     }
-  }, [selectedProject, showArchived, includeDetails]);
+  }, [fetchReleases, selectedProject]);
 
   return {
     releases,

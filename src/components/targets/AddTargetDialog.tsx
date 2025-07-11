@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -52,7 +52,7 @@ export function AddTargetDialog({ onTargetAdded }: AddTargetDialogProps) {
   };
 
   // Check if target name is unique within the project
-  const checkNameUniqueness = async (name: string) => {
+  const checkNameUniqueness = useCallback(async (name: string) => {
     if (!name.trim() || !selectedProject) {
       setNameError("");
       return;
@@ -83,10 +83,10 @@ export function AddTargetDialog({ onTargetAdded }: AddTargetDialogProps) {
     } finally {
       setIsCheckingName(false);
     }
-  };
+  }, [selectedProject]);
 
   // Check if target short_name is unique within the project
-  const checkShortNameUniqueness = async (shortName: string) => {
+  const checkShortNameUniqueness = useCallback(async (shortName: string) => {
     if (!shortName.trim() || !selectedProject) {
       setShortNameError("");
       return;
@@ -114,7 +114,7 @@ export function AddTargetDialog({ onTargetAdded }: AddTargetDialogProps) {
     } finally {
       setIsCheckingName(false);
     }
-  };
+  }, [selectedProject]);
 
   // Debounced name validation
   useEffect(() => {
@@ -127,7 +127,7 @@ export function AddTargetDialog({ onTargetAdded }: AddTargetDialogProps) {
     }, 500); // 500ms delay
 
     return () => clearTimeout(timeoutId);
-  }, [formData.name, selectedProject]);
+  }, [formData.name, checkNameUniqueness]);
 
   // Debounced short_name validation
   useEffect(() => {
@@ -139,7 +139,7 @@ export function AddTargetDialog({ onTargetAdded }: AddTargetDialogProps) {
       }
     }, 500);
     return () => clearTimeout(timeoutId);
-  }, [formData.short_name, selectedProject]);
+  }, [formData.short_name, checkShortNameUniqueness]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

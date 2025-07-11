@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -319,11 +319,11 @@ function CalendarGrid({
 }
 
 export default function CalendarPage() {
+  const { selectedProject, user, is_release_manager } = useAuth();
   const [releases, setReleases] = useState<Release[]>([]);
-  const [userInvolvedReleaseIds, setUserInvolvedReleaseIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [userInvolvedReleaseIds, setUserInvolvedReleaseIds] = useState<Set<string>>(new Set());
   const { addToast } = useToast();
-  const { user, selectedProject, is_release_manager } = useAuth();
   const [dragState, setDragState] = useState<DragState>({
     isDragging: false,
     releaseId: null,
@@ -331,19 +331,21 @@ export default function CalendarPage() {
     originalDate: null
   });
 
-  const fetchUserInvolvement = async () => {
+  // Memoize the repository to prevent recreation on every render
+  const calendarRepository = useMemo(() => new CalendarRepository(), []);
+
+  const fetchUserInvolvement = useCallback(async () => {
     if (!user || !selectedProject) return;
     
     try {
-      const calendarRepository = new CalendarRepository();
       const involvement = await calendarRepository.getUserInvolvement(user.id, selectedProject.id);
       setUserInvolvedReleaseIds(involvement.involvedReleaseIds);
     } catch (error) {
       console.error("Error fetching user involvement:", error);
     }
-  };
+  }, [user, selectedProject, calendarRepository]);
 
-  const fetchReleases = async () => {
+  const fetchReleases = useCallback(async () => {
     try {
       if (!selectedProject) {
         console.error("No project selected");
@@ -352,7 +354,6 @@ export default function CalendarPage() {
         return;
       }
       
-      const calendarRepository = new CalendarRepository();
       const calendarReleases = await calendarRepository.getReleases(selectedProject.id);
       // Convert CalendarRelease to Release format
       const releases: Release[] = calendarReleases.map(release => ({
@@ -371,7 +372,7 @@ export default function CalendarPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedProject, calendarRepository]);
 
   const handleReleaseMove = async (releaseId: string, newDate: string) => {
     try {
@@ -379,8 +380,6 @@ export default function CalendarPage() {
         console.error("No project selected or user not found");
         throw new Error("No project selected or user not found");
       }
-      
-      const calendarRepository = new CalendarRepository();
       
       // Get the current release data to log the change
       const currentRelease = await calendarRepository.getReleaseById(releaseId);
@@ -446,15 +445,9 @@ export default function CalendarPage() {
   };
 
   useEffect(() => {
-    if (selectedProject && user) {
-      fetchReleases();
-      fetchUserInvolvement();
-    } else {
-      setReleases([]);
-      setUserInvolvedReleaseIds(new Set());
-      setLoading(false);
-    }
-  }, [selectedProject, user]);
+    fetchReleases();
+    fetchUserInvolvement();
+  }, [fetchReleases, fetchUserInvolvement]);
 
   // Global drag end handler to reset drag state
   useEffect(() => {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { HomeRepository } from "@/lib/repository";
 
@@ -20,29 +20,26 @@ export function useUserMilestones() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { selectedProject, availableProjects, user } = useAuth();
-  const homeRepository = new HomeRepository();
+  
+  // Memoize the repository to prevent recreation on every render
+  const homeRepository = useMemo(() => new HomeRepository(), []);
 
-  const getUserMilestones = async (projectIds: string[]): Promise<Milestone[]> => {
+  // Memoize the fetchMilestones function
+  const fetchMilestones = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     try {
-      if (!user) {
-        return [];
+      if (!selectedProject || !user || !user.email) {
+        setMilestones([]);
+        setLoading(false);
+        return;
       }
-
-      if (!user.email) {
-        return [];
-      }
-      
+      const projectIds = [selectedProject.id];
       const repositoryMilestones = await homeRepository.getUserMilestones(projectIds, user.email);
-      
       console.log("Repository milestones:", repositoryMilestones);
-
-      // Transform repository milestones to the expected format
       const milestones: Milestone[] = [];
-      
-      // Process repository milestones
       repositoryMilestones.forEach((milestone: any) => {
         console.log('Raw milestone:', milestone);
-        // Team member milestone
         if (milestone.name && milestone.target_date && !milestone.releases) {
           milestones.push({
             id: `release-${milestone.id}`,
@@ -54,15 +51,14 @@ export function useUserMilestones() {
             release_id: milestone.id
           });
         } else if (milestone.releases) {
-          // DRI feature milestone
           const release = Array.isArray(milestone.releases) ? milestone.releases[0] : milestone.releases;
           if (release) {
             milestones.push({
               id: `feature-${milestone.id}`,
               type: 'dri',
-              title: release.name, // Release name for context
-              dri_feature_name: milestone.name, // Feature name
-              target_date: release.target_date, // Use release date
+              title: release.name,
+              dri_feature_name: milestone.name,
+              target_date: release.target_date,
               project_name: release.projects?.name,
               is_ready: false,
               release_id: release.id,
@@ -72,46 +68,21 @@ export function useUserMilestones() {
           }
         }
       });
-
-      // Sort by target date and take top 10
       const sortedMilestones = milestones
         .sort((a, b) => new Date(a.target_date).getTime() - new Date(b.target_date).getTime())
         .slice(0, 10);
-
-      return sortedMilestones;
-      
-    } catch (error) {
-      console.error("Error in getUserMilestones:", error);
-      return [];
-    }
-  };
-
-  const fetchMilestones = async () => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      if (!selectedProject) {
-        setMilestones([]);
-        setLoading(false);
-        return;
-      }
-
-      // For now, use only the selected project
-      const projectIds = [selectedProject.id];
-      const milestoneData = await getUserMilestones(projectIds);
-      setMilestones(milestoneData);
+      setMilestones(sortedMilestones);
     } catch (err) {
       console.error("Error in fetchMilestones:", err);
       setError(err instanceof Error ? err.message : "An unexpected error occurred");
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedProject, user, homeRepository]);
 
   useEffect(() => {
     fetchMilestones();
-  }, [selectedProject, user]);
+  }, [fetchMilestones]);
 
   return {
     milestones,
@@ -134,58 +105,45 @@ export function useNagMilestones() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { selectedProject, user } = useAuth();
-  const homeRepository = new HomeRepository();
+  
+  // Memoize the repository to prevent recreation on every render
+  const homeRepository = useMemo(() => new HomeRepository(), []);
 
-  const getNagMilestones = async (projectIds: string[]): Promise<NagMilestone[]> => {
-    try {
-      if (!user || !user.email) return [];
-      const repositoryMilestones = await homeRepository.getNagMilestones(projectIds, user.email);
-      // Transform repository milestones to the expected format
-      const milestones: NagMilestone[] = [];
-      repositoryMilestones.forEach((milestone: any) => {
-        if (milestone.type === 'team_member') {
-          milestones.push({
-            ...milestone,
-          });
-        } else if (milestone.type === 'dri') {
-          milestones.push({
-            ...milestone,
-          });
-        }
-      });
-      // Sort by target date and take top 20 (Nag list could be longer)
-      return milestones
-        .sort((a, b) => new Date(a.target_date).getTime() - new Date(b.target_date).getTime())
-        .slice(0, 20);
-    } catch (error) {
-      console.error('Error in getNagMilestones:', error);
-      return [];
-    }
-  };
-
-  const fetchNagMilestones = async () => {
+  // Memoize the fetchNagMilestones function
+  const fetchNagMilestones = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      if (!selectedProject) {
+      if (!selectedProject || !user || !user.email) {
         setNagMilestones([]);
         setLoading(false);
         return;
       }
       const projectIds = [selectedProject.id];
-      const milestoneData = await getNagMilestones(projectIds);
-      setNagMilestones(milestoneData);
+      const repositoryMilestones = await homeRepository.getNagMilestones(projectIds, user.email);
+      const milestones: NagMilestone[] = [];
+      repositoryMilestones.forEach((milestone: any) => {
+        if (milestone.type === 'team_member') {
+          milestones.push({ ...milestone });
+        } else if (milestone.type === 'dri') {
+          milestones.push({ ...milestone });
+        }
+      });
+      const sortedMilestones = milestones
+        .sort((a, b) => new Date(a.target_date).getTime() - new Date(b.target_date).getTime())
+        .slice(0, 20);
+      setNagMilestones(sortedMilestones);
     } catch (err) {
       console.error('Error in fetchNagMilestones:', err);
       setError(err instanceof Error ? err.message : 'An unexpected error occurred');
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedProject, user, homeRepository]);
 
   useEffect(() => {
     fetchNagMilestones();
-  }, [selectedProject, user]);
+  }, [fetchNagMilestones]);
 
   return {
     nagMilestones,

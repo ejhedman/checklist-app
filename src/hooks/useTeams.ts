@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { TeamsRepository, TransformedTeam } from "@/lib/repository";
 
@@ -7,9 +7,12 @@ export function useTeams() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { selectedProject } = useAuth();
-  const teamsRepository = new TeamsRepository();
+  
+  // Memoize the repository to prevent recreation on every render
+  const teamsRepository = useMemo(() => new TeamsRepository(), []);
 
-  const fetchTeams = async () => {
+  // Memoize the fetchTeams function
+  const fetchTeams = useCallback(async () => {
     setLoading(true);
     setError(null);
     
@@ -29,7 +32,7 @@ export function useTeams() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedProject, teamsRepository]);
 
   useEffect(() => {
     if (selectedProject) {
@@ -38,7 +41,7 @@ export function useTeams() {
       setTeams([]);
       setLoading(false);
     }
-  }, [selectedProject]);
+  }, [fetchTeams, selectedProject]);
 
   return {
     teams,

@@ -206,7 +206,7 @@ export class HomeRepository {
       }
 
       // Get features where user is DRI and feature is not ready
-      let driQuery = this.supabase
+      const driQuery = this.supabase
         .from('features')
         .select(`
           id,

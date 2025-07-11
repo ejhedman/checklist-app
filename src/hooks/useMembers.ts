@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { MembersRepository, TransformedMember } from "@/lib/repository";
 
@@ -7,7 +7,9 @@ export function useMembers() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { selectedProject } = useAuth();
-  const membersRepository = new MembersRepository();
+  
+  // Memoize the repository to prevent recreation on every render
+  const membersRepository = useMemo(() => new MembersRepository(), []);
 
   const fetchMembers = useCallback(async () => {
     setLoading(true);
@@ -29,7 +31,7 @@ export function useMembers() {
     } finally {
       setLoading(false);
     }
-  }, [selectedProject]);
+  }, [selectedProject, membersRepository]);
 
   useEffect(() => {
     if (selectedProject) {
@@ -38,7 +40,7 @@ export function useMembers() {
       setMembers([]);
       setLoading(false);
     }
-  }, [selectedProject, fetchMembers]);
+  }, [fetchMembers, selectedProject]);
 
   return {
     members,

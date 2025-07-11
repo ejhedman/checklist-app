@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ReleaseNotesDisplay } from "@/components/releasenotes/ReleaseNotesDisplay";
 import { useAuth } from "@/contexts/AuthContext";
@@ -15,7 +15,7 @@ export default function DisplayReleaseNotesPage() {
   const [releaseName, setReleaseName] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const releaseNotesRepository = new ReleaseNotesRepository();
+  const releaseNotesRepository = useMemo(() => new ReleaseNotesRepository(), []);
 
   useEffect(() => {
     const fetchReleaseNotes = async () => {
@@ -62,7 +62,7 @@ export default function DisplayReleaseNotesPage() {
     if (selectedProject) {
       fetchReleaseNotes();
     }
-  }, [slug, selectedProject]);
+  }, [slug, releaseNotesRepository, router, user, selectedProject]);
 
   if (loading) {
     return (

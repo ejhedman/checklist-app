@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -84,7 +84,7 @@ export function EditTeamDialog({ team, onTeamUpdated }: EditTeamDialogProps) {
   };
 
   // Check if team name is unique (excluding this team)
-  const checkNameUniqueness = async (name: string) => {
+  const checkNameUniqueness = useCallback(async (name: string) => {
     if (!name.trim()) {
       setNameError("");
       return;
@@ -112,7 +112,7 @@ export function EditTeamDialog({ team, onTeamUpdated }: EditTeamDialogProps) {
     } finally {
       setIsCheckingName(false);
     }
-  };
+  }, [team.id]);
   // Debounced name validation
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -123,7 +123,7 @@ export function EditTeamDialog({ team, onTeamUpdated }: EditTeamDialogProps) {
       }
     }, 500);
     return () => clearTimeout(timeoutId);
-  }, [formData.name, team.id]);
+  }, [formData.name, checkNameUniqueness]);
 
   // Fetch all users and current team members when dialog opens
   const fetchData = async () => {

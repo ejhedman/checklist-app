@@ -21,6 +21,7 @@ function getNextReleaseId(allReleases: any[]): string | null {
 
 export default function MyUpcomingMilestonesCard({ milestones, allReleases = [] }: { milestones: any[], allReleases?: any[] }) {
   const nextReleaseId = getNextReleaseId(allReleases);
+
   return (
     <Card className="hover:shadow-md transition-shadow">
       <CardHeader className="pb-4">
@@ -97,7 +98,7 @@ export default function MyUpcomingMilestonesCard({ milestones, allReleases = [] 
             <div className="text-center py-4 text-muted-foreground">
               <CheckCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
               <p>No pending milestones</p>
-              <p className="text-xs">You're all caught up!</p>
+              <p className="text-xs">You&apos;re all caught up!</p>
             </div>
           )}
         </div>
