@@ -212,6 +212,9 @@ export class HomeRepository {
           id,
           name,
           is_ready,
+          feature_type,
+          breaking_change,
+          summary,
           release_id,
           releases (
             id,
@@ -349,7 +352,7 @@ export class HomeRepository {
       // 5. Get features for this release (with DRI info)
       const { data: features, error: featuresError } = await this.supabase
         .from('features')
-        .select('id, name, is_ready, dri_member_id')
+        .select('id, name, is_ready, dri_member_id, feature_type, breaking_change, summary')
         .eq('release_id', releaseId)
         .eq('is_ready', false);
       if (featuresError || !features) return [];

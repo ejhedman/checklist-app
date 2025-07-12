@@ -14,6 +14,9 @@ export interface Feature {
   comments: string | null;
   dri_member_id: string | null;
   release_id: string;
+  feature_type: string;
+  breaking_change: boolean;
+  summary: string | null;
   dri_member?: {
     id: string;
     full_name: string;
@@ -38,6 +41,9 @@ export class FeaturesRepository {
     is_config: boolean;
     dri_member_id?: string | null;
     release_id: string;
+    feature_type?: string;
+    breaking_change?: boolean;
+    summary?: string | null;
   }) {
     const { data, error } = await this.supabase
       .from("features")
@@ -49,6 +55,9 @@ export class FeaturesRepository {
         is_config: featureData.is_config,
         dri_member_id: featureData.dri_member_id || null,
         release_id: featureData.release_id,
+        feature_type: featureData.feature_type || 'feature',
+        breaking_change: featureData.breaking_change || false,
+        summary: featureData.summary || null,
       })
       .select()
       .single();
@@ -110,6 +119,9 @@ export class FeaturesRepository {
         is_ready,
         comments,
         dri_member_id,
+        feature_type,
+        breaking_change,
+        summary,
         dri_member:members!dri_member_id (
           id,
           full_name,

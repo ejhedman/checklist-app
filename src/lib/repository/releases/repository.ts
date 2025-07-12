@@ -88,6 +88,9 @@ export class ReleasesRepository {
         is_ready,
         comments,
         dri_member_id,
+        feature_type,
+        breaking_change,
+        summary,
         dri_member:members!dri_member_id (
           id,
           full_name,
@@ -164,6 +167,9 @@ export class ReleasesRepository {
           is_ready,
           comments,
           dri_member_id,
+          feature_type,
+          breaking_change,
+          summary,
           dri_member:members!dri_member_id (
             id,
             full_name,
@@ -236,6 +242,9 @@ export class ReleasesRepository {
           is_ready,
           comments,
           dri_member_id,
+          feature_type,
+          breaking_change,
+          summary,
           dri_member:members!dri_member_id (
             id,
             full_name,

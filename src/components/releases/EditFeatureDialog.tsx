@@ -113,6 +113,7 @@ export function EditFeatureDialog({ feature, releaseName, onFeatureUpdated, onFe
     if (newOpen) {
       fetchMembers();
       // Initialize form with current feature data
+      console.log('Current feature data:', feature);
       setFormData({
         name: feature.name || "",
         summary: feature.summary || "",
@@ -143,21 +144,30 @@ export function EditFeatureDialog({ feature, releaseName, onFeatureUpdated, onFe
       }
 
       // Update feature
-      const { error: featureError } = await supabase
+      const updateData = {
+        name: formData.name,
+        summary: formData.summary || null,
+        description: formData.description || null,
+        jira_ticket: formData.jiraTicket || null,
+        dri_member_id: formData.driMemberId || null,
+        is_platform: formData.isPlatform,
+        is_config: formData.isConfig,
+        feature_type: formData.featureType,
+        breaking_change: formData.breakingChange,
+        comments: formData.comments || null,
+      };
+      
+      console.log('Updating feature with data:', updateData);
+      console.log('Feature ID:', feature.id);
+      
+      const { error: featureError, data: updatedFeature } = await supabase
         .from("features")
-        .update({
-          name: formData.name,
-          summary: formData.summary || null,
-          description: formData.description || null,
-          jira_ticket: formData.jiraTicket || null,
-          dri_member_id: formData.driMemberId || null,
-          is_platform: formData.isPlatform,
-          is_config: formData.isConfig,
-          feature_type: formData.featureType,
-          breaking_change: formData.breakingChange,
-          comments: formData.comments || null,
-        })
-        .eq("id", feature.id);
+        .update(updateData)
+        .eq("id", feature.id)
+        .select();
+      
+      console.log('Database response - error:', featureError);
+      console.log('Database response - data:', updatedFeature);
 
       if (featureError) {
         console.error("Error updating feature:", featureError);

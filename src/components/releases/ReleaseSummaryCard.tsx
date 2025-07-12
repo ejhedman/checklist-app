@@ -283,6 +283,9 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
               is_ready,
               comments,
               dri_member_id,
+              feature_type,
+              breaking_change,
+              summary,
               dri_member:members!dri_member_id (
                 id,
                 full_name,
@@ -700,20 +703,28 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
       )
     );
     
-    // Update the feature counts in the release summary if ready status changed
+    // Update the expandedReleaseDetail with the updated feature
     if (expandedReleaseDetail) {
+      const updatedFeatures = expandedReleaseDetail.features?.map((f: any) => 
+        f.id === updatedFeature.id ? { ...f, ...updatedFeature } : f
+      ) || [];
+      
+      const updatedDetail = {
+        ...expandedReleaseDetail,
+        features: updatedFeatures
+      };
+      
+      // Update ready features count if ready status changed
       const oldFeature = features.find((f: any) => f.id === updatedFeature.id);
       if (oldFeature && oldFeature.is_ready !== updatedFeature.is_ready) {
         const readyFeaturesChange = updatedFeature.is_ready ? 1 : -1;
-        const updatedDetail = {
-          ...expandedReleaseDetail,
-          ready_features: expandedReleaseDetail.ready_features + readyFeaturesChange
-        };
-        setExpandedReleaseDetail(updatedDetail);
+        updatedDetail.ready_features = expandedReleaseDetail.ready_features + readyFeaturesChange;
         
         // Trigger the new ready state update system
         updateReleaseReadyState();
       }
+      
+      setExpandedReleaseDetail(updatedDetail);
     }
   };
 

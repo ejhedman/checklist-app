@@ -141,24 +141,31 @@ export function AddFeatureDialog({ releaseId, releaseName, onFeatureAdded, onFea
       }
 
       // Insert new feature
+      const insertData = {
+        release_id: releaseId,
+        name: formData.name,
+        summary: formData.summary || null,
+        description: formData.description || null,
+        jira_ticket: formData.jiraTicket || null,
+        dri_member_id: formData.driMemberId || null,
+        is_platform: formData.isPlatform,
+        is_config: formData.isConfig,
+        feature_type: formData.featureType,
+        breaking_change: formData.breakingChange,
+        is_ready: false, // Always default to false when creating
+        project_id: memberInfo?.project_id,
+      };
+      
+      console.log('Inserting feature with data:', insertData);
+      
       const { error: featureError, data: featureData } = await supabase
         .from("features")
-        .insert({
-          release_id: releaseId,
-          name: formData.name,
-          summary: formData.summary || null,
-          description: formData.description || null,
-          jira_ticket: formData.jiraTicket || null,
-          dri_member_id: formData.driMemberId || null,
-          is_platform: formData.isPlatform,
-          is_config: formData.isConfig,
-          feature_type: formData.featureType,
-          breaking_change: formData.breakingChange,
-          is_ready: false, // Always default to false when creating
-          project_id: memberInfo?.project_id,
-        })
+        .insert(insertData)
         .select()
         .single();
+      
+      console.log('Database response - error:', featureError);
+      console.log('Database response - data:', featureData);
 
       if (featureError) {
         console.error("Error creating feature:", featureError);
