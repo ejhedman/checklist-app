@@ -840,50 +840,51 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
         }
         style={{ cursor: collapsible && !expanded ? 'pointer' : 'default' }}
       >
-        <CardHeader className={`flex flex-row items-center justify-between px-4 py-3 rounded-t-lg ${collapsible && expanded ? '' : collapsible ? 'border-b border-border' : ''} ${getStatePaleBackgroundColor(dynamicState as any, release.is_archived)}`}>
-          <div className="flex items-center w-full justify-between">
+        <CardHeader className={`flex flex-col sm:flex-row sm:items-center sm:justify-between px-3 sm:px-4 py-3 rounded-t-lg ${collapsible && expanded ? '' : collapsible ? 'border-b border-border' : ''} ${getStatePaleBackgroundColor(dynamicState as any, release.is_archived)}`}>
+          <div className="flex flex-col sm:flex-row sm:items-center w-full justify-between gap-3 sm:gap-4">
             <div className="flex items-center flex-1 min-w-0 rounded px-1 py-0.5 transition-colors">
-              <div className="flex items-center space-x-3 min-w-0">
+              <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
                 {collapsible && (
                   <button
                     type="button"
                     aria-label={expanded ? "Collapse details" : "Expand details"}
                     title={expanded ? "Collapse details" : "Expand details"}
-                    className="p-2 rounded hover:bg-gray-100 transition-colors"
+                    className="p-1 sm:p-2 rounded hover:bg-gray-100 transition-colors"
                     onClick={e => {
                       e.stopPropagation();
                       setExpanded(e => !e);
                     }}
                   >
-                    {expanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                    {expanded ? <ChevronUp className="w-4 h-4 sm:w-5 sm:h-5" /> : <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5" />}
                   </button>
                 )}
-                <div className="flex items-center gap-3 min-w-0">
-                  <span className="font-semibold truncate">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 min-w-0">
+                  <span className="font-semibold text-sm sm:text-base truncate">
                     {release.project?.name ? `${release.project.name}: ` : ''}{release.name}
                   </span>
-                  <StateBadge state={dynamicState as any} />
-                  {/* Release Readiness Badge: only show if state is 'next' or 'pending' */}
-                  {['next', 'pending'].includes(dynamicState) && (() => {
-                    // Always use the database state for the badge
-                    const isReleaseReady = getCurrentReleaseReadyState();
-                    const notReadyClass = days < 3
-                      ? 'bg-red-100 text-red-800 border-red-200'
-                      : 'bg-amber-100 text-amber-800 border-amber-200';
-                    return (
-                      <Badge
-                        variant={isReleaseReady ? "default" : "secondary"}
-                        className={`text-xs ${isReleaseReady ? 'bg-green-100 text-green-800 border-green-200' : notReadyClass}`}
-                      >
-                        {isReleaseReady ? "Ready" : "Not Ready"}
-                      </Badge>
-                    );
-                  })()}
-                  
+                  <div className="flex items-center gap-1 sm:gap-2">
+                    <StateBadge state={dynamicState as any} />
+                    {/* Release Readiness Badge: only show if state is 'next' or 'pending' */}
+                    {['next', 'pending'].includes(dynamicState) && (() => {
+                      // Always use the database state for the badge
+                      const isReleaseReady = getCurrentReleaseReadyState();
+                      const notReadyClass = days < 3
+                        ? 'bg-red-100 text-red-800 border-red-200'
+                        : 'bg-amber-100 text-amber-800 border-amber-200';
+                      return (
+                        <Badge
+                          variant={isReleaseReady ? "default" : "secondary"}
+                          className={`text-[10px] sm:text-xs ${isReleaseReady ? 'bg-green-100 text-green-800 border-green-200' : notReadyClass}`}
+                        >
+                          {isReleaseReady ? "Ready" : "Not Ready"}
+                        </Badge>
+                      );
+                    })()}
+                  </div>
                 </div>
               </div>
-              <div className="flex-1 flex justify-center items-center space-x-4">
-                <CardDescription className="m-0">
+              <div className="flex flex-col sm:flex-row sm:flex-1 sm:justify-center sm:items-center gap-2 sm:space-x-4">
+                <CardDescription className="m-0 text-xs sm:text-sm text-center sm:text-left">
                   {(() => {
                     const label = isPast ? "Release Date" : "Target Date";
                     const [year, month, day] = release.target_date.split('-');
@@ -896,10 +897,10 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
                 
                 {/* Archive checkbox for release managers - only show when release is past due or cancelled */}
                 {is_release_manager && (dynamicState === 'past_due' || dynamicState === 'cancelled') && (
-                  <div className="flex items-center space-x-2 bg-white p-2 rounded hover:bg-gray-100 transition-colors shadow-sm ml-4">
+                  <div className="flex items-center justify-center sm:justify-start space-x-2 bg-white p-2 rounded hover:bg-gray-100 transition-colors shadow-sm">
                     <label 
                       htmlFor={`archive-${release.id}`} 
-                      className="text-xs text-muted-foreground cursor-pointer select-none"
+                      className="text-[10px] sm:text-xs text-muted-foreground cursor-pointer select-none"
                     >
                       Archive
                     </label>
@@ -914,32 +915,32 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
               </div>
             </div>
             {/* Move link and release notes buttons to the right side */}
-            <div className="flex items-center space-x-2 ml-4">
+            <div className="flex items-center justify-center sm:justify-end space-x-1 sm:space-x-2">
               {collapsible && (
                 <button
                   type="button"
                   aria-label="View Release Detail"
                   title="View release detail page"
-                  className="bg-white p-2 rounded hover:bg-gray-100 transition-colors shadow-sm"
+                  className="bg-white p-1.5 sm:p-2 rounded hover:bg-gray-100 transition-colors shadow-sm"
                   onClick={e => {
                     e.stopPropagation();
                     router.push(`/releases/${encodeURIComponent(release.name)}`);
                   }}
                 >
-                  <ExternalLink className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
+                  <ExternalLink className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground hover:text-foreground transition-colors" />
                 </button>
               )}
               <button
                 type="button"
                 aria-label="View Release Notes"
                 title="View release notes"
-                className="bg-white p-2 rounded hover:bg-gray-100 transition-colors shadow-sm"
+                className="bg-white p-1.5 sm:p-2 rounded hover:bg-gray-100 transition-colors shadow-sm"
                 onClick={e => {
                   e.stopPropagation();
                   router.push(`/releases/${encodeURIComponent(release.name)}/releasenotes`);
                 }}
               >
-                <FileText className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
+                <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground hover:text-foreground transition-colors" />
               </button>
 
               {/* Deploy button for release managers - always show but disable based on state */}
@@ -954,7 +955,7 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
                     if (!isReleaseReady) return "Release not ready for deployment";
                     return "Mark as deployed";
                   })()}
-                  className={`p-2 rounded shadow-sm transition-colors ${
+                  className={`p-1.5 sm:p-2 rounded shadow-sm transition-colors ${
                     (() => {
                       const isReleaseReady = getCurrentReleaseReadyState();
                       const isDeployed = expandedReleaseDetail?.is_deployed || release.is_deployed;
@@ -977,7 +978,7 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
                     return !(isReleaseReady && !isDeployed && ['pending', 'next'].includes(dynamicState));
                   })()}
                 >
-                  <CheckSquare className={`h-4 w-4 transition-colors ${
+                  <CheckSquare className={`h-3.5 w-3.5 sm:h-4 sm:w-4 transition-colors ${
                     (() => {
                       const isReleaseReady = getCurrentReleaseReadyState();
                       const isDeployed = expandedReleaseDetail?.is_deployed || release.is_deployed;
@@ -999,7 +1000,7 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
                     if (isDeployed) return "Cannot cancel deployed release";
                     return "Cancel this release";
                   })()}
-                  className={`p-2 rounded shadow-sm transition-colors ${
+                  className={`p-1.5 sm:p-2 rounded shadow-sm transition-colors ${
                     (() => {
                       const isDeployed = expandedReleaseDetail?.is_deployed || release.is_deployed;
                       return !isDeployed && ['pending', 'next'].includes(dynamicState)
@@ -1019,7 +1020,7 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
                     return !(!isDeployed && ['pending', 'next'].includes(dynamicState));
                   })()}
                 >
-                  <X className={`h-4 w-4 transition-colors ${
+                  <X className={`h-3.5 w-3.5 sm:h-4 sm:w-4 transition-colors ${
                     (() => {
                       const isDeployed = expandedReleaseDetail?.is_deployed || release.is_deployed;
                       return !isDeployed && ['pending', 'next'].includes(dynamicState)
@@ -1041,7 +1042,7 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
                     }
                     return "Edit release";
                   })()}
-                  className={`p-2 rounded shadow-sm transition-colors ${
+                  className={`p-1.5 sm:p-2 rounded shadow-sm transition-colors ${
                     ['pending', 'next'].includes(dynamicState)
                       ? 'bg-white hover:bg-gray-100'
                       : 'bg-gray-50 opacity-50 cursor-not-allowed'
@@ -1054,7 +1055,7 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
                   }}
                   disabled={!['pending', 'next'].includes(dynamicState)}
                 >
-                  <Pencil className={`h-4 w-4 transition-colors ${
+                  <Pencil className={`h-3.5 w-3.5 sm:h-4 sm:w-4 transition-colors ${
                     ['pending', 'next'].includes(dynamicState)
                       ? 'text-muted-foreground hover:text-foreground'
                       : 'text-gray-400'
@@ -1068,20 +1069,20 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
                   type="button"
                   aria-label="Delete Release"
                   title="Delete release"
-                  className="bg-white p-2 rounded hover:bg-red-100 transition-colors shadow-sm hover:border-red-200"
+                  className="bg-white p-1.5 sm:p-2 rounded hover:bg-red-100 transition-colors shadow-sm hover:border-red-200"
                   onClick={e => {
                     e.stopPropagation();
                     setDeleteDialogOpen(true);
                   }}
                 >
-                  <Trash2 className="h-4 w-4 text-red-500 hover:text-red-600 transition-colors" />
+                  <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-red-500 hover:text-red-600 transition-colors" />
                 </button>
               )}
             </div>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-6 gap-4 pb-2">
+        <CardContent className="px-3 sm:px-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-4 pb-2">
             {/* Platform/Config mini-card on the left with 'Release' header */}
             <MiniCard title="Release">
               <div className="flex flex-row w-full gap-2">
@@ -1333,7 +1334,7 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
             </Card>
           ) : (
             <Card className="rounded-none rounded-b-lg border-t-0 shadow-none">
-              <CardContent className="pt-6">
+              <CardContent className="pt-4 sm:pt-6 px-3 sm:px-6">
                 <ReleaseDetailBottomContent
                   release={expandedReleaseDetail || release}
                   user={user}

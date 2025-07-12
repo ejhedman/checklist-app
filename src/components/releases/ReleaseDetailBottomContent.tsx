@@ -48,7 +48,7 @@ export function ReleaseDetailBottomContent({
   const { selectedProject } = useAuth();
 
   return (
-    <div className="flex flex-col md:flex-row gap-6 w-full pb-4">
+    <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 w-full pb-4">
       {/* Features Card */}
       {selectedProject?.is_manage_features && (
         <FeaturesCard

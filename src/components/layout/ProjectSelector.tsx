@@ -29,9 +29,10 @@ export function ProjectSelector() {
   // Don't show selector if user has no projects
   if (availableProjects.length === 0) {
     return (
-      <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-        <AlertCircle className="h-4 w-4" />
-        <span>No projects available</span>
+      <div className="flex items-center space-x-2 text-xs sm:text-sm text-muted-foreground">
+        <AlertCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+        <span className="hidden sm:inline">No projects available</span>
+        <span className="sm:hidden">No projects</span>
       </div>
     );
   }
@@ -40,16 +41,17 @@ export function ProjectSelector() {
   if (availableProjects.length === 1) {
     return (
       <TooltipProvider>
-        <div className="flex items-center space-x-2 text-sm">
+        <div className="flex items-center space-x-2 text-xs sm:text-sm">
           <Tooltip>
             <TooltipTrigger asChild>
-              <Briefcase className="h-4 w-4" />
+              <Briefcase className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </TooltipTrigger>
             <TooltipContent>
               <p>Selected Project</p>
             </TooltipContent>
           </Tooltip>
-          <span>{selectedProject?.name}</span>
+          <span className="hidden sm:inline">{selectedProject?.name}</span>
+          <span className="sm:hidden max-w-[80px] truncate">{selectedProject?.name}</span>
         </div>
       </TooltipProvider>
     );
@@ -61,7 +63,7 @@ export function ProjectSelector() {
       <div className="flex items-center space-x-2">
         <Tooltip>
           <TooltipTrigger asChild>
-            <Briefcase className="h-4 w-4" />
+            <Briefcase className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </TooltipTrigger>
           <TooltipContent>
             <p>Selected Project</p>
@@ -74,7 +76,7 @@ export function ProjectSelector() {
             setSelectedProject(project || null);
           }}
         >
-          <SelectTrigger className="w-[200px]">
+          <SelectTrigger className="w-[120px] sm:w-[200px] text-xs sm:text-sm">
             <SelectValue placeholder="Select a project" />
           </SelectTrigger>
           <SelectContent>

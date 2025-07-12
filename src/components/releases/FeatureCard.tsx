@@ -64,9 +64,9 @@ export default function FeatureCard({ feature, memberId, updatingFeature, handle
   };
 
   return (
-    <div className={`p-3 border rounded-lg relative ${isDri ? 'bg-blue-50 border-blue-200' : 'bg-white'}`}>
+    <div className={`p-2 sm:p-3 border rounded-lg relative ${isDri ? 'bg-blue-50 border-blue-200' : 'bg-white'}`}>
       {/* Edit and Delete buttons in top right corner */}
-      <div className="absolute top-2 right-2 flex items-center space-x-1">
+      <div className="absolute top-1 sm:top-2 right-1 sm:right-2 flex items-center space-x-1">
         <EditFeatureDialog 
           feature={feature} 
           releaseName={releaseName || "this release"} 
@@ -84,52 +84,52 @@ export default function FeatureCard({ feature, memberId, updatingFeature, handle
               setDeleteDialogOpen(true);
             }}
           >
-            <Trash2 className="h-4 w-4 text-red-500 hover:text-red-700 transition-colors" />
+            <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-red-500 hover:text-red-700 transition-colors" />
           </button>
         )}
       </div>
       
       {/* Top row: Platform/Config badges (left), Feature name: description (right) */}
-      <div className="flex flex-row items-center w-full gap-2 pr-8">
-        <div className="flex flex-row items-center space-x-2 min-w-[80px]">
+      <div className="flex flex-col sm:flex-row sm:items-center w-full gap-2 pr-6 sm:pr-8">
+        <div className="flex flex-row items-center space-x-1 sm:space-x-2 min-w-[80px]">
           {feature.is_platform && (
-            <Badge variant="outline" className="text-xs">Platform</Badge>
+            <Badge variant="outline" className="text-[10px] sm:text-xs">Platform</Badge>
           )}
           {feature.is_config && (
-            <Badge variant="outline" className="text-xs">Config</Badge>
+            <Badge variant="outline" className="text-[10px] sm:text-xs">Config</Badge>
           )}
         </div>
-        <p className="text-sm text-muted-foreground flex-1 min-w-0 truncate pr-6">
+        <p className="text-xs sm:text-sm text-muted-foreground flex-1 min-w-0 truncate">
           {feature.name}{feature.description ? `: ${feature.description}` : ''}
         </p>
       </div>
       {/* Bottom row: DRI info (left), JIRA and comments (center), Ready checkbox/state (right) */}
-      <div className="mt-2 flex flex-row items-center w-full gap-2">
+      <div className="mt-2 flex flex-col sm:flex-row sm:items-center w-full gap-2">
         {/* DRI info (left) */}
         <div className="min-w-[120px] md:w-1/4 flex flex-col items-start">
           {feature.dri_member ? (
-            <span className="text-sm font-medium truncate flex items-center gap-1">
-              <span className="text-xs font-semibold text-muted-foreground">DRI:</span>
+            <span className="text-xs sm:text-sm font-medium truncate flex items-center gap-1">
+              <span className="text-[10px] sm:text-xs font-semibold text-muted-foreground">DRI:</span>
               {feature.dri_member.nickname || feature.dri_member.full_name}
             </span>
           ) : (
-            <span className="text-sm text-muted-foreground">No DRI assigned</span>
+            <span className="text-xs sm:text-sm text-muted-foreground">No DRI assigned</span>
           )}
         </div>
         {/* JIRA and comments (center) */}
-        <div className="flex-1 min-w-0 flex flex-col items-center">
+        <div className="flex-1 min-w-0 flex flex-col items-start sm:items-center">
           {feature.jira_ticket && (
-            <p className="text-xs text-muted-foreground truncate">JIRA: {feature.jira_ticket}</p>
+            <p className="text-[10px] sm:text-xs text-muted-foreground truncate">JIRA: {feature.jira_ticket}</p>
           )}
           {feature.comments && (
-            <p className="text-xs text-muted-foreground italic truncate">Comments: {feature.comments}</p>
+            <p className="text-[10px] sm:text-xs text-muted-foreground italic truncate">Comments: {feature.comments}</p>
           )}
         </div>
         {/* Ready checkbox/state (right) */}
-        <div className="flex items-center min-w-[110px] md:w-1/4 justify-end">
+        <div className="flex items-center min-w-[110px] md:w-1/4 justify-start sm:justify-end">
           {canMarkReady && (
             <>
-              <label htmlFor={`feature-ready-${feature.id}`} className="text-xs text-muted-foreground cursor-pointer select-none mr-2">Ready</label>
+              <label htmlFor={`feature-ready-${feature.id}`} className="text-[10px] sm:text-xs text-muted-foreground cursor-pointer select-none mr-2">Ready</label>
               <Checkbox
                 checked={feature.is_ready}
                 onCheckedChange={(checked) => {
@@ -141,7 +141,7 @@ export default function FeatureCard({ feature, memberId, updatingFeature, handle
             </>
           )}
           <Badge
-            className={`text-xs ml-2 ${feature.is_ready ? 'bg-green-100 text-green-800 border-green-200' : notReadyClass} ${canMarkReady ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}`}
+            className={`text-[10px] sm:text-xs ml-2 ${feature.is_ready ? 'bg-green-100 text-green-800 border-green-200' : notReadyClass} ${canMarkReady ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}`}
             onClick={canMarkReady ? () => handleFeatureReadyChange(feature, !feature.is_ready) : undefined}
             style={{ cursor: canMarkReady ? 'pointer' : 'default' }}
           >

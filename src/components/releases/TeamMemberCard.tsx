@@ -25,26 +25,26 @@ export function TeamMemberCard({ member, user, release, daysUntilRelease, update
   return (
     <div
       key={member.id}
-      className={`grid grid-cols-3 items-center p-2 rounded border ${user && member.email === user.email ? 'bg-blue-50 border-blue-200' : 'bg-gray-50'}`}
+      className={`grid grid-cols-1 sm:grid-cols-3 items-center p-2 sm:p-3 rounded border gap-2 sm:gap-0 ${user && member.email === user.email ? 'bg-blue-50 border-blue-200' : 'bg-gray-50'}`}
     >
       {/* Nickname/Name (left) */}
-      <div className="text-sm font-medium text-left truncate">
+      <div className="text-xs sm:text-sm font-medium text-left truncate">
         {member.nickname || member.full_name}
       </div>
       {/* Team badges (left-aligned in column) */}
       <div className="flex flex-row flex-wrap gap-1 justify-start items-center">
         {memberTeams.map((team: any) => (
-          <Badge key={team.id} variant="secondary" className="text-xs">
+          <Badge key={team.id} variant="secondary" className="text-[10px] sm:text-xs">
             {team.name}
           </Badge>
         ))}
       </div>
       {/* Ready state/checkbox (right, right-aligned) */}
-      <div className="flex items-center space-x-2 justify-end">
+      <div className="flex items-center space-x-1 sm:space-x-2 justify-start sm:justify-end">
         {/* Only show the Ready label and checkbox for the logged-in user OR release managers */}
         {(user && member.email === user.email) || is_release_manager ? (
           <>
-            <label htmlFor={`member-ready-${member.id}`} className="text-xs text-muted-foreground cursor-pointer select-none">Ready</label>
+            <label htmlFor={`member-ready-${member.id}`} className="text-[10px] sm:text-xs text-muted-foreground cursor-pointer select-none">Ready</label>
             <Checkbox
               checked={member.is_ready}
               onCheckedChange={(checked) =>
@@ -57,7 +57,7 @@ export function TeamMemberCard({ member, user, release, daysUntilRelease, update
         {/* Always show the Ready/Not Ready badge */}
         <Badge
           variant={member.is_ready ? "default" : "secondary"}
-          className={`text-xs ${member.is_ready ? 'bg-green-100 text-green-800 border-green-200' : notReadyClass}`}
+          className={`text-[10px] sm:text-xs ${member.is_ready ? 'bg-green-100 text-green-800 border-green-200' : notReadyClass}`}
         >
           {member.is_ready ? "Ready" : "Not Ready"}
         </Badge>

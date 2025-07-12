@@ -74,10 +74,10 @@ export function FeaturesCard({
   }, [isReady, onFeaturesReadyStateChange]);
 
   return (
-    <Card className={`w-full md:w-1/2 border-1 shadow-none ${isReady ? 'bg-green-50 border-green-200' : ''}`}>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-base flex items-center">
-          <FileText className="h-4 w-4 mr-2" />Key Feature Readiness
+    <Card className={`w-full lg:w-1/2 border-1 shadow-none ${isReady ? 'bg-green-50 border-green-200' : ''}`}>
+      <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 px-4 sm:px-6">
+        <CardTitle className="text-sm sm:text-base flex items-center">
+          <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-2" />Key Feature Readiness
         </CardTitle>
         <AddFeatureDialog
           releaseId={releaseId}
@@ -86,10 +86,10 @@ export function FeaturesCard({
           onFeatureChanged={onFeatureChanged}
         />
       </CardHeader>
-      <CardContent className="pb-4">
-        <div className="space-y-2">
+      <CardContent className="pb-4 px-4 sm:px-6">
+        <div className="space-y-2 sm:space-y-3">
           {localFeatures.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No features added yet.</p>
+            <p className="text-xs sm:text-sm text-muted-foreground">No features added yet.</p>
           ) : (
             [...localFeatures]
               .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())

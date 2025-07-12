@@ -14,7 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Loader2 } from "lucide-react";
+import { SquarePlus, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -280,9 +280,8 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
     <Dialog open={open} onOpenChange={handleOpenChange}>
       {!isEdit && is_release_manager && (
         <DialogTrigger asChild>
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Create Release
+          <Button variant="ghost" size="sm" className="p-2">
+            <SquarePlus className="h-5 w-5" />
           </Button>
         </DialogTrigger>
       )}

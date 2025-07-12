@@ -5,6 +5,7 @@ import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Footer } from "@/components/layout/Footer";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { SidebarProvider } from "@/contexts/SidebarContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { ToastProvider } from "@/components/ui/toast";
 import { ProjectRequiredMessage } from "@/components/layout/ProjectRequiredMessage";
@@ -25,22 +26,24 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className + " h-screen overflow-hidden"}>
         <AuthProvider>
-          <ProtectedRoute>
-            <ToastProvider>
-              <Header />
-              <div className="flex h-[calc(100vh-80px)] pb-20">
-                <Sidebar />
-                <main
-                  className="ml-64 flex-1 overflow-y-auto bg-background p-6 pt-4"
-                >
-                  <ProjectRequiredMessage>
-                    {children}
-                  </ProjectRequiredMessage>
-                </main>
-              </div>
-              <Footer />
-            </ToastProvider>
-          </ProtectedRoute>
+          <SidebarProvider>
+            <ProtectedRoute>
+              <ToastProvider>
+                <Header />
+                <div className="flex h-[calc(100vh-80px)] pb-20">
+                  <Sidebar />
+                  <main
+                    className="flex-1 overflow-y-auto bg-background p-4 sm:p-6 pt-4 transition-all duration-300 ease-in-out lg:ml-64"
+                  >
+                    <ProjectRequiredMessage>
+                      {children}
+                    </ProjectRequiredMessage>
+                  </main>
+                </div>
+                <Footer />
+              </ToastProvider>
+            </ProtectedRoute>
+          </SidebarProvider>
         </AuthProvider>
       </body>
     </html>

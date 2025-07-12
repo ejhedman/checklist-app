@@ -27,162 +27,19 @@ export default function ReleaseDetailCard({ release, onReleaseUpdated, allReleas
   // const [archiving, setArchiving] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   // const [expanded, setExpanded] = useState(true); // Always expanded for detail page
-  const [expandedReleaseDetail, setExpandedReleaseDetail] = useState<any>(null);
-  const [detailLoading, setDetailLoading] = useState(false);
-  const [detailError, setDetailError] = useState<string | null>(null);
+  // const [expandedReleaseDetail, setExpandedReleaseDetail] = useState<any>(null);
+  // const [detailLoading, setDetailLoading] = useState(false);
+  // const [detailError, setDetailError] = useState<string | null>(null);
 
+  // Since we're already passing the complete release data, we don't need to fetch it again
+  // The release prop already contains all the necessary data
 
-  useEffect(() => {
-    // Fetch expanded release detail on mount or when release.id/selectedProject/user changes
-    if (!release?.id || !selectedProject || !user) return;
-    setDetailLoading(true);
-    setDetailError(null);
-    const fetchDetail = async () => {
-      const supabase = createClient();
-      const { data, error: supabaseError } = await supabase
-        .from("releases")
-        .select(`
-          id,
-          name,
-          target_date,
-          state,
-          platform_update,
-          config_update,
-          is_archived,
-          is_ready,
-          is_deployed,
-          is_cancelled,
-          targets,
-          created_at,
-          project_id,
-          projects (
-            id,
-            name
-          ),
-          release_teams (
-            team:teams (
-              id,
-              name,
-              description,
-              team_members (
-                member:members (
-                  id,
-                  full_name,
-                  email,
-                  nickname,
-                  project_id
-                )
-              )
-            )
-          ),
-          member_release_state (
-            member_id,
-            is_ready
-          ),
-          features (
-            id,
-            name,
-            description,
-            jira_ticket,
-            is_platform,
-            is_config,
-            is_ready,
-            comments,
-            dri_member_id,
-            dri_member:members!dri_member_id (
-              id,
-              full_name,
-              email,
-              nickname
-            )
-          )
-        `)
-        .eq("id", release.id)
-        .eq("project_id", selectedProject.id)
-        .order("created_at", { foreignTable: "features", ascending: true })
-        .single();
-      if (supabaseError || !data) {
-        setDetailError("Failed to load release details");
-        setDetailLoading(false);
-        return;
-      }
-      // Calculate total_members and ready_members (distinct by member.id)
-      const allMembers: any[] = [];
-      if (data.release_teams) {
-        data.release_teams.forEach((rt: any) => {
-          if (rt.team && rt.team.team_members) {
-            const members = Array.isArray(rt.team.team_members)
-              ? rt.team.team_members
-              : [rt.team.team_members];
-            members.forEach((tm: any) => {
-              allMembers.push(tm.member ? tm.member : tm);
-            });
-          }
-        });
-      }
-      // Deduplicate by member.id
-      const uniqueMembersMap = new Map();
-      allMembers.forEach((member) => {
-        uniqueMembersMap.set(member.id, member);
-      });
-      const uniqueMembers = Array.from(uniqueMembersMap.values()).map(member => {
-        const memberReadyState = data.member_release_state?.find((mrs: any) => mrs.member_id === member.id);
-        return {
-          ...member,
-          is_ready: memberReadyState?.is_ready || false,
-        };
-      });
-      const total_members = uniqueMembers.length;
-      const ready_members = uniqueMembers.filter((member) => {
-        return member.is_ready;
-      }).length;
-      // Transform the data to match the card props
-      const transformedRelease = {
-        ...data,
-        team_count: data.release_teams?.length || 0,
-        feature_count: data.features?.length || 0,
-        ready_features: data.features?.filter((f: any) => f.is_ready)?.length || 0,
-        features: data.features?.map((feature: any) => ({
-          ...feature,
-          dri_member: Array.isArray(feature.dri_member)
-            ? feature.dri_member[0]
-            : feature.dri_member,
-        })) || [],
-        teams: data.release_teams?.map((rt: any) => ({
-          id: rt.team.id,
-          name: rt.team.name,
-          description: rt.team.description,
-          members: (Array.isArray(rt.team.team_members)
-            ? rt.team.team_members
-            : (rt.team.team_members ? [rt.team.team_members] : [])
-          ).map((tm: any) => {
-            const memberReadyState = data.member_release_state?.find((mrs: any) => mrs.member_id === tm.member.id);
-            return {
-              id: tm.member.id,
-              full_name: tm.member.full_name,
-              email: tm.member.email,
-              nickname: tm.member.nickname,
-              project_id: tm.member.project_id,
-              is_ready: memberReadyState?.is_ready || false,
-            };
-          }) || [],
-        })) || [],
-        total_members,
-        ready_members,
-        project: data.projects,
-      };
-      setExpandedReleaseDetail(transformedRelease);
-      setDetailLoading(false);
-    };
-    fetchDetail();
-  }, [release.id, selectedProject, user]);
-
-  if (detailLoading) {
-    return <div className="flex items-center justify-center py-12"><LoadingSpinner text="Loading release details..." /></div>;
-  }
-  if (detailError) {
-    return <div className="flex items-center justify-center py-12 text-red-600">{detailError}</div>;
-  }
+  // if (detailLoading) {
+  //   return <div className="flex items-center justify-center py-12"><LoadingSpinner text="Loading release details..." /></div>;
+  // }
+  // if (detailError) {
+  //   return <div className="flex items-center justify-center py-12 text-red-600">{detailError}</div>;
+  // }
 
   // const handleArchiveChange = async (checked: boolean) => {
   //   setArchiving(true);
@@ -362,7 +219,7 @@ export default function ReleaseDetailCard({ release, onReleaseUpdated, allReleas
   return (
     <div className="flex flex-col">
       <ReleaseSummaryCard
-        release={expandedReleaseDetail || release}
+        release={release}
         onReleaseUpdated={() => onReleaseUpdated?.()}
         collapsible={false}
         initialExpanded={true}
