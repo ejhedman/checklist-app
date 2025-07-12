@@ -470,13 +470,13 @@ export default function ReleaseNotesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full max-w-full px-2 sm:px-0">
       {/* Release Summary Card */}
-      <Card>
+      <Card className="w-full max-w-full">
         <CardHeader className="border-b bg-muted/30">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 w-full">
             <CardTitle className="text-xl">Release Summary</CardTitle>
-            <div className="flex gap-2">
+            <div className="flex flex-row flex-wrap gap-2 w-full sm:w-auto justify-end">
               <Popover open={summaryDownloadOpen} onOpenChange={setSummaryDownloadOpen}>
                 <PopoverTrigger asChild>
                   <Button size="icon" variant="ghost" className="bg-white" title="Copy summary to clipboard">
@@ -569,10 +569,10 @@ export default function ReleaseNotesPage() {
       </Card>
 
       {editing ? (
-        <div className="border-l border-r border-b border-border bg-background p-6 flex flex-col min-h-[60vh]">
-          <div className="flex items-center justify-between mb-4">
+        <div className="border-l border-r border-b border-border bg-background p-2 sm:p-6 flex flex-col min-h-[60vh] w-full max-w-full">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4 w-full">
             <h1 className="text-2xl font-bold">Edit Release Notes</h1>
-            <div className="flex gap-2">
+            <div className="flex flex-row flex-wrap gap-2 w-full sm:w-auto justify-end">
               <Button variant="outline" size="icon" onClick={() => setEditing(false)} title="Cancel">
                 <X className="h-5 w-5" />
               </Button>
@@ -610,30 +610,32 @@ export default function ReleaseNotesPage() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-          <div className="flex-1 min-h-0">
-            <MDEditor
-              value={releaseNotes}
-              onChange={v => setReleaseNotes(v ?? "")}
-              height={"100%"}
-              preview="edit"
-              textareaProps={{
-                placeholder: "Write release notes in markdown...",
-                style: { fontSize: 16, minHeight: "100%" },
-              }}
-              style={{ height: "100%" }}
-            />
+          <div className="flex-1 min-h-0 w-full max-w-full">
+            <div className="overflow-x-auto">
+              <MDEditor
+                value={releaseNotes}
+                onChange={v => setReleaseNotes(v ?? "")}
+                height={"100%"}
+                preview="edit"
+                textareaProps={{
+                  placeholder: "Write release notes in markdown...",
+                  style: { fontSize: 16, minHeight: "100%" },
+                }}
+                style={{ height: "100%", minWidth: 0 }}
+              />
+            </div>
           </div>
           <div className="mb-4" />
         </div>
       ) : (
-        <Card>
+        <Card className="w-full max-w-full">
           <CardHeader className="border-b bg-muted/30">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 w-full">
               <div>
                 <CardTitle className="text-2xl">Release Notes</CardTitle>
                 <p className="text-muted-foreground text-sm mt-1">Release notes for {name}</p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-row flex-wrap gap-2 w-full sm:w-auto justify-end">
                 <Popover open={notesDownloadOpen} onOpenChange={setNotesDownloadOpen}>
                   <PopoverTrigger asChild>
                     <Button size="icon" variant="ghost" className="bg-white" title="Copy release notes to clipboard">
@@ -697,7 +699,7 @@ export default function ReleaseNotesPage() {
             </div>
           </CardHeader>
           <CardContent className="pt-4">
-            <div className="prose prose-sm max-w-none">
+            <div className="prose prose-sm max-w-none overflow-x-auto">
               {releaseNotes ? (
                 <ReactMarkdown>{releaseNotes}</ReactMarkdown>
               ) : (
