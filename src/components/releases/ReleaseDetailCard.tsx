@@ -1,13 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { createClient } from "@/lib/supabase";
-import { useAuth } from "@/contexts/AuthContext";
+import { useState } from "react";
 import { CreateReleaseDialog } from "./CreateReleaseDialog";
 import { ReleaseSummaryCard } from "./ReleaseSummaryCard";
-// import { ReleaseState } from "@/lib/state-colors";
-import { LoadingSpinner } from "@/components/ui/loading";
-// import { ReleaseDetailBottomContent } from "./ReleaseDetailBottomContent";
 
 export default function ReleaseDetailCard({ release, onReleaseUpdated, allReleases = [] } : {
   release: any,
@@ -20,7 +15,6 @@ export default function ReleaseDetailCard({ release, onReleaseUpdated, allReleas
     is_deployed?: boolean;
   }>,
 }) {
-  const { user, selectedProject } = useAuth();
   // const [readyDialogOpen, setReadyDialogOpen] = useState(false);
   // const [selectedFeature, setSelectedFeature] = useState<any>(null);
 

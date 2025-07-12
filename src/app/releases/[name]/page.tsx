@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { use } from "react";
 import { useRouter } from "next/navigation";
 import ReleaseDetailCard from "@/components/releases/ReleaseDetailCard";
-import { createClient } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { ReleasesRepository } from "@/lib/repository";
 
@@ -163,7 +162,7 @@ export default function ReleaseDetailPage({ params }: { params: Promise<{ name: 
       router.push('/');
       return;
     }
-  }, [selectedProject, user, decodedName, router]); // Removed releasesRepository from dependencies
+  }, [selectedProject, user, decodedName, router, releasesRepository]);
 
   useEffect(() => {
     if (selectedProject && user) {

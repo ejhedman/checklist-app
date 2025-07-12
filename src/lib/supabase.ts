@@ -15,9 +15,9 @@ export function createClient() {
             const cookieStore = await cookies();
             return cookieStore.getAll();
           },
-          // setAll: (_newCookies: { name: string; value: string; options?: any }[]) => {
-          //   // No-op in server components; implement in API routes/middleware if needed
-          // },
+          setAll: (_newCookies: { name: string; value: string; options?: any }[]) => {
+            // No-op in server components; implement in API routes/middleware if needed
+          },
         },
       }
     )

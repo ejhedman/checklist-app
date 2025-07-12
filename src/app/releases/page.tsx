@@ -5,7 +5,6 @@ import { CreateReleaseDialog } from "@/components/releases/CreateReleaseDialog";
 import { ReleaseSummaryCard } from "@/components/releases/ReleaseSummaryCard";
 import { useReleases } from "@/hooks/useReleases";
 import { LoadingSpinner } from "@/components/ui/loading";
-import { SquarePlus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function ReleasesPage() {

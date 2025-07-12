@@ -1,5 +1,4 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Users, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { EditTeamDialog } from "./EditTeamDialog";
 import { Button } from "@/components/ui/button";

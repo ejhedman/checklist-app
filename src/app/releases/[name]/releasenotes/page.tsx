@@ -400,7 +400,7 @@ export default function ReleaseNotesPage() {
     let features: Feature[] = [];
     try {
       features = await featuresRepo.getFeaturesForRelease(releaseId) as unknown as Feature[];
-    } catch (err) {
+    } catch {
       setError("Failed to fetch features for release");
       setSaving(false);
       return;

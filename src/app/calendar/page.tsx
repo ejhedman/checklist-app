@@ -169,7 +169,6 @@ function generateWeeks(startDate: Date, numWeeks: number, releases: Release[], u
 
 function CalendarGrid({ 
   weeks, 
-  userInvolvedReleaseIds,
   onReleaseMove,
   dragState,
   onDragStart,
@@ -178,7 +177,6 @@ function CalendarGrid({
   is_release_manager
 }: { 
   weeks: CalendarDay[][];
-  userInvolvedReleaseIds: Set<string>;
   onReleaseMove: (releaseId: string, newDate: string) => Promise<void>;
   dragState: DragState;
   onDragStart: (releaseId: string, releaseName: string, originalDate: string) => void;
@@ -337,7 +335,7 @@ export default function CalendarPage() {
     originalDate: null
   });
   const [numWeeks, setNumWeeks] = useState(12);
-  const [startDate, setStartDate] = useState<Date>(getCurrentWeekSunday());
+  const [startDate] = useState<Date>(getCurrentWeekSunday());
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Memoize the repository to prevent recreation on every render
@@ -550,7 +548,6 @@ export default function CalendarPage() {
       >
         <CalendarGrid 
           weeks={weeks}
-          userInvolvedReleaseIds={userInvolvedReleaseIds}
           onReleaseMove={handleReleaseMove}
           dragState={dragState}
           onDragStart={handleDragStart}

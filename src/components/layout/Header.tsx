@@ -40,29 +40,25 @@ export function Header() {
             <div className="w-full sm:w-auto mb-1 sm:mb-0 sm:mr-2">
               <ProjectSelector />
             </div>
-            <Button variant="ghost" size="sm" className="justify-start w-full sm:w-auto truncate">
-              <User className="h-4 w-4 mr-2 hidden sm:inline" />
-              <span className="truncate">{user.email}</span>
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" className="justify-start w-full sm:w-auto truncate">
+                <User className="h-4 w-4 mr-2 hidden sm:inline" />
+                <span className="truncate">{user.email}</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={signOut}
+                className="p-2"
+                aria-label="Sign out"
+              >
+                <LogOut className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="flex flex-1 justify-end">
             <LoginDialog onLoginSuccess={handleLoginSuccess} />
-          </div>
-        )}
-
-        {/* Logoff icon: always at top right, vertically centered */}
-        {user && (
-          <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={signOut}
-              className="p-2"
-              aria-label="Sign out"
-            >
-              <LogOut className="h-5 w-5" />
-            </Button>
           </div>
         )}
       </div>
