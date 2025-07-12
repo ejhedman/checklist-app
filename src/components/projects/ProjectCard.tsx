@@ -65,14 +65,7 @@ export function ProjectCard({ project, onProjectUpdated }: ProjectCardProps) {
             {project.name}
           </CardTitle>
           <div className="flex items-center space-x-1">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="border border-gray-300 rounded-md p-1 hover:bg-gray-100"
-              aria-label="Edit Project"
-            >
-              <EditProjectDialog project={project} onProjectUpdated={onProjectUpdated} />
-            </Button>
+            <EditProjectDialog project={project} onProjectUpdated={onProjectUpdated} />
             <Button 
               variant="ghost" 
               size="icon" 

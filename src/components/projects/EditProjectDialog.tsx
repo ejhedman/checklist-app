@@ -258,7 +258,12 @@ export function EditProjectDialog({ project, onProjectUpdated }: EditProjectDial
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="border border-gray-300 rounded-md p-1 hover:bg-gray-100"
+          aria-label="Edit Project"
+        >
           <Pencil className="h-4 w-4" />
         </Button>
       </DialogTrigger>
