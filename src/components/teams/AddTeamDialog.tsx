@@ -31,7 +31,6 @@ export function AddTeamDialog({ onTeamAdded }: AddTeamDialogProps) {
   });
   const [error, setError] = useState("");
   const [nameError, setNameError] = useState("");
-  const [isCheckingName, setIsCheckingName] = useState(false);
   const { selectedProject } = useAuth();
 
   const handleOpenChange = (newOpen: boolean) => {
@@ -52,7 +51,6 @@ export function AddTeamDialog({ onTeamAdded }: AddTeamDialogProps) {
       setNameError("");
       return;
     }
-    setIsCheckingName(true);
     try {
       const supabase = createClient();
       const { data, error } = await supabase
@@ -72,8 +70,6 @@ export function AddTeamDialog({ onTeamAdded }: AddTeamDialogProps) {
       }
     } catch (error) {
       console.error("Error checking name uniqueness:", error);
-    } finally {
-      setIsCheckingName(false);
     }
   }, [selectedProject]);
   // Debounced name validation
@@ -143,9 +139,13 @@ export function AddTeamDialog({ onTeamAdded }: AddTeamDialogProps) {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Team
+        <Button
+          variant="ghost"
+          size="icon"
+          className="border border-gray-300 rounded-md p-1 hover:bg-gray-100"
+          aria-label="Add Team"
+        >
+          <Plus className="h-5 w-5" />
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
@@ -157,10 +157,8 @@ export function AddTeamDialog({ onTeamAdded }: AddTeamDialogProps) {
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">
-                Team Name *
-              </Label>
+            <div className="grid grid-cols-[140px_1fr_1fr_1fr] items-center gap-4">
+              <Label htmlFor="name" className="block w-full text-left">Team Name *</Label>
               <Input
                 id="name"
                 value={formData.name}
@@ -171,10 +169,8 @@ export function AddTeamDialog({ onTeamAdded }: AddTeamDialogProps) {
                 placeholder="e.g., Frontend Team"
               />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="description" className="text-right">
-                Description
-              </Label>
+            <div className="grid grid-cols-[140px_1fr_1fr_1fr] items-center gap-4">
+              <Label htmlFor="description" className="block w-full text-left">Description</Label>
               <Textarea
                 id="description"
                 value={formData.description}

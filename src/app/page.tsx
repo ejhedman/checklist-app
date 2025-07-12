@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+// import { useState } from "react";
 import UpcomingReleasesCard from '@/components/home/UpcomingReleasesCard';
 import MyUpcomingMilestonesCard from '@/components/home/MyUpcomingMilestonesCard';
 import RecentActivityCard from '@/components/home/RecentActivityCard';
@@ -15,11 +15,11 @@ import { PageLoadingState } from "@/components/ui/loading";
 import NagListCard from '@/components/home/NagListCard';
 
 export default function HomePage() {
-  const [showAllProjects, setShowAllProjects] = useState(false);
+  // const [showAllProjects, setShowAllProjects] = useState(false);
   const { selectedProject } = useAuth();
-  const { data, loading: dashboardLoading, error: dashboardError } = useDashboardData();
-  const { milestones: userMilestones, loading: milestonesLoading, error: milestonesError } = useUserMilestones();
-  const { nagMilestones, loading: nagLoading, error: nagError } = useNagMilestones();
+  const { data, loading: dashboardLoading } = useDashboardData();
+  const { milestones: userMilestones, loading: milestonesLoading } = useUserMilestones();
+  const { nagMilestones } = useNagMilestones();
 
   const loading = dashboardLoading || milestonesLoading;
 

@@ -68,7 +68,7 @@ export function EditUserDialog({ user, onUserUpdated }: EditUserDialogProps) {
       setOpen(false);
       addToast("User updated successfully!", "success");
       onUserUpdated();
-    } catch (error) {
+    } catch (error) { // eslint-disable-line @typescript-eslint/no-unused-vars
       addToast("An unexpected error occurred", "error");
     } finally {
       setLoading(false);

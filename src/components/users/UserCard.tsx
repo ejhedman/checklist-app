@@ -13,7 +13,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useState } from "react";
-import { createClient } from "@/lib/supabase";
+// import { createClient } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/ui/toast";
 
@@ -99,7 +99,7 @@ export function UserCard({ user, onUserUpdated }: { user: User; onUserUpdated: (
       setDeleteDialogOpen(false);
       addToast("User deleted successfully!", "success");
       onUserUpdated();
-    } catch (error) {
+    } catch (error) { // eslint-disable-line @typescript-eslint/no-unused-vars
       addToast("An unexpected error occurred", "error");
     } finally {
       setDeleting(false);

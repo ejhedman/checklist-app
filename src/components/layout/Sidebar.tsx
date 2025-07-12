@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 
 export function Sidebar() {
-  const { userRole, user, loading, selectedProject } = useAuth();
+  const { userRole, loading, selectedProject } = useAuth();
   const isAdmin = userRole === 'admin';
  
   // Don't render admin features until we're sure about the user's role

@@ -36,11 +36,9 @@ export default function ReleaseNotesPage() {
   const [releaseSummary, setReleaseSummary] = useState<string>("");
   const [editingSummary, setEditingSummary] = useState(false);
   const [savingSummary, setSavingSummary] = useState(false);
-  const [summaryPopoverOpen, setSummaryPopoverOpen] = useState(false);
-  const [notesPopoverOpen, setNotesPopoverOpen] = useState(false);
   const [summaryDownloadOpen, setSummaryDownloadOpen] = useState(false);
-  const [notesDownloadOpen, setNotesDownloadOpen] = useState(false);
   const [summaryPasteOpen, setSummaryPasteOpen] = useState(false);
+  const [notesDownloadOpen, setNotesDownloadOpen] = useState(false);
   const [notesPasteOpen, setNotesPasteOpen] = useState(false);
   const { addToast } = useToast();
 
@@ -201,7 +199,6 @@ export default function ReleaseNotesPage() {
   // Clipboard handlers
   const handleCopySummaryMarkdown = async () => {
     await navigator.clipboard.writeText(releaseSummary || "");
-    setSummaryPopoverOpen(false);
     addToast("Copied summary as markdown to clipboard!", "success");
   };
   const handleCopySummaryRich = async () => {
@@ -221,7 +218,6 @@ export default function ReleaseNotesPage() {
       selection?.removeAllRanges();
       document.body.removeChild(tempDiv);
     }
-    setSummaryPopoverOpen(false);
     addToast("Copied summary as rich text to clipboard!", "success");
   };
   const handleCopySummaryPlain = async () => {
@@ -231,7 +227,6 @@ export default function ReleaseNotesPage() {
     tempDiv.innerHTML = html;
     const text = tempDiv.textContent || tempDiv.innerText || "";
     await navigator.clipboard.writeText(text);
-    setSummaryPopoverOpen(false);
     addToast("Copied summary as plain text to clipboard!", "success");
   };
   const handlePasteSummaryPlain = async () => {
@@ -290,7 +285,6 @@ export default function ReleaseNotesPage() {
   };
   const handleCopyNotesMarkdown = async () => {
     await navigator.clipboard.writeText(releaseNotes || "");
-    setNotesPopoverOpen(false);
     addToast("Copied release notes as markdown to clipboard!", "success");
   };
   const handleCopyNotesRich = async () => {
@@ -310,7 +304,6 @@ export default function ReleaseNotesPage() {
       selection?.removeAllRanges();
       document.body.removeChild(tempDiv);
     }
-    setNotesPopoverOpen(false);
     addToast("Copied release notes as rich text to clipboard!", "success");
   };
   const handleCopyNotesPlain = async () => {
@@ -320,7 +313,6 @@ export default function ReleaseNotesPage() {
     tempDiv.innerHTML = html;
     const text = tempDiv.textContent || tempDiv.innerText || "";
     await navigator.clipboard.writeText(text);
-    setNotesPopoverOpen(false);
     addToast("Copied release notes as plain text to clipboard!", "success");
   };
   const handlePasteNotesPlain = async () => {

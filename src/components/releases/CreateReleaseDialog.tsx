@@ -214,10 +214,10 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
         const templateText = await templateRes.text();
         
         // Get member info for project_id
-        let memberInfo = null;
-        if (user?.id) {
-          memberInfo = await getMemberInfo(user.id);
-        }
+        // let memberInfo = null;
+        // if (user?.id) {
+        //   memberInfo = await getMemberInfo(user.id);
+        // }
         
         const { data: created, error: createError } = await supabase
           .from("releases")
@@ -260,7 +260,7 @@ export function CreateReleaseDialog({ onReleaseSaved, initialRelease, isEdit = f
       }
       setOpen(false);
       onReleaseSaved(release);
-    } catch (error) {
+    } catch (error) { // eslint-disable-line @typescript-eslint/no-unused-vars  
       setError("An unexpected error occurred");
     } finally {
       setLoading(false);

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { UsersRepository } from '@/lib/repository';
 
@@ -8,7 +8,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-export async function POST(request: NextRequest) {
+export async function POST(/*request: NextRequest*/) {
   try {
     // Fetch all users from Supabase auth
     const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();

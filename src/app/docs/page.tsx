@@ -62,7 +62,7 @@ export default function DocsPage() {
       } else {
         setDocContent('# Documentation Not Found\n\nThe requested documentation could not be loaded.');
       }
-    } catch (error) {
+    } catch (error) { // eslint-disable-line @typescript-eslint/no-unused-vars
       setDocContent('# Error Loading Documentation\n\nThere was an error loading the documentation.');
     }
     setLoading(false);

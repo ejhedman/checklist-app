@@ -67,7 +67,7 @@ export function EditMemberDialog({ member, onMemberUpdated }: { member: Member; 
       //   member_role: formData.member_role,
       // });
       
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("members")
         .update({
           nickname: formData.nickname || null,
@@ -96,8 +96,8 @@ export function EditMemberDialog({ member, onMemberUpdated }: { member: Member; 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" className="p-2">
-          <Edit className="h-4 w-4" />
+        <Button variant="ghost" size="icon" className="border border-gray-300 rounded-md p-1 hover:bg-blue-100 hover:text-blue-600">
+          <Edit className="h-4 w-4 text-blue-500" />
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">

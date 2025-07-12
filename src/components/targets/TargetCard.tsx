@@ -28,7 +28,12 @@ export function TargetCard({ target, onTargetUpdated }: TargetCardProps) {
         </CardTitle>
           <div className="flex items-center space-x-1">
             <EditTargetDialog target={target} onTargetUpdated={onTargetUpdated} />
-            <Button variant="ghost" size="sm" className="hover:bg-red-100 hover:text-red-600">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="border border-gray-300 rounded-md p-1 hover:bg-red-100 hover:text-red-600"
+              aria-label="Delete Target"
+            >
               <Trash2 className="h-4 w-4 text-red-500" />
             </Button>
           </div>

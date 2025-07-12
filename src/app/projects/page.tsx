@@ -30,15 +30,17 @@ export default function ProjectsPage() {
   }, [fetchProjects]);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Projects</h1>
-          <p className="text-muted-foreground">
+    <div className="space-y-6 px-2 sm:px-4 md:px-8">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="min-w-0">
+          <h1 className="text-3xl font-bold tracking-tight truncate">Projects</h1>
+          <p className="text-muted-foreground truncate">
             Manage projects and their configurations
           </p>
         </div>
-        <AddProjectDialog onProjectAdded={fetchProjects} />
+        <div className="w-full md:w-auto flex-shrink-0">
+          <AddProjectDialog onProjectAdded={fetchProjects} />
+        </div>
       </div>
 
       {loading ? (
@@ -46,7 +48,7 @@ export default function ProjectsPage() {
           <div className="text-muted-foreground">Loading projects...</div>
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
           {projects.map((project) => (
             <ProjectCard
               key={project.id}

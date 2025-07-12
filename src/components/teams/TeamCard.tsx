@@ -47,19 +47,24 @@ export function TeamCard({ team, expanded, onToggleExpand, onTeamUpdated }: Team
           </CardTitle>
           <div className="flex items-center space-x-1">
             <EditTeamDialog team={team} onTeamUpdated={onTeamUpdated} />
-            <Button variant="ghost" size="sm" className="hover:bg-red-100 hover:text-red-600">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="border border-gray-300 rounded-md p-1 hover:bg-red-100 hover:text-red-600"
+              aria-label="Delete Team"
+            >
               <Trash2 className="h-4 w-4 text-red-500" />
             </Button>
           </div>
         </div>
         <CardDescription>{team.description || "No description"}</CardDescription>
       </CardHeader>
-      <CardContent className="pb-1">
+      <CardContent className="pb-1 min-w-0 w-full">
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
+          <div className="flex items-center justify-between min-w-0">
+            <div className="space-y-1 min-w-0">
               <p className="text-sm text-muted-foreground">Members</p>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 min-w-0">
                 <p className="text-2xl font-bold">{team.member_count}</p>
                 {team.member_count > 0 && (
                   <Button
@@ -77,7 +82,7 @@ export function TeamCard({ team, expanded, onToggleExpand, onTeamUpdated }: Team
                 )}
               </div>
             </div>
-            <div className="space-y-1 text-right">
+            <div className="space-y-1 text-right min-w-0">
               <p className="text-sm text-muted-foreground">Active Releases</p>
               <p className="text-lg font-semibold">{team.active_releases}</p>
             </div>
@@ -87,18 +92,13 @@ export function TeamCard({ team, expanded, onToggleExpand, onTeamUpdated }: Team
           {expanded && team.members && team.members.length > 0 && (
             <div className="border-t pt-4">
               <h4 className="text-sm font-medium mb-3">Team Members</h4>
-              <div className="space-y-2">
+              <div className="space-y-2 min-w-0 w-full">
                 {team.members.map((member) => (
-                  <div key={member.member_id} className="flex items-center justify-between p-2 bg-muted/50 rounded-md">
-                    <div>
-                      <p className="text-sm font-medium">{member.full_name}</p>
-                      <p className="text-xs text-muted-foreground">{member.email}</p>
+                  <div key={member.member_id} className="flex items-center justify-between p-2 bg-muted/50 rounded-md min-w-0">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{member.full_name}</p>
+                      <p className="text-xs text-muted-foreground break-all">{member.email}</p>
                     </div>
-                    {member.nickname && (
-                      <Badge variant="outline" className="text-xs">
-                        {member.nickname}
-                      </Badge>
-                    )}
                   </div>
                 ))}
               </div>

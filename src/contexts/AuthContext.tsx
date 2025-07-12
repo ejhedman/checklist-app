@@ -95,7 +95,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // console.log('🔄 WAITING FOR PREVIOUS ROLE FETCH TO COMPLETE');
       try {
         await roleFetchPromise.current;
-      } catch (error) {
+      } catch (error) { // eslint-disable-line @typescript-eslint/no-unused-vars
         // console.log('🔄 PREVIOUS ROLE FETCH FAILED, PROCEEDING WITH NEW FETCH');
         // Clear the failed promise and continue
         roleFetchPromise.current = null;

@@ -14,10 +14,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Loader2, Search, Check, ChevronsUpDown } from "lucide-react";
+import { Plus, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMembers } from "@/hooks/useMembers";
@@ -153,7 +151,7 @@ export function AddMemberDialog({ onMemberAdded }: AddMemberDialogProps) {
       // Insert new member using the database function
       for (const user of selectedUsers) {
         console.log('Adding user:', user);
-        const { data, error } = await supabase.rpc('create_member_from_auth_user', {
+        const { error } = await supabase.rpc('create_member_from_auth_user', {
           auth_user_id: user.id,
           project_id: selectedProject.id,
           member_role: formData.member_role
@@ -202,9 +200,13 @@ export function AddMemberDialog({ onMemberAdded }: AddMemberDialogProps) {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Member
+        <Button
+          variant="ghost"
+          size="icon"
+          className="border border-gray-300 rounded-md p-1 hover:bg-gray-100"
+          aria-label="Add Member"
+        >
+          <Plus className="h-5 w-5" />
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-hidden flex flex-col">

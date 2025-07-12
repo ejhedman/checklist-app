@@ -26,7 +26,7 @@ interface FeatureCardProps {
   onFeatureEdited?: (updatedFeature: any) => void;
 }
 
-export default function FeatureCard({ feature, user, memberId, updatingFeature, handleFeatureReadyChange, onFeatureUpdated, releaseName, daysUntilRelease, onFeatureEdited }: FeatureCardProps) {
+export default function FeatureCard({ feature, memberId, updatingFeature, handleFeatureReadyChange, onFeatureUpdated, releaseName, daysUntilRelease, onFeatureEdited }: FeatureCardProps) {
   const { is_release_manager } = useAuth();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);

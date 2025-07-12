@@ -39,7 +39,6 @@ export function EditProjectDialog({ project, onProjectUpdated }: EditProjectDial
   });
   const [error, setError] = useState("");
   const [nameError, setNameError] = useState("");
-  const [isCheckingName, setIsCheckingName] = useState(false);
   const [availableUsers, setAvailableUsers] = useState<Array<{id: string, email: string, full_name: string}>>([]);
   const [selectedUserId, setSelectedUserId] = useState<string>("");
   const [projectUsers, setProjectUsers] = useState<Array<{id: string, email: string, full_name: string}>>(project.users || []);
@@ -66,7 +65,6 @@ export function EditProjectDialog({ project, onProjectUpdated }: EditProjectDial
       setNameError("");
       return;
     }
-    setIsCheckingName(true);
     try {
       const supabase = createClient();
       const { data, error } = await supabase
@@ -86,8 +84,6 @@ export function EditProjectDialog({ project, onProjectUpdated }: EditProjectDial
       }
     } catch (error) {
       console.error("Error checking name uniqueness:", error);
-    } finally {
-      setIsCheckingName(false);
     }
   }, [project.id]);
 

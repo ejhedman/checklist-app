@@ -8,8 +8,7 @@ import { LoadingSpinner } from "@/components/ui/loading";
 
 export default function ReleasesPage() {
   const [showArchived, setShowArchived] = useState(false);
-  // const { selectedProject } = useAuth();
-  const { releases, loading, error, refetch } = useReleases({ showArchived });
+  const { releases, loading, refetch } = useReleases({ showArchived });
 
   return (
     <div className="space-y-6">

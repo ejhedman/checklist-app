@@ -33,7 +33,6 @@ export function EditTargetDialog({ target, onTargetUpdated }: EditTargetDialogPr
   });
   const [error, setError] = useState("");
   const [nameError, setNameError] = useState("");
-  const [isCheckingName, setIsCheckingName] = useState(false);
 
   const handleOpenChange = (newOpen: boolean) => {
     setOpen(newOpen);
@@ -54,7 +53,6 @@ export function EditTargetDialog({ target, onTargetUpdated }: EditTargetDialogPr
       setNameError("");
       return;
     }
-    setIsCheckingName(true);
     try {
       const supabase = createClient();
       const { data, error } = await supabase
@@ -74,8 +72,6 @@ export function EditTargetDialog({ target, onTargetUpdated }: EditTargetDialogPr
       }
     } catch (error) {
       console.error("Error checking name uniqueness:", error);
-    } finally {
-      setIsCheckingName(false);
     }
   }, [target.id]);
   // Debounced name validation

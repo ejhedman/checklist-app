@@ -69,7 +69,7 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
       setOpen(false);
       addToast("User created successfully!", "success");
       onUserAdded();
-    } catch (error) {
+    } catch (error) { // eslint-disable-line @typescript-eslint/no-unused-vars
       addToast("An unexpected error occurred", "error");
     } finally {
       setLoading(false);

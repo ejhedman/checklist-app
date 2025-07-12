@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+// import { useState } from "react";
 import {
   Select,
   SelectContent,
@@ -19,7 +19,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 export function ProjectSelector() {
   const { availableProjects, selectedProject, setSelectedProject, user } = useAuth();
-  const [open, setOpen] = useState(false);
+  // const [open, setOpen] = useState(false);
 
   // Don't show selector if user is not logged in
   if (!user) {

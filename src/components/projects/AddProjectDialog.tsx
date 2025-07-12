@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Plus, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface AddProjectDialogProps {
   onProjectAdded: () => void;
@@ -30,7 +31,6 @@ export function AddProjectDialog({ onProjectAdded }: AddProjectDialogProps) {
   });
   const [error, setError] = useState("");
   const [nameError, setNameError] = useState("");
-  const [isCheckingName, setIsCheckingName] = useState(false);
 
   const handleOpenChange = (newOpen: boolean) => {
     setOpen(newOpen);
@@ -51,7 +51,6 @@ export function AddProjectDialog({ onProjectAdded }: AddProjectDialogProps) {
       setNameError("");
       return;
     }
-    setIsCheckingName(true);
     try {
       const supabase = createClient();
       const { data, error } = await supabase
@@ -70,8 +69,6 @@ export function AddProjectDialog({ onProjectAdded }: AddProjectDialogProps) {
       }
     } catch (error) {
       console.error("Error checking name uniqueness:", error);
-    } finally {
-      setIsCheckingName(false);
     }
   };
 
@@ -131,9 +128,13 @@ export function AddProjectDialog({ onProjectAdded }: AddProjectDialogProps) {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          New Project
+        <Button
+          variant="ghost"
+          size="icon"
+          className="border border-gray-300 rounded-md p-1 hover:bg-gray-100"
+          aria-label="Add Project"
+        >
+          <Plus className="h-5 w-5" />
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
@@ -145,10 +146,8 @@ export function AddProjectDialog({ onProjectAdded }: AddProjectDialogProps) {
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">
-                Name *
-              </Label>
+            <div className="grid grid-cols-[140px_1fr_1fr_1fr] items-center gap-4">
+              <Label htmlFor="name" className="block w-full text-left">Name *</Label>
               <Input
                 id="name"
                 value={formData.name}
@@ -164,31 +163,27 @@ export function AddProjectDialog({ onProjectAdded }: AddProjectDialogProps) {
                 {nameError}
               </div>
             )}
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="is_manage_members" className="text-right">
-                Manage Members
-              </Label>
-              <input
-                id="is_manage_members"
-                type="checkbox"
-                checked={formData.is_manage_members}
-                onChange={e => setFormData({ ...formData, is_manage_members: e.target.checked })}
-                className="col-span-3"
-                disabled={loading}
-              />
+            <div className="grid grid-cols-[140px_1fr_1fr_1fr] items-center gap-4">
+              <Label htmlFor="is_manage_members" className="block w-full text-left">Manage Members</Label>
+              <div className="col-span-3 flex items-center">
+                <Checkbox
+                  id="is_manage_members"
+                  checked={formData.is_manage_members}
+                  onCheckedChange={checked => setFormData({ ...formData, is_manage_members: Boolean(checked) })}
+                  disabled={loading}
+                />
+              </div>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="is_manage_features" className="text-right">
-                Manage Features
-              </Label>
-              <input
-                id="is_manage_features"
-                type="checkbox"
-                checked={formData.is_manage_features}
-                onChange={e => setFormData({ ...formData, is_manage_features: e.target.checked })}
-                className="col-span-3"
-                disabled={loading}
-              />
+            <div className="grid grid-cols-[140px_1fr_1fr_1fr] items-center gap-4">
+              <Label htmlFor="is_manage_features" className="block w-full text-left">Manage Features</Label>
+              <div className="col-span-3 flex items-center">
+                <Checkbox
+                  id="is_manage_features"
+                  checked={formData.is_manage_features}
+                  onCheckedChange={checked => setFormData({ ...formData, is_manage_features: Boolean(checked) })}
+                  disabled={loading}
+                />
+              </div>
             </div>
           </div>
           {error && (

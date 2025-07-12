@@ -1,6 +1,6 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { User, Mail, Edit, Trash2 } from "lucide-react";
+import { User, Mail, Trash2 } from "lucide-react";
 import { EditMemberDialog } from "./EditMemberDialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -57,7 +57,7 @@ export function MemberCard({ member, onMemberUpdated }: { member: Member; onMemb
       }
       setDeleteDialogOpen(false);
       onMemberUpdated();
-    } catch (error) {
+    } catch (error) { // eslint-disable-line @typescript-eslint/no-unused-vars
       alert("An unexpected error occurred");
     } finally {
       setDeleting(false);
@@ -67,12 +67,22 @@ export function MemberCard({ member, onMemberUpdated }: { member: Member; onMemb
   return (
     <Card className={isCurrentUser ? "bg-blue-50 border-blue-200" : ""}>
       <CardHeader className="relative">
+        {/* Name and nickname at the top of the header */}
+        <div className="flex flex-col min-w-0 pr-12">
+          <div className="flex items-center gap-2 min-w-0">
+            <User className="h-5 w-5" />
+            <span className="font-semibold text-lg truncate min-w-0">{member.full_name}</span>
+          </div>
+          {member.nickname && member.nickname !== member.full_name && (
+            <span className="text-xs text-muted-foreground ml-7">(aka: {member.nickname})</span>
+          )}
+        </div>
         {/* Edit and Delete buttons in top right corner */}
         <div className="absolute top-2 right-2 flex items-center space-x-1">
           <EditMemberDialog member={member} onMemberUpdated={onMemberUpdated} />
           <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
             <DialogTrigger asChild>
-              <Button variant="ghost" size="sm" className="p-2 hover:bg-red-100 hover:text-red-600">
+              <Button variant="ghost" size="icon" className="border border-gray-300 rounded-md p-1 hover:bg-red-100 hover:text-red-600">
                 <Trash2 className="h-4 w-4 text-red-500" />
               </Button>
             </DialogTrigger>
@@ -92,45 +102,24 @@ export function MemberCard({ member, onMemberUpdated }: { member: Member; onMemb
             </DialogContent>
           </Dialog>
         </div>
-        {/* Email row styled exactly like feature name row */}
-        <div className="flex flex-row items-center w-full gap-2 pr-8">
-          <Mail className="h-3 w-3 mr-1 shrink-0" />
-          <span className="text-sm text-muted-foreground flex-1 min-w-0 truncate pr-6">
+      </CardHeader>
+      {/* Email row below name */}
+      <div className="px-6 pt-0 pb-2 min-w-0 w-full">
+        <div className="flex items-center gap-2 min-w-0 w-full">
+          <Mail className="h-3 w-3" />
+          <span className="text-sm text-muted-foreground break-all min-w-0 w-full">
             {member.email}
           </span>
         </div>
-        {/* Name/nickname and role badge row (centered in columns) */}
-        <div className="flex flex-col md:flex-row gap-2 mt-1 mb-2">
-          {/* Name/nickname column */}
-          <div className="flex-1 flex flex-col items-center justify-center min-w-0">
-            <span className="font-semibold text-lg flex items-center justify-center">
-              <User className="h-5 w-5 mr-2" />
-              {member.full_name}
-            </span>
-            {member.nickname && member.nickname !== member.full_name && (
-              <span className="text-muted-foreground text-base font-normal">(aka: {member.nickname})</span>
-            )}
-          </div>
-          {/* Role badge column */}
-          <div className="flex-1 flex items-center justify-center min-w-0">
-            <Badge 
-              variant="outline" 
-              className={`text-xs w-fit max-w-full truncate ${getRoleBadgeStyle(member.member_role)}`}
-              style={{maxWidth: '140px'}}
-            >
-              {member.member_role.replace('_', ' ')}
-            </Badge>
-          </div>
-        </div>
-      </CardHeader>
+      </div>
       <CardContent className="pb-1">
         <div className="space-y-3">
           <div>
             <div className="flex flex-col md:flex-row justify-between gap-4 w-full mt-2">
-              {/* Teams group */}
-              <div className="flex flex-col items-center flex-1 min-w-0">
+              {/* Teams group on the left */}
+              <div className="flex flex-col items-start flex-1 min-w-0">
                 <p className="text-sm text-muted-foreground">Teams</p>
-                <div className="flex flex-wrap gap-1 justify-center w-full">
+                <div className="flex flex-wrap gap-1 justify-start w-full">
                   {member.teams.length > 0 ? (
                     member.teams.map((team) => (
                       <Badge key={team} variant="secondary" className="text-xs">
@@ -142,10 +131,16 @@ export function MemberCard({ member, onMemberUpdated }: { member: Member; onMemb
                   )}
                 </div>
               </div>
-              {/* Active Releases group */}
-              <div className="flex flex-col items-center flex-1 min-w-0">
-                <p className="text-sm text-muted-foreground">Active Releases</p>
-                <p className="text-lg font-semibold">{member.active_releases}</p>
+              {/* Role group on the right */}
+              <div className="flex flex-col items-start flex-1 min-w-0">
+                <p className="text-sm text-muted-foreground">Role</p>
+                <Badge 
+                  variant="outline" 
+                  className={`text-xs w-fit max-w-full truncate ${getRoleBadgeStyle(member.member_role)}`}
+                  style={{maxWidth: '140px'}}
+                >
+                  {member.member_role.replace('_', ' ')}
+                </Badge>
               </div>
             </div>
           </div>

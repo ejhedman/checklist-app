@@ -65,13 +65,21 @@ export function ProjectCard({ project, onProjectUpdated }: ProjectCardProps) {
             {project.name}
           </CardTitle>
           <div className="flex items-center space-x-1">
-            <EditProjectDialog project={project} onProjectUpdated={onProjectUpdated} />
             <Button 
               variant="ghost" 
-              size="sm" 
+              size="icon" 
+              className="border border-gray-300 rounded-md p-1 hover:bg-gray-100"
+              aria-label="Edit Project"
+            >
+              <EditProjectDialog project={project} onProjectUpdated={onProjectUpdated} />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon" 
               onClick={handleDelete}
               disabled={deleting}
-              className="hover:bg-red-100 hover:text-red-600"
+              className="border border-gray-300 rounded-md p-1 hover:bg-red-100 hover:text-red-600"
+              aria-label="Delete Project"
             >
               <Trash2 className="h-4 w-4 text-red-500" />
             </Button>
@@ -81,9 +89,9 @@ export function ProjectCard({ project, onProjectUpdated }: ProjectCardProps) {
           Created: {new Date(project.created_at).toLocaleDateString()}
         </CardDescription>
       </CardHeader>
-      <CardContent className="pb-4">
+      <CardContent className="pb-4 min-w-0 w-full">
         {/* Management Flags */}
-        <div className="flex gap-2 mb-4">
+        <div className="flex flex-wrap gap-2 sm:flex-row flex-col">
           <Badge variant={project.is_manage_members ? "default" : "secondary"} className="flex items-center gap-1">
             <Users className="h-3 w-3" />
             {project.is_manage_members ? "Manage Members" : "No Member Management"}
@@ -96,10 +104,10 @@ export function ProjectCard({ project, onProjectUpdated }: ProjectCardProps) {
         
         {project.users && project.users.length > 0 ? (
           <div className="space-y-2">
-            <h4 className="text-sm font-medium text-muted-foreground">Associated Users:</h4>
-            <div className="space-y-1 pl-4">
+            <h4 className="text-sm font-medium text-muted-foreground pt-4">Associated Users:</h4>
+            <div className="space-y-1 pl-4 min-w-0 w-full">
               {project.users.map((user) => (
-                <div key={user.id} className="text-sm text-muted-foreground">
+                <div key={user.id} className="text-sm text-muted-foreground break-all">
                   {user.email}
                 </div>
               ))}

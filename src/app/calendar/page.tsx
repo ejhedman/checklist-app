@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { CalendarRepository } from "@/lib/repository";
-import Link from "next/link";
 import { getStateColor, ReleaseState } from "@/lib/state-colors";
 
 // Wrapper function to convert string to ReleaseState
@@ -298,7 +297,7 @@ function CalendarGrid({
                       title={release.name}
                       draggable={is_release_manager}
                       onDragStart={(e) => handleDragStart(e, release)}
-                      onClick={(e) => {
+                      onClick={(e) => { // eslint-disable-line @typescript-eslint/no-unused-vars
                         if (!dragState.isDragging) {
                           window.location.href = `/releases/${encodeURIComponent(release.name)}`;
                         }

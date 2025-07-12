@@ -52,7 +52,6 @@ export function EditTeamDialog({ team, onTeamUpdated }: EditTeamDialogProps) {
   });
   const [error, setError] = useState("");
   const [nameError, setNameError] = useState("");
-  const [isCheckingName, setIsCheckingName] = useState(false);
   
   const [allUsers, setAllUsers] = useState<TeamMember[]>([]);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
@@ -89,7 +88,6 @@ export function EditTeamDialog({ team, onTeamUpdated }: EditTeamDialogProps) {
       setNameError("");
       return;
     }
-    setIsCheckingName(true);
     try {
       const supabase = createClient();
       const { data, error } = await supabase
@@ -109,8 +107,6 @@ export function EditTeamDialog({ team, onTeamUpdated }: EditTeamDialogProps) {
       }
     } catch (error) {
       console.error("Error checking name uniqueness:", error);
-    } finally {
-      setIsCheckingName(false);
     }
   }, [team.id]);
   // Debounced name validation

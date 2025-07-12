@@ -8,7 +8,7 @@ import { LoginDialog } from "@/components/auth/LoginDialog";
 import { ProjectSelector } from "./ProjectSelector";
 
 export function Header() {
-  const { user, userRole, memberId, memberRole, signOut } = useAuth();
+  const { user, signOut } = useAuth();
 
   const handleLoginSuccess = () => {
     // Refresh the page or update the UI as needed

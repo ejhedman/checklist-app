@@ -1,17 +1,16 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { CreateReleaseDialog } from "./CreateReleaseDialog";
 import { ReleaseSummaryCard } from "./ReleaseSummaryCard";
-import { ReleaseState } from "@/lib/state-colors";
+// import { ReleaseState } from "@/lib/state-colors";
 import { LoadingSpinner } from "@/components/ui/loading";
-import { ReleaseDetailBottomContent } from "./ReleaseDetailBottomContent";
+// import { ReleaseDetailBottomContent } from "./ReleaseDetailBottomContent";
 
-export default function ReleaseDetailCard({ release, onMemberReadyChange, onReleaseUpdated, allReleases = [] } : {
+export default function ReleaseDetailCard({ release, onReleaseUpdated, allReleases = [] } : {
   release: any,
-  onMemberReadyChange?: (releaseId: string, userId: string, isReady: boolean) => void,
   onReleaseUpdated: () => void,
   allReleases?: Array<{
     id: string;
@@ -21,59 +20,17 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onRele
     is_deployed?: boolean;
   }>,
 }) {
-  const { user, memberId, selectedProject, is_release_manager } = useAuth();
+  const { user, selectedProject } = useAuth();
   // const [readyDialogOpen, setReadyDialogOpen] = useState(false);
   // const [selectedFeature, setSelectedFeature] = useState<any>(null);
-  const [updatingFeature, setUpdatingFeature] = useState(false);
-  const [isArchived, setIsArchived] = useState(release.is_archived);
+
   // const [archiving, setArchiving] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
-  const [features, setFeatures] = useState(release.features);
   // const [expanded, setExpanded] = useState(true); // Always expanded for detail page
   const [expandedReleaseDetail, setExpandedReleaseDetail] = useState<any>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
 
-  // Add local state for summary counts
-  const [readyMembers, setReadyMembers] = useState(release.ready_members);
-  const [totalMembers, setTotalMembers] = useState(release.total_members);
-  const [readyFeatures, setReadyFeatures] = useState(release.ready_features);
-  const [featureCount, setFeatureCount] = useState(release.feature_count);
-
-  // Collect all unique members from all teams (move this to state)
-  const getAllMembers = useCallback(() => {
-    const memberMap = new Map();
-    release.teams.forEach((team: any) => {
-      team.members.forEach((member: any) => {
-        if (!memberMap.has(member.id)) {
-          memberMap.set(member.id, member);
-        }
-      });
-    });
-    return Array.from(memberMap.values());
-  }, [release.teams]);
-  const [allMembers, setAllMembers] = useState(getAllMembers());
-  useEffect(() => {
-    setAllMembers(getAllMembers());
-  }, [getAllMembers]);
-
-  useEffect(() => {
-    setIsArchived(release.is_archived);
-  }, [release.is_archived]);
-
-  useEffect(() => {
-    setFeatures(release.features);
-  }, [release.features]);
-
-  // Keep counts in sync with allMembers and features
-  useEffect(() => {
-    setReadyMembers(allMembers.filter((m: any) => m.is_ready).length);
-    setTotalMembers(allMembers.length);
-  }, [allMembers]);
-  useEffect(() => {
-    setReadyFeatures(features.filter((f: any) => f.is_ready).length);
-    setFeatureCount(features.length);
-  }, [features]);
 
   useEffect(() => {
     // Fetch expanded release detail on mount or when release.id/selectedProject/user changes
@@ -246,37 +203,37 @@ export default function ReleaseDetailCard({ release, onMemberReadyChange, onRele
   // };
 
   // Allow DRI or release manager to mark feature ready
-  const handleFeatureReadyChange = async (feature: any, isReady: boolean) => {
-    if (!user) return;
-    if (!feature.dri_member || (memberId !== feature.dri_member.id && !is_release_manager)) {
-      return;
-    }
-    await updateFeatureReady(feature.id, isReady, "");
-  };
+  // const handleFeatureReadyChange = async (feature: any, isReady: boolean) => {
+  //   if (!user) return;
+  //   if (!feature.dri_member || (memberId !== feature.dri_member.id && !is_release_manager)) {
+  //     return;
+  //   }
+  //   await updateFeatureReady(feature.id, isReady, "");
+  // };
 
-  const updateFeatureReady = async (featureId: string, isReady: boolean, comments: string) => {
-    setUpdatingFeature(true);
-    const supabase = createClient();
-    const { error } = await supabase
-      .from("features")
-      .update({
-        is_ready: isReady,
-        comments: comments || null,
-      })
-      .eq("id", featureId);
-    if (error) {
-      console.error('Error updating feature ready state:', error);
-    } else {
-      setFeatures((prev: any[]) =>
-        prev.map((f: any) =>
-          f.id === featureId ? { ...f, is_ready: isReady, comments } : f
-        )
-      );
-      // Update summary counts
-      setReadyFeatures((prev: number) => prev + (isReady ? 1 : -1));
-    }
-    setUpdatingFeature(false);
-  };
+  // const updateFeatureReady = async (featureId: string, isReady: boolean, comments: string) => {
+  //   setUpdatingFeature(true);
+  //   const supabase = createClient();
+  //   const { error } = await supabase
+  //     .from("features")
+  //     .update({
+  //       is_ready: isReady,
+  //       comments: comments || null,
+  //     })
+  //     .eq("id", featureId);
+  //   if (error) {
+  //     console.error('Error updating feature ready state:', error);
+  //   } else {
+  //     setFeatures((prev: any[]) =>
+  //       prev.map((f: any) =>
+  //         f.id === featureId ? { ...f, is_ready: isReady, comments } : f
+  //       )
+  //     );
+  //     // Update summary counts
+  //     setReadyFeatures((prev: number) => prev + (isReady ? 1 : -1));
+  //   }
+  //   setUpdatingFeature(false);
+  // };
 
   // const handleReadyDialogConfirm = async (comments: string) => {
   //   if (selectedFeature) {

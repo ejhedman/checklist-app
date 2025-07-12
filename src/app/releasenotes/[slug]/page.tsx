@@ -49,7 +49,7 @@ export default function DisplayReleaseNotesPage() {
         setReleaseName(release.name);
         setReleaseNotes(release.release_notes || "");
         setReleaseSummary(release.release_summary || "");
-      } catch (error) {
+      } catch (error) {// eslint-disable-line @typescript-eslint/no-unused-vars
         // Release not found or doesn't belong to selected project - redirect to home
         console.log('Release not found or project mismatch, redirecting to home');
         router.push('/');

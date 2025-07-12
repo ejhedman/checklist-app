@@ -203,42 +203,7 @@ export default function ReleaseDetailPage({ params }: { params: Promise<{ name: 
     setLoading(false);
   }, [selectedProject, user, decodedName, router]);
 
-  const handleMemberReadyChange = async (releaseId: string, memberId: string, isReady: boolean) => {
-    const supabase = createClient();
-    
-    // Find the member to get their project_id
-    let memberProjectId = null;
-    if (release && release.teams) {
-      for (const team of release.teams) {
-        const member = team.members?.find((m: any) => m.id === memberId);
-        if (member) {
-          memberProjectId = member.project_id;
-          break;
-        }
-      }
-    }
-    
-    // If we can't find the member's project_id, use the release's project_id as fallback
-    if (!memberProjectId && release?.project?.id) {
-      memberProjectId = release.project.id;
-    }
-    
-    const { error: updateError } = await supabase
-      .from("member_release_state")
-      .upsert({
-        release_id: releaseId,
-        member_id: memberId,
-        project_id: memberProjectId,
-        is_ready: isReady,
-      });
 
-    if (updateError) {
-      console.error("Error updating member ready state:", updateError);
-    } else {
-      // Refresh the release data
-      fetchRelease();
-    }
-  };
 
   useEffect(() => {
     if (selectedProject && user) {
@@ -271,7 +236,6 @@ export default function ReleaseDetailPage({ params }: { params: Promise<{ name: 
     <div className="space-y-6">
       <ReleaseDetailCard 
         release={release} 
-        onMemberReadyChange={handleMemberReadyChange}
         onReleaseUpdated={fetchRelease}
         allReleases={allReleases} // Pass allReleases to the card
       />

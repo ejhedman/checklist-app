@@ -33,7 +33,6 @@ export function AddTargetDialog({ onTargetAdded }: AddTargetDialogProps) {
   const [error, setError] = useState("");
   const [nameError, setNameError] = useState("");
   const [shortNameError, setShortNameError] = useState("");
-  const [isCheckingName, setIsCheckingName] = useState(false);
   const { selectedProject } = useAuth();
 
   const handleOpenChange = (newOpen: boolean) => {
@@ -58,7 +57,6 @@ export function AddTargetDialog({ onTargetAdded }: AddTargetDialogProps) {
       return;
     }
 
-    setIsCheckingName(true);
     try {
       const supabase = createClient();
       const { data, error } = await supabase
@@ -80,8 +78,6 @@ export function AddTargetDialog({ onTargetAdded }: AddTargetDialogProps) {
       }
     } catch (error) {
       console.error("Error checking name uniqueness:", error);
-    } finally {
-      setIsCheckingName(false);
     }
   }, [selectedProject]);
 
@@ -91,7 +87,6 @@ export function AddTargetDialog({ onTargetAdded }: AddTargetDialogProps) {
       setShortNameError("");
       return;
     }
-    setIsCheckingName(true);
     try {
       const supabase = createClient();
       const { data, error } = await supabase
@@ -111,8 +106,6 @@ export function AddTargetDialog({ onTargetAdded }: AddTargetDialogProps) {
       }
     } catch (error) {
       console.error("Error checking short_name uniqueness:", error);
-    } finally {
-      setIsCheckingName(false);
     }
   }, [selectedProject]);
 

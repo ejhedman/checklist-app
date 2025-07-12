@@ -1,6 +1,6 @@
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Target, AlertCircle, CheckCircle } from 'lucide-react';
+import { Clock, AlertCircle, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 import { formatTargetDate, getDaysUntil } from '@/lib/utils';
 

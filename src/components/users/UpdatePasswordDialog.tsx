@@ -83,7 +83,7 @@ export function UpdatePasswordDialog({ user, onPasswordUpdated }: UpdatePassword
       setOpen(false);
       addToast("Password updated successfully!", "success");
       onPasswordUpdated();
-    } catch (error) {
+    } catch (error) { // eslint-disable-line @typescript-eslint/no-unused-vars
       addToast("An unexpected error occurred", "error");
     } finally {
       setLoading(false);

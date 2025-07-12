@@ -19,7 +19,7 @@ export function useUserMilestones() {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { selectedProject, availableProjects, user } = useAuth();
+  const { selectedProject, user } = useAuth();
   
   // Memoize the repository to prevent recreation on every render
   const homeRepository = useMemo(() => new HomeRepository(), []);

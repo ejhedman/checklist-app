@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { getStatePaleBackgroundColor, ReleaseState } from "@/lib/state-colors";
+// import { getStatePaleBackgroundColor, ReleaseState } from "@/lib/state-colors";
 
 interface ReleaseNotesSummaryCardProps {
   release: {

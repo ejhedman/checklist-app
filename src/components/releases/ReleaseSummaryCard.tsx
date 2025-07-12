@@ -194,16 +194,14 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   
-  // Track internal ready states from child components
-  const [featuresReadyState, setFeaturesReadyState] = useState<boolean | null>(null);
-  const [teamsReadyState, setTeamsReadyState] = useState<boolean | null>(null);
+
 
   // Centralized function to calculate release ready state
-  const calculateReleaseReadyState = (features: any[], members: any[]) => {
-    const allFeaturesReady = features.length > 0 && features.every(f => f.is_ready);
-    const allMembersReady = members.length > 0 && members.every(m => m.is_ready);
-    return allFeaturesReady && allMembersReady;
-  };
+  // const calculateReleaseReadyState = (features: any[], members: any[]) => {
+  //   const allFeaturesReady = features.length > 0 && features.every(f => f.is_ready);
+  //   const allMembersReady = members.length > 0 && members.every(m => m.is_ready);
+  //   return allFeaturesReady && allMembersReady;
+  // };
 
   // Update dynamic state when release or allReleases changes
   useEffect(() => {
@@ -215,24 +213,7 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
     setIsArchived(release.is_archived);
   }, [release.is_archived]);
 
-  // Initialize ready states when expanded release detail is loaded
-  useEffect(() => {
-    if (expandedReleaseDetail) {
-      // Calculate initial features ready state
-      const isFeaturesReady = expandedReleaseDetail.feature_count > 0 && 
-        expandedReleaseDetail.ready_features === expandedReleaseDetail.feature_count;
-      setFeaturesReadyState(isFeaturesReady);
-      
-      // Calculate initial teams ready state
-      const isTeamsReady = expandedReleaseDetail.total_members > 0 && 
-        expandedReleaseDetail.ready_members === expandedReleaseDetail.total_members;
-      setTeamsReadyState(isTeamsReady);
-    } else {
-      // Reset states when detail is unloaded
-      setFeaturesReadyState(null);
-      setTeamsReadyState(null);
-    }
-  }, [expandedReleaseDetail]);
+
 
   useEffect(() => {
     const fetchTeams = async () => {
@@ -617,61 +598,61 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
   };
 
   // Function to check and automatically update release state based on ready status
-  const checkAndUpdateReleaseState = async (releaseDetail: any, members: any[]) => {
-    const totalFeatures = releaseDetail.feature_count;
-    const readyFeatures = releaseDetail.ready_features;
-    const totalMembers = members.length;
-    const readyMembers = members.filter((m: any) => m.is_ready).length;
+  // const checkAndUpdateReleaseState = async (releaseDetail: any, members: any[]) => {
+  //   const totalFeatures = releaseDetail.feature_count;
+  //   const readyFeatures = releaseDetail.ready_features;
+  //   const totalMembers = members.length;
+  //   const readyMembers = members.filter((m: any) => m.is_ready).length;
     
-    // Determine if all features and members are ready
-    const allFeaturesReady = totalFeatures > 0 && readyFeatures === totalFeatures;
-    const allMembersReady = totalMembers > 0 && readyMembers === totalMembers;
+  //   // Determine if all features and members are ready
+  //   const allFeaturesReady = totalFeatures > 0 && readyFeatures === totalFeatures;
+  //   const allMembersReady = totalMembers > 0 && readyMembers === totalMembers;
     
-    // Calculate if the release is ready (all features and members ready)
-    const isReleaseReady = allFeaturesReady && allMembersReady;
+  //   // Calculate if the release is ready (all features and members ready)
+  //   const isReleaseReady = allFeaturesReady && allMembersReady;
     
-    // Only update if the is_ready status actually changed
-    if (isReleaseReady !== releaseDetail.is_ready) {
-      const supabase = createClient();
-      const { error } = await supabase
-        .from("releases")
-        .update({ is_ready: isReleaseReady })
-        .eq("id", release.id);
+  //   // Only update if the is_ready status actually changed
+  //   if (isReleaseReady !== releaseDetail.is_ready) {
+  //     const supabase = createClient();
+  //     const { error } = await supabase
+  //       .from("releases")
+  //       .update({ is_ready: isReleaseReady })
+  //       .eq("id", release.id);
       
-      if (error) {
-        console.error('Error updating release is_ready:', error);
-      } else {
-        // Update the local state
-        setExpandedReleaseDetail((prev: any) => prev ? { ...prev, is_ready: isReleaseReady } : null);
+  //     if (error) {
+  //       console.error('Error updating release is_ready:', error);
+  //     } else {
+  //       // Update the local state
+  //       setExpandedReleaseDetail((prev: any) => prev ? { ...prev, is_ready: isReleaseReady } : null);
         
-        // Log activity for is_ready change
-        if (user?.id) {
-          const { error: activityError } = await supabase.from("activity_log").insert({
-            release_id: release.id,
-            member_id: memberId,
-            project_id: releaseDetail.project?.id || "",
-            activity_type: "release_ready_change",
-            activity_details: { 
-              oldIsReady: releaseDetail.is_ready, 
-              newIsReady: isReleaseReady,
-              reason: "automatic_ready_change",
-              readyFeatures,
-              totalFeatures,
-              readyMembers,
-              totalMembers,
-              releaseName: releaseDetail.name
-            },
-          });
-          if (activityError) {
-            console.error("Failed to log release ready change activity:", activityError);
-          }
-        }
-      }
-    }
-  };
+  //       // Log activity for is_ready change
+  //       if (user?.id) {
+  //         const { error: activityError } = await supabase.from("activity_log").insert({
+  //           release_id: release.id,
+  //           member_id: memberId,
+  //           project_id: releaseDetail.project?.id || "",
+  //           activity_type: "release_ready_change",
+  //           activity_details: { 
+  //             oldIsReady: releaseDetail.is_ready, 
+  //             newIsReady: isReleaseReady,
+  //             reason: "automatic_ready_change",
+  //             readyFeatures,
+  //             totalFeatures,
+  //             readyMembers,
+  //             totalMembers,
+  //             releaseName: releaseDetail.name
+  //           },
+  //         });
+  //         if (activityError) {
+  //           console.error("Failed to log release ready change activity:", activityError);
+  //         }
+  //       }
+  //     }
+  //   }
+  // };
 
   // Handle team changes locally without triggering full refresh
-  const handleTeamsChanged = async (addedTeams: string[], removedTeams: string[]) => {
+  const handleTeamsChanged = async () => {
     // Update the team names display by fetching the current teams for this release
     const supabase = createClient();
     const { data, error } = await supabase
@@ -736,17 +717,7 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
     }
   };
 
-  // Handle features ready state change from FeaturesCard
-  const handleFeaturesReadyStateChange = (isReady: boolean) => {
-    setFeaturesReadyState(isReady);
-    updateReleaseReadyState();
-  };
 
-  // Handle teams ready state change from TeamMembersCard
-  const handleTeamsReadyStateChange = (isReady: boolean) => {
-    setTeamsReadyState(isReady);
-    updateReleaseReadyState();
-  };
 
   // Lock to prevent duplicate ready state updates/logs
   const isUpdatingReleaseReadyState = useRef(false);
@@ -787,13 +758,13 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
         
         // Also update the release prop locally for immediate UI update
         // This ensures the badge updates immediately
-        if (release.is_ready !== isReleaseReady) {
-          // Create a new release object with updated is_ready
-          const updatedRelease = { ...release, is_ready: isReleaseReady };
-          // Force a re-render by updating the local state
-          // Note: This is a workaround since we can't directly modify the prop
-          // The parent component should refresh the data after this update
-        }
+        // if (release.is_ready !== isReleaseReady) {
+        //   // Create a new release object with updated is_ready
+        //   // const updatedRelease = { ...release, is_ready: isReleaseReady };
+        //   // Force a re-render by updating the local state
+        //   // Note: This is a workaround since we can't directly modify the prop
+        //   // The parent component should refresh the data after this update
+        // }
         
         // Log activity for is_ready change
         if (user?.id) {
@@ -1380,8 +1351,6 @@ export const ReleaseSummaryCard: React.FC<ReleaseSummaryCardProps> = ({
                   onTeamsChanged={handleTeamsChanged}
                   onFeatureChanged={handleFeatureChanged}
                   onFeatureEdited={handleFeatureEdited}
-                  onFeaturesReadyStateChange={handleFeaturesReadyStateChange}
-                  onTeamsReadyStateChange={handleTeamsReadyStateChange}
                 />
               </CardContent>
             </Card>
