@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase";
 import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Pencil, Save, X, Copy, ClipboardPaste, FileText, FileCode2, FileType2 } from "lucide-react";
+import { Pencil, Save, X, Copy, ClipboardPaste, FileText, FileCode2, FileType2, Wand2 } from "lucide-react";
 import dynamic from "next/dynamic";
 import "@uiw/react-md-editor/markdown-editor.css";
 import "@uiw/react-markdown-preview/markdown.css";
@@ -21,6 +21,8 @@ import {
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { marked } from "marked";
 import { useToast } from "@/components/ui/toast";
+import { FeaturesRepository } from "@/lib/repository/releases/features-repository";
+import type { Feature } from "@/lib/repository/releases/features-repository";
 
 const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
 
@@ -370,6 +372,96 @@ export default function ReleaseNotesPage() {
     }
   };
 
+  // Add this handler for generating fake release notes
+  const handleGenerateReleaseNotes = async () => {
+    if (!releaseId) return;
+    setSaving(true);
+    setError(null);
+    const supabase = createClient();
+    // Get current user's member info for activity logging
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      setError("No authenticated user found");
+      setSaving(false);
+      return;
+    }
+    const { data: member, error: memberError } = await supabase
+      .from('members')
+      .select('id, project_id')
+      .eq('email', user.email)
+      .single();
+    if (memberError || !member) {
+      setError("No member record found for user");
+      setSaving(false);
+      return;
+    }
+    // Fetch features for this release
+    const featuresRepo = new FeaturesRepository();
+    let features: Feature[] = [];
+    try {
+      features = await featuresRepo.getFeaturesForRelease(releaseId) as unknown as Feature[];
+    } catch (err) {
+      setError("Failed to fetch features for release");
+      setSaving(false);
+      return;
+    }
+    // Group features by type
+    const featureGroups = {
+      feature: features.filter(f => f.feature_type === 'feature'),
+      bug: features.filter(f => f.feature_type === 'bug'),
+      nfr: features.filter(f => f.feature_type === 'nfr'),
+    };
+    // Helper to render properties
+    const renderProperties = (f: Feature) => {
+      const props: string[] = [];
+      if (f.is_platform) props.push('✅ Platform Feature');
+      if (f.is_config) props.push('✅ Configuration');
+      if (f.breaking_change) props.push('✅ Breaking Change');
+      return props.length ? props.join('   ') : '';
+    };
+    // Helper to render a block for a group
+    const renderGroup = (title: string, group: Feature[]) => {
+      if (!group.length) return '';
+      let md = `## ${title}\n\n`;
+      for (const f of group) {
+        md += `### ${f.name}${f.summary ? `: ${f.summary}` : ''}\n`;
+        const props = renderProperties(f);
+        if (props) md += `${props}\n`;
+        if (f.description) md += `\n${f.description}\n`;
+        md += '\n';
+      }
+      return md;
+    };
+    let generated = '';
+    generated += renderGroup('Features', featureGroups.feature);
+    generated += renderGroup('Bug Fixes', featureGroups.bug);
+    generated += renderGroup('NFRs', featureGroups.nfr);
+    generated = generated.trim();
+    // Save to DB
+    setReleaseNotes(generated);
+    const { error } = await supabase
+      .from("releases")
+      .update({ release_notes: generated })
+      .eq("id", releaseId);
+    if (error) {
+      setError("Failed to generate release notes");
+    } else {
+      addToast("Release notes generated!", "success");
+      // Log activity: release notes generated
+      const { error: activityError } = await supabase.from("activity_log").insert({
+        release_id: releaseId,
+        member_id: member.id,
+        project_id: member.project_id,
+        activity_type: "release_notes_generated",
+        activity_details: { method: "features_list" },
+      });
+      if (activityError) {
+        console.error("Failed to log release notes generate activity:", activityError);
+      }
+    }
+    setSaving(false);
+  };
+
   if (loading) {
     return <div className="p-8 text-center text-muted-foreground">Loading release notes...</div>;
   }
@@ -595,6 +687,9 @@ export default function ReleaseNotesPage() {
                     </div>
                   </PopoverContent>
                 </Popover>
+                <Button onClick={handleGenerateReleaseNotes} disabled={saving} size="icon" variant="ghost" className="bg-white" title="Generate Release Notes">
+                  <Wand2 className="h-4 w-4" />
+                </Button>
                 <Button onClick={() => setEditing(true)} disabled={saving} size="icon" variant="ghost" className="bg-white" title="Edit Release Notes">
                   <Pencil className="h-4 w-4" />
                 </Button>

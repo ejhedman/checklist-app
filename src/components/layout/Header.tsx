@@ -37,13 +37,13 @@ export function Header() {
         {/* Center: Email and ProjectSelector (stacked on mobile) */}
         {user ? (
           <div className="flex flex-col items-start justify-center flex-1 min-w-0 px-2 sm:flex-row sm:items-center sm:justify-end sm:space-x-4">
+            <div className="w-full sm:w-auto mb-1 sm:mb-0 sm:mr-2">
+              <ProjectSelector />
+            </div>
             <Button variant="ghost" size="sm" className="justify-start w-full sm:w-auto truncate">
               <User className="h-4 w-4 mr-2 hidden sm:inline" />
               <span className="truncate">{user.email}</span>
             </Button>
-            <div className="w-full sm:w-auto mt-1 sm:mt-0">
-              <ProjectSelector />
-            </div>
           </div>
         ) : (
           <div className="flex flex-1 justify-end">
