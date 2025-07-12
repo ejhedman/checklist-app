@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2, Edit } from "lucide-react";
+import { Loader2, SquarePlus, Bug, Ghost, Lightbulb } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -30,13 +30,29 @@ interface AddFeatureDialogProps {
 export function AddFeatureDialog({ releaseId, releaseName, onFeatureAdded, onFeatureChanged }: AddFeatureDialogProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  
+  // Function to get the appropriate icon based on feature type
+  const getFeatureTypeIcon = (featureType: string) => {
+    switch (featureType) {
+      case 'bug':
+        return <Bug className="h-4 w-4 text-red-500" />;
+      case 'nfr':
+        return <Ghost className="h-4 w-4 text-gray-500" />;
+      case 'feature':
+      default:
+        return <Lightbulb className="h-4 w-4 text-blue-500" />;
+    }
+  };
   const [formData, setFormData] = useState({
     name: "",
+    summary: "",
     description: "",
     jiraTicket: "",
     driMemberId: "",
     isPlatform: false,
     isConfig: false,
+    featureType: "feature",
+    breakingChange: false,
   });
   const [error, setError] = useState("");
   const [members, setMembers] = useState<Array<{ id: string; full_name: string; email: string }>>([]);
@@ -98,11 +114,14 @@ export function AddFeatureDialog({ releaseId, releaseName, onFeatureAdded, onFea
       // Reset form
       setFormData({
         name: "",
+        summary: "",
         description: "",
         jiraTicket: "",
         driMemberId: "",
         isPlatform: false,
         isConfig: false,
+        featureType: "feature",
+        breakingChange: false,
       });
       setError("");
     }
@@ -127,11 +146,14 @@ export function AddFeatureDialog({ releaseId, releaseName, onFeatureAdded, onFea
         .insert({
           release_id: releaseId,
           name: formData.name,
+          summary: formData.summary || null,
           description: formData.description || null,
           jira_ticket: formData.jiraTicket || null,
           dri_member_id: formData.driMemberId || null,
           is_platform: formData.isPlatform,
           is_config: formData.isConfig,
+          feature_type: formData.featureType,
+          breaking_change: formData.breakingChange,
           is_ready: false, // Always default to false when creating
           project_id: memberInfo?.project_id,
         })
@@ -190,7 +212,7 @@ export function AddFeatureDialog({ releaseId, releaseName, onFeatureAdded, onFea
       {is_release_manager && (
         <DialogTrigger asChild>
           <Button size="sm" variant="outline" title="Add Feature" aria-label="Add Feature">
-            <Edit className="h-5 w-5" />
+            <SquarePlus className="h-5 w-5" />
           </Button>
         </DialogTrigger>
       )}
@@ -215,6 +237,20 @@ export function AddFeatureDialog({ releaseId, releaseName, onFeatureAdded, onFea
                 required
                 disabled={loading}
                 placeholder="e.g., User Authentication"
+              />
+            </div>
+
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="summary" className="text-right">
+                Summary
+              </Label>
+              <Input
+                id="summary"
+                value={formData.summary}
+                onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
+                className="col-span-3"
+                disabled={loading}
+                placeholder="Short summary (optional)"
               />
             </div>
 
@@ -245,6 +281,44 @@ export function AddFeatureDialog({ releaseId, releaseName, onFeatureAdded, onFea
                 disabled={loading}
                 placeholder="e.g., PROJ-123"
               />
+            </div>
+
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="featureType" className="text-right">
+                Feature Type
+              </Label>
+              <Select
+                value={formData.featureType}
+                onValueChange={(value) => setFormData({ ...formData, featureType: value })}
+                disabled={loading}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select feature type">
+                    {formData.featureType && (
+                      <div className="flex items-center gap-2">
+                        {getFeatureTypeIcon(formData.featureType)}
+                        {formData.featureType === 'feature' ? 'Feature' : 
+                         formData.featureType === 'bug' ? 'Bug' : 
+                         formData.featureType === 'nfr' ? 'NFR (Non-Functional Requirement)' : formData.featureType}
+                      </div>
+                    )}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="feature" className="flex items-center gap-2">
+                    {getFeatureTypeIcon('feature')}
+                    Feature
+                  </SelectItem>
+                  <SelectItem value="bug" className="flex items-center gap-2">
+                    {getFeatureTypeIcon('bug')}
+                    Bug
+                  </SelectItem>
+                  <SelectItem value="nfr" className="flex items-center gap-2">
+                    {getFeatureTypeIcon('nfr')}
+                    NFR (Non-Functional Requirement)
+                  </SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="grid grid-cols-4 items-center gap-4">
@@ -293,6 +367,18 @@ export function AddFeatureDialog({ releaseId, releaseName, onFeatureAdded, onFea
                   disabled={loading}
                 />
                 <Label htmlFor="isConfig">Config Feature</Label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="breakingChange"
+                  checked={formData.breakingChange}
+                  onCheckedChange={(checked) => 
+                    setFormData({ ...formData, breakingChange: checked as boolean })
+                  }
+                  disabled={loading}
+                />
+                <Label htmlFor="breakingChange">Breaking Change</Label>
               </div>
             </div>
 

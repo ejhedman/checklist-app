@@ -16,7 +16,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
-import { Edit } from "lucide-react";
+import { SquarePlus } from "lucide-react";
 
 interface AddTeamDialogProps {
   releaseId: string;
@@ -198,7 +198,7 @@ export function AddTeamDialog({ releaseId, releaseName, onTeamsUpdated, currentT
       {is_release_manager && (
         <DialogTrigger asChild>
           <Button size="sm" variant="outline" title="Add Team" aria-label="Add Team">
-            <Edit className="h-5 w-5" />
+            <SquarePlus className="h-5 w-5" />
           </Button>
         </DialogTrigger>
       )}

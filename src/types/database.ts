@@ -214,6 +214,11 @@ export interface Database {
           dri_member_id: string | null
           is_platform: boolean
           is_ready: boolean
+          is_config: boolean
+          comments: string | null
+          feature_type: string
+          breaking_change: boolean
+          summary: string | null
           project_id: string
           created_at: string
           updated_at: string
@@ -227,6 +232,11 @@ export interface Database {
           dri_member_id?: string | null
           is_platform?: boolean
           is_ready?: boolean
+          is_config?: boolean
+          comments?: string | null
+          feature_type?: string
+          breaking_change?: boolean
+          summary?: string | null
           project_id: string
           created_at?: string
           updated_at?: string
@@ -240,6 +250,11 @@ export interface Database {
           dri_member_id?: string | null
           is_platform?: boolean
           is_ready?: boolean
+          is_config?: boolean
+          comments?: string | null
+          feature_type?: string
+          breaking_change?: boolean
+          summary?: string | null
           project_id?: string
           created_at?: string
           updated_at?: string

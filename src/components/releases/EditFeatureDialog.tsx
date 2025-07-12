@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Edit, Loader2 } from "lucide-react";
+import { Edit, Loader2, Bug, Ghost, Lightbulb } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -30,14 +30,30 @@ interface EditFeatureDialogProps {
 export function EditFeatureDialog({ feature, releaseName, onFeatureUpdated, onFeatureChanged }: EditFeatureDialogProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  
+  // Function to get the appropriate icon based on feature type
+  const getFeatureTypeIcon = (featureType: string) => {
+    switch (featureType) {
+      case 'bug':
+        return <Bug className="h-4 w-4 text-red-500" />;
+      case 'nfr':
+        return <Ghost className="h-4 w-4 text-gray-500" />;
+      case 'feature':
+      default:
+        return <Lightbulb className="h-4 w-4 text-blue-500" />;
+    }
+  };
   const [formData, setFormData] = useState({
     name: "",
+    summary: "",
     description: "",
     jiraTicket: "",
     driMemberId: "",
     isPlatform: false,
     isConfig: false,
     comments: "",
+    featureType: "feature",
+    breakingChange: false,
   });
   const [error, setError] = useState("");
   const [members, setMembers] = useState<Array<{ id: string; full_name: string; email: string }>>([]);
@@ -99,12 +115,15 @@ export function EditFeatureDialog({ feature, releaseName, onFeatureUpdated, onFe
       // Initialize form with current feature data
       setFormData({
         name: feature.name || "",
+        summary: feature.summary || "",
         description: feature.description || "",
         jiraTicket: feature.jira_ticket || "",
         driMemberId: feature.dri_member_id || "",
         isPlatform: feature.is_platform || false,
         isConfig: feature.is_config || false,
         comments: feature.comments || "",
+        featureType: feature.feature_type || "feature",
+        breakingChange: feature.breaking_change || false,
       });
       setError("");
     }
@@ -128,11 +147,14 @@ export function EditFeatureDialog({ feature, releaseName, onFeatureUpdated, onFe
         .from("features")
         .update({
           name: formData.name,
+          summary: formData.summary || null,
           description: formData.description || null,
           jira_ticket: formData.jiraTicket || null,
           dri_member_id: formData.driMemberId || null,
           is_platform: formData.isPlatform,
           is_config: formData.isConfig,
+          feature_type: formData.featureType,
+          breaking_change: formData.breakingChange,
           comments: formData.comments || null,
         })
         .eq("id", feature.id);
@@ -147,11 +169,14 @@ export function EditFeatureDialog({ feature, releaseName, onFeatureUpdated, onFe
       if (user?.id && memberInfo) {
         const changes = [];
         if (feature.name !== formData.name) changes.push(`name: "${feature.name}" → "${formData.name}"`);
+        if (feature.summary !== formData.summary) changes.push(`summary updated`);
         if (feature.description !== formData.description) changes.push(`description updated`);
         if (feature.jira_ticket !== formData.jiraTicket) changes.push(`jira ticket: "${feature.jira_ticket || 'none'}" → "${formData.jiraTicket || 'none'}"`);
         if (feature.dri_member_id !== formData.driMemberId) changes.push(`dri updated`);
         if (feature.is_platform !== formData.isPlatform) changes.push(`platform: ${feature.is_platform} → ${formData.isPlatform}`);
         if (feature.is_config !== formData.isConfig) changes.push(`config: ${feature.is_config} → ${formData.isConfig}`);
+        if (feature.feature_type !== formData.featureType) changes.push(`feature type: ${feature.feature_type || 'feature'} → ${formData.featureType}`);
+        if (feature.breaking_change !== formData.breakingChange) changes.push(`breaking change: ${feature.breaking_change} → ${formData.breakingChange}`);
         if (feature.comments !== formData.comments) changes.push(`comments updated`);
         
         if (changes.length > 0) {
@@ -165,20 +190,26 @@ export function EditFeatureDialog({ feature, releaseName, onFeatureUpdated, onFe
               changes: changes,
               oldValues: {
                 name: feature.name,
+                summary: feature.summary,
                 description: feature.description,
                 jira_ticket: feature.jira_ticket,
                 dri_member_id: feature.dri_member_id,
                 is_platform: feature.is_platform,
                 is_config: feature.is_config,
+                feature_type: feature.feature_type,
+                breaking_change: feature.breaking_change,
                 comments: feature.comments
               },
               newValues: {
                 name: formData.name,
+                summary: formData.summary,
                 description: formData.description,
                 jira_ticket: formData.jiraTicket,
                 dri_member_id: formData.driMemberId,
                 is_platform: formData.isPlatform,
                 is_config: formData.isConfig,
+                feature_type: formData.featureType,
+                breaking_change: formData.breakingChange,
                 comments: formData.comments
               }
             },
@@ -200,12 +231,15 @@ export function EditFeatureDialog({ feature, releaseName, onFeatureUpdated, onFe
         onFeatureChanged({
           ...feature,
           name: formData.name,
+          summary: formData.summary,
           description: formData.description,
           jira_ticket: formData.jiraTicket,
           dri_member_id: formData.driMemberId,
           dri_member: driMemberObj,
           is_platform: formData.isPlatform,
           is_config: formData.isConfig,
+          feature_type: formData.featureType,
+          breaking_change: formData.breakingChange,
           comments: formData.comments,
         });
       } else {
@@ -253,6 +287,20 @@ export function EditFeatureDialog({ feature, releaseName, onFeatureUpdated, onFe
             </div>
 
             <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="summary" className="text-right">
+                Summary
+              </Label>
+              <Input
+                id="summary"
+                value={formData.summary}
+                onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
+                className="col-span-3"
+                disabled={loading}
+                placeholder="Short summary (optional)"
+              />
+            </div>
+
+            <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="description" className="text-right">
                 Description
               </Label>
@@ -279,6 +327,44 @@ export function EditFeatureDialog({ feature, releaseName, onFeatureUpdated, onFe
                 disabled={loading}
                 placeholder="e.g., PROJ-123"
               />
+            </div>
+
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="featureType" className="text-right">
+                Feature Type
+              </Label>
+              <Select
+                value={formData.featureType}
+                onValueChange={(value) => setFormData({ ...formData, featureType: value })}
+                disabled={loading}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select feature type">
+                    {formData.featureType && (
+                      <div className="flex items-center gap-2">
+                        {getFeatureTypeIcon(formData.featureType)}
+                        {formData.featureType === 'feature' ? 'Feature' : 
+                         formData.featureType === 'bug' ? 'Bug' : 
+                         formData.featureType === 'nfr' ? 'NFR (Non-Functional Requirement)' : formData.featureType}
+                      </div>
+                    )}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="feature" className="flex items-center gap-2">
+                    {getFeatureTypeIcon('feature')}
+                    Feature
+                  </SelectItem>
+                  <SelectItem value="bug" className="flex items-center gap-2">
+                    {getFeatureTypeIcon('bug')}
+                    Bug
+                  </SelectItem>
+                  <SelectItem value="nfr" className="flex items-center gap-2">
+                    {getFeatureTypeIcon('nfr')}
+                    NFR (Non-Functional Requirement)
+                  </SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="grid grid-cols-4 items-center gap-4">
@@ -342,6 +428,18 @@ export function EditFeatureDialog({ feature, releaseName, onFeatureUpdated, onFe
                   disabled={loading}
                 />
                 <Label htmlFor="isConfig">Configuration Feature</Label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="breakingChange"
+                  checked={formData.breakingChange}
+                  onCheckedChange={(checked) => 
+                    setFormData({ ...formData, breakingChange: checked as boolean })
+                  }
+                  disabled={loading}
+                />
+                <Label htmlFor="breakingChange">Breaking Change</Label>
               </div>
             </div>
 

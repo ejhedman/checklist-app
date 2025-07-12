@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { EditFeatureDialog } from "./EditFeatureDialog";
-import { Trash2 } from "lucide-react";
+import { Trash2, Bug, Ghost, Lightbulb, AlertTriangle } from "lucide-react";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -30,6 +30,19 @@ export default function FeatureCard({ feature, memberId, updatingFeature, handle
   const { is_release_manager } = useAuth();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  
+  // Function to get the appropriate icon based on feature type
+  const getFeatureTypeIcon = (featureType: string) => {
+    switch (featureType) {
+      case 'bug':
+        return <Bug className="h-3 w-3 text-red-500" />;
+      case 'nfr':
+        return <Ghost className="h-3 w-3 text-gray-500" />;
+      case 'feature':
+      default:
+        return <Lightbulb className="h-3 w-3 text-blue-500" />;
+    }
+  };
   
   const isDri = memberId && feature.dri_member && memberId === feature.dri_member.id;
   // Only the logged-in user who is the DRI OR a release manager can check the box
@@ -89,7 +102,7 @@ export default function FeatureCard({ feature, memberId, updatingFeature, handle
         )}
       </div>
       
-      {/* Top row: Platform/Config badges (left), Feature name: description (right) */}
+      {/* Top row: Platform/Config badges (left), Feature type icon, Feature name (right) */}
       <div className="flex flex-col sm:flex-row sm:items-center w-full gap-2 pr-6 sm:pr-8">
         <div className="flex flex-row items-center space-x-1 sm:space-x-2 min-w-[80px]">
           {feature.is_platform && (
@@ -99,10 +112,27 @@ export default function FeatureCard({ feature, memberId, updatingFeature, handle
             <Badge variant="outline" className="text-[10px] sm:text-xs">Config</Badge>
           )}
         </div>
-        <p className="text-xs sm:text-sm text-muted-foreground flex-1 min-w-0 truncate">
-          {feature.name}{feature.description ? `: ${feature.description}` : ''}
-        </p>
+        <div className="flex items-center space-x-1">
+          {getFeatureTypeIcon(feature.feature_type || 'feature')}
+          <p className="text-xs sm:text-sm text-muted-foreground flex-1 min-w-0 truncate">
+            {feature.name}
+          </p>
+          {feature.breaking_change && (
+            <div title="Breaking Change">
+              <AlertTriangle className="h-3 w-3 text-orange-500" />
+            </div>
+          )}
+        </div>
       </div>
+      
+      {/* Summary row (if present) */}
+      {feature.summary && (
+        <div className="mt-1 pr-6 sm:pr-8">
+          <p className="text-xs sm:text-sm text-muted-foreground break-words">
+            {feature.summary}
+          </p>
+        </div>
+      )}
       {/* Bottom row: DRI info (left), JIRA and comments (center), Ready checkbox/state (right) */}
       <div className="mt-2 flex flex-col sm:flex-row sm:items-center w-full gap-2">
         {/* DRI info (left) */}
