@@ -33,16 +33,16 @@ export default function HomePage() {
   }
 
   return (
-    <div className="space-y-8">
-      {/* Project title and checkbox */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">
+    <div className="space-y-4 sm:space-y-6 lg:space-y-8">
+      {/* Project title */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">
           {selectedProject ? `Project: ${selectedProject.name}` : 'No Project Selected'}
         </h1>
       </div>
 
       {/* Top row: Four stat cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
         <TotalReleasesCard count={data.totalReleases} />
         <ReadyReleasesCard count={data.readyReleases} />
         <PastDueCard count={data.pastDueReleases} />
@@ -50,14 +50,14 @@ export default function HomePage() {
       </div>
 
       {/* Two-column section below */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6 items-stretch">
         {/* Left column: Upcoming Releases (top), Recent Activity (bottom) */}
-        <div className="flex flex-col gap-6 h-full">
+        <div className="flex flex-col gap-4 sm:gap-6 h-full">
           <UpcomingReleasesCard releases={data.upcomingReleases} />
           <RecentActivityCard activity={data.recentActivity} />
         </div>
         {/* Right column: My Upcoming Milestones (spans full height) */}
-        <div className="h-full flex flex-col gap-6">
+        <div className="h-full flex flex-col gap-4 sm:gap-6">
           <MyUpcomingMilestonesCard milestones={userMilestones} allReleases={data.upcomingReleases} />
           <NagListCard nagMilestones={nagMilestones} allReleases={data.upcomingReleases} />
         </div>

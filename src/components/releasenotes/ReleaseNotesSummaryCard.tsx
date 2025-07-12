@@ -35,33 +35,37 @@ export function ReleaseNotesSummaryCard({ release }: ReleaseNotesSummaryCardProp
 
   return (
     <Card className="overflow-hidden rounded-lg">
-      <CardHeader className="border-b border-border rounded-none px-4 py-3 bg-gray-50">
-        <div className="flex items-center justify-between w-full">
-          {/* Release Name (left) */}
-          <div className="flex-1 min-w-0 flex items-center">
-            <CardTitle className="truncate">{release.name}</CardTitle>
+      <CardHeader className="border-b border-border rounded-none px-3 sm:px-4 py-3 bg-gray-50">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full gap-3 sm:gap-4">
+          {/* Release Name */}
+          <div className="flex-1 min-w-0">
+            <CardTitle className="text-lg sm:text-xl truncate">{release.name}</CardTitle>
           </div>
-          {/* Date (center) */}
-          <div className="flex-1 flex justify-center">
-            <CardDescription>
+          
+          {/* Date */}
+          <div className="flex justify-center sm:flex-1">
+            <CardDescription className="text-xs sm:text-sm text-center">
               <span className="font-medium mr-1">{getDateLabel(release.target_date)}:</span>
               {getDateDisplay(release.target_date)}
             </CardDescription>
           </div>
-          {/* View Full Release Notes Button (right) */}
-          <div className="flex-1 flex justify-end">
+          
+          {/* View Full Release Notes Button */}
+          <div className="flex justify-center sm:flex-1 sm:justify-end">
             <Link href={`/releasenotes/${encodeURIComponent(release.name)}`}>
-              <Button size="sm" variant="outline">View Full Release Notes</Button>
+              <Button size="sm" variant="outline" className="text-xs sm:text-sm w-full sm:w-auto">
+                View Full Release Notes
+              </Button>
             </Link>
           </div>
         </div>
       </CardHeader>
-      <CardContent className="px-4 py-2">
-        <div className="prose prose-sm max-w-none mb-4">
+      <CardContent className="px-3 sm:px-4 py-3 sm:py-4">
+        <div className="prose prose-sm sm:prose-base max-w-none mb-3 sm:mb-4">
           {release.release_summary ? (
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{release.release_summary}</ReactMarkdown>
           ) : (
-            <span className="text-muted-foreground">No summary provided.</span>
+            <span className="text-muted-foreground text-sm sm:text-base">No summary provided.</span>
           )}
         </div>
       </CardContent>

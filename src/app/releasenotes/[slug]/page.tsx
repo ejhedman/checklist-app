@@ -66,16 +66,16 @@ export default function DisplayReleaseNotesPage() {
 
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto py-10">
-        <div className="p-8 text-center text-muted-foreground">Loading release notes...</div>
+      <div className="max-w-4xl mx-auto py-6 sm:py-10 px-4 sm:px-6">
+        <div className="p-4 sm:p-8 text-center text-muted-foreground">Loading release notes...</div>
       </div>
     );
   }
   
   if (error) {
     return (
-      <div className="max-w-4xl mx-auto py-10">
-        <div className="p-8 text-center text-red-500">{error}</div>
+      <div className="max-w-4xl mx-auto py-6 sm:py-10 px-4 sm:px-6">
+        <div className="p-4 sm:p-8 text-center text-red-500">{error}</div>
       </div>
     );
   }

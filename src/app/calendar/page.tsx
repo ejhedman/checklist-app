@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
+
 import { useToast } from "@/components/ui/toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { CalendarRepository } from "@/lib/repository";
@@ -111,52 +111,64 @@ interface DragState {
   originalDate: string | null;
 }
 
-function generateCalendarDays(year: number, month: number, releases: Release[], userInvolvedReleaseIds: Set<string>): CalendarDay[] {
-  const firstDay = new Date(year, month, 1);
-  const startDate = new Date(firstDay);
-  startDate.setDate(startDate.getDate() - firstDay.getDay()); // Start from Sunday of the week
+// Get the Sunday of the current week
+function getCurrentWeekSunday(): Date {
+  const today = new Date();
+  const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+  const daysToSubtract = dayOfWeek;
+  const sunday = new Date(today);
+  sunday.setDate(today.getDate() - daysToSubtract);
+  sunday.setHours(0, 0, 0, 0);
+  return sunday;
+}
 
-  const days: CalendarDay[] = [];
+// Generate weeks starting from a given date
+function generateWeeks(startDate: Date, numWeeks: number, releases: Release[], userInvolvedReleaseIds: Set<string>): CalendarDay[][] {
+  const weeks: CalendarDay[][] = [];
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  for (let i = 0; i < 42; i++) { // 6 weeks * 7 days
-    const currentDate = new Date(startDate);
-    currentDate.setDate(startDate.getDate() + i);
-    
-    const isCurrentMonth = currentDate.getMonth() === month;
-    const isPast = currentDate < today;
-    
-    // Find releases for this date
-    const dayReleases = releases.filter(release => {
-      const year = currentDate.getFullYear();
-      const month = String(currentDate.getMonth() + 1).padStart(2, '0');
-      const day = String(currentDate.getDate()).padStart(2, '0');
-      const currentDateString = `${year}-${month}-${day}`;
-      return release.target_date === currentDateString;
-    });
-    
-    // Check if any releases on this day have user involvement
-    const hasUserInvolvement = dayReleases.some(release => userInvolvedReleaseIds.has(release.id));
-    
-    days.push({
-      date: currentDate,
-      dayOfMonth: currentDate.getDate(),
-      isCurrentMonth,
-      isPast,
-      releases: dayReleases,
-      hasUserInvolvement
-    });
+  for (let weekIndex = 0; weekIndex < numWeeks; weekIndex++) {
+    const week: CalendarDay[] = [];
+    const weekStartDate = new Date(startDate);
+    weekStartDate.setDate(startDate.getDate() + (weekIndex * 7));
+
+    for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+      const currentDate = new Date(weekStartDate);
+      currentDate.setDate(weekStartDate.getDate() + dayIndex);
+      
+      const isCurrentMonth = currentDate.getMonth() === new Date().getMonth();
+      const isPast = currentDate < today;
+      
+      // Find releases for this date
+      const dayReleases = releases.filter(release => {
+        const year = currentDate.getFullYear();
+        const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+        const day = String(currentDate.getDate()).padStart(2, '0');
+        const currentDateString = `${year}-${month}-${day}`;
+        return release.target_date === currentDateString;
+      });
+      
+      // Check if any releases on this day have user involvement
+      const hasUserInvolvement = dayReleases.some(release => userInvolvedReleaseIds.has(release.id));
+      
+      week.push({
+        date: currentDate,
+        dayOfMonth: currentDate.getDate(),
+        isCurrentMonth,
+        isPast,
+        releases: dayReleases,
+        hasUserInvolvement
+      });
+    }
+    weeks.push(week);
   }
 
-  return days;
+  return weeks;
 }
 
 function CalendarGrid({ 
-  year, 
-  month, 
-  title, 
-  releases, 
+  weeks, 
   userInvolvedReleaseIds,
   onReleaseMove,
   dragState,
@@ -165,10 +177,7 @@ function CalendarGrid({
   addToast,
   is_release_manager
 }: { 
-  year: number; 
-  month: number; 
-  title: string; 
-  releases: Release[];
+  weeks: CalendarDay[][];
   userInvolvedReleaseIds: Set<string>;
   onReleaseMove: (releaseId: string, newDate: string) => Promise<void>;
   dragState: DragState;
@@ -177,7 +186,6 @@ function CalendarGrid({
   addToast: (message: string, type?: 'success' | 'error' | 'warning' | 'info', duration?: number) => void;
   is_release_manager: boolean;
 }) {
-  const days = generateCalendarDays(year, month, releases, userInvolvedReleaseIds);
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   const handleDragStart = (e: React.DragEvent, release: Release) => {
@@ -193,7 +201,7 @@ function CalendarGrid({
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     const target = e.currentTarget as HTMLElement;
-    const day = days.find(d => d.date.toDateString() === target.dataset.date);
+    const day = weeks.flat().find(d => d.date.toDateString() === target.dataset.date);
     
     if (day) {
       const today = new Date();
@@ -250,25 +258,25 @@ function CalendarGrid({
   };
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="text-center">{title}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-7 gap-1">
-          {/* Day headers */}
+    <div className="w-full p-2 sm:p-6">
+      <div className="space-y-1">
+        {/* Day headers */}
+        <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
           {dayNames.map((day) => (
-            <div key={day} className="p-2 text-center text-sm font-medium text-muted-foreground">
+            <div key={day} className="p-1 sm:p-2 text-center text-[10px] sm:text-xs md:text-sm font-medium text-muted-foreground">
               {day}
             </div>
           ))}
-          
-          {/* Calendar days */}
-          {days.map((day, index) => {
-            const dayContent = (
+        </div>
+        
+        {/* Calendar weeks */}
+        {weeks.map((week, weekIndex) => (
+          <div key={weekIndex} className="grid grid-cols-7 gap-0.5 sm:gap-1">
+            {week.map((day, dayIndex) => (
               <div
+                key={dayIndex}
                 className={`
-                  p-1 text-center text-xs border rounded min-h-[60px] flex flex-col items-center justify-start
+                  p-0.5 sm:p-1 text-center text-xs border rounded min-h-[50px] sm:min-h-[60px] md:min-h-[70px] flex flex-col items-center justify-start
                   ${!day.isCurrentMonth ? 'text-muted-foreground/50' : ''}
                   ${day.isPast && day.releases.length === 0 ? 'bg-muted text-muted-foreground' : ''}
                   ${day.isCurrentMonth && !day.isPast && day.releases.length === 0 ? 'hover:bg-accent cursor-pointer' : ''}
@@ -279,18 +287,18 @@ function CalendarGrid({
                 onDragLeave={handleDragLeave}
                 onDrop={(e) => handleDrop(e, day)}
               >
-                <div className="text-[10px] text-muted-foreground mb-0.5">{
+                <div className="text-[8px] sm:text-[10px] text-muted-foreground mb-0.5">{
                   String(day.date.getMonth() + 1).padStart(2, '0') + '/' + String(day.date.getDate()).padStart(2, '0')
                 }</div>
                 {day.releases.map((release) => {
                   // Calculate dynamic state for this release
-                  const dynamicState = calculateDynamicState(release, releases);
+                  const dynamicState = calculateDynamicState(release, weeks.flat().map(d => d.releases).flat());
                   
                   return (
                     <div
                       key={release.id}
                       className={`
-                        w-full px-1 py-0.5 mb-0.5 rounded text-xs truncate cursor-grab active:cursor-grabbing
+                        w-full px-0.5 sm:px-1 py-0.5 mb-0.5 rounded text-[10px] sm:text-xs truncate cursor-grab active:cursor-grabbing touch-manipulation
                         ${getStateColorWrapper(dynamicState)}
                         ${dragState.isDragging && dragState.releaseId === release.id ? 'opacity-50' : ''}
                       `}
@@ -308,12 +316,11 @@ function CalendarGrid({
                   );
                 })}
               </div>
-            );
-            return <div key={index}>{dayContent}</div>;
-          })}
-        </div>
-      </CardContent>
-    </Card>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -329,9 +336,17 @@ export default function CalendarPage() {
     releaseName: null,
     originalDate: null
   });
+  const [numWeeks, setNumWeeks] = useState(12);
+  const [startDate, setStartDate] = useState<Date>(getCurrentWeekSunday());
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Memoize the repository to prevent recreation on every render
   const calendarRepository = useMemo(() => new CalendarRepository(), []);
+
+  // Generate weeks based on current state
+  const weeks = useMemo(() => {
+    return generateWeeks(startDate, numWeeks, releases, userInvolvedReleaseIds);
+  }, [startDate, numWeeks, releases, userInvolvedReleaseIds]);
 
   const fetchUserInvolvement = useCallback(async () => {
     if (!user || !selectedProject) return;
@@ -352,8 +367,17 @@ export default function CalendarPage() {
         setLoading(false);
         return;
       }
+
+      if (!selectedProject.id) {
+        console.error("Selected project has no ID:", selectedProject);
+        setReleases([]);
+        setLoading(false);
+        return;
+      }
       
+      console.log("Fetching releases for project:", selectedProject.id);
       const calendarReleases = await calendarRepository.getReleases(selectedProject.id);
+      
       // Convert CalendarRelease to Release format
       const releases: Release[] = calendarReleases.map(release => ({
         id: release.id,
@@ -366,6 +390,7 @@ export default function CalendarPage() {
       setReleases(releases);
     } catch (error) {
       console.error("Error fetching releases:", error);
+      console.error("Selected project:", selectedProject);
       // Set empty array on error to prevent infinite loading
       setReleases([]);
     } finally {
@@ -443,10 +468,29 @@ export default function CalendarPage() {
     });
   };
 
+  // Handle scroll to add more weeks
+  const handleScroll = useCallback(() => {
+    if (!scrollContainerRef.current) return;
+    
+    const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
+    const scrollPercentage = (scrollTop + clientHeight) / scrollHeight;
+    
+    // If scrolled to 80% of the container, add more weeks
+    if (scrollPercentage > 0.8) {
+      setNumWeeks(prev => prev + 2); // Add 2 more weeks
+    }
+  }, []);
+
   useEffect(() => {
-    fetchReleases();
-    fetchUserInvolvement();
-  }, [fetchReleases, fetchUserInvolvement]);
+    if (selectedProject && selectedProject.id) {
+      fetchReleases();
+      fetchUserInvolvement();
+    } else {
+      setReleases([]);
+      setUserInvolvedReleaseIds(new Set());
+      setLoading(false);
+    }
+  }, [fetchReleases, fetchUserInvolvement, selectedProject]);
 
   // Global drag end handler to reset drag state
   useEffect(() => {
@@ -462,23 +506,24 @@ export default function CalendarPage() {
     };
   }, [dragState.isDragging]);
 
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth();
-  
-  const nextMonth = currentMonth === 11 ? 0 : currentMonth + 1;
-  const nextYear = currentMonth === 11 ? currentYear + 1 : currentYear;
-
-  const monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ];
+  if (!selectedProject) {
+    return (
+      <div className="space-y-4 sm:space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <h1 className="text-2xl sm:text-3xl font-bold">Release Calendar</h1>
+        </div>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-muted-foreground">Please select a project to view the calendar.</div>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Release Calendar</h1>
+      <div className="space-y-4 sm:space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <h1 className="text-2xl sm:text-3xl font-bold">Release Calendar</h1>
         </div>
         <div className="flex items-center justify-center h-64">
           <div className="text-muted-foreground">Loading calendar...</div>
@@ -488,35 +533,23 @@ export default function CalendarPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Release Calendar</h1>
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <h1 className="text-2xl sm:text-3xl font-bold">Release Calendar</h1>
         {dragState.isDragging && (
-          <div className="text-sm text-muted-foreground">
+          <div className="text-xs sm:text-sm text-muted-foreground">
             Dragging: {dragState.releaseName}
           </div>
         )}
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div 
+        ref={scrollContainerRef}
+        className="h-[70vh] overflow-y-auto border rounded-lg"
+        onScroll={handleScroll}
+      >
         <CalendarGrid 
-          year={currentYear} 
-          month={currentMonth} 
-          title={monthNames[currentMonth]}
-          releases={releases}
-          userInvolvedReleaseIds={userInvolvedReleaseIds}
-          onReleaseMove={handleReleaseMove}
-          dragState={dragState}
-          onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
-          addToast={addToast}
-          is_release_manager={is_release_manager}
-        />
-        <CalendarGrid 
-          year={nextYear} 
-          month={nextMonth} 
-          title={monthNames[nextMonth]}
-          releases={releases}
+          weeks={weeks}
           userInvolvedReleaseIds={userInvolvedReleaseIds}
           onReleaseMove={handleReleaseMove}
           dragState={dragState}

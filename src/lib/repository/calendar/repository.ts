@@ -101,6 +101,13 @@ export class CalendarRepository {
 
   // Get releases for calendar
   async getReleases(projectId: string): Promise<CalendarRelease[]> {
+    if (!projectId) {
+      console.error("Project ID is required for getReleases");
+      throw new Error("Project ID is required");
+    }
+
+    console.log("Fetching releases for project:", projectId);
+
     const { data, error } = await this.supabase
       .from("releases")
       .select("id, name, target_date, is_archived, is_cancelled, is_deployed")
@@ -113,6 +120,7 @@ export class CalendarRepository {
       throw error;
     }
 
+    console.log("Successfully fetched releases:", data?.length || 0);
     return data || [];
   }
 

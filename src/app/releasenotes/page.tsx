@@ -36,16 +36,20 @@ export default function ReleaseNotesListPage() {
   }, [fetchReleases]);
 
   if (loading) {
-    return <div className="p-8 text-center text-muted-foreground">Loading release notes...</div>;
+    return (
+      <div className="p-4 sm:p-8 text-center text-muted-foreground">
+        Loading release notes...
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold mb-6">Release Notes</h1>
+    <div className="space-y-4 sm:space-y-6">
+      <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">Release Notes</h1>
       {releases.length === 0 ? (
-        <div className="text-muted-foreground">No releases found.</div>
+        <div className="text-muted-foreground text-center py-8">No releases found.</div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {releases.map((release) => (
             <ReleaseNotesSummaryCard key={release.id} release={release} />
           ))}

@@ -3,21 +3,29 @@ import { CheckCircle } from 'lucide-react';
 import { ActivityIcon } from '@/components/ui/activity-icon';
 
 export default function RecentActivityCard({ activity }: { activity: any[] }) {
+  const formatActivityDate = (dateString: string) => {
+    const activityDate = new Date(dateString);
+    return `on ${activityDate.getMonth() + 1}/${activityDate.getDate()}`;
+  };
+
   return (
     <Card className="hover:shadow-md transition-shadow">
-      <CardHeader className="pb-4">
-        <CardTitle>Recent Release Activity</CardTitle>
-        <CardDescription>
+      <CardHeader className="pb-3 sm:pb-4">
+        <CardTitle className="text-lg sm:text-xl">Recent Release Activity</CardTitle>
+        <CardDescription className="text-xs sm:text-sm">
           Latest project events
         </CardDescription>
       </CardHeader>
-      <CardContent className="pt-0 pb-4">
-        <div className="space-y-3">
+      <CardContent className="pt-0 pb-3 sm:pb-4">
+        <div className="space-y-2 sm:space-y-3">
           {activity.length > 0 ? (
             activity.map((activity) => (
-              <div key={activity.id} className="flex items-center space-x-3 text-sm">
-                <ActivityIcon activityType={activity.activity_type} className="flex-shrink-0" />
-                <div className="flex-1">
+              <div key={activity.id} className="flex items-start space-x-2 sm:space-x-3 text-xs sm:text-sm">
+                <ActivityIcon activityType={activity.activity_type} className="flex-shrink-0 mt-0.5" />
+                <span className="text-muted-foreground text-[10px] sm:text-xs flex-shrink-0">
+                  {formatActivityDate(activity.created_at)}
+                </span>
+                <div className="flex-1 min-w-0">
                   <span className="font-medium">
                     {(() => {
                       const memberName = activity.members?.nickname || activity.members?.full_name || 'A user';
@@ -63,14 +71,13 @@ export default function RecentActivityCard({ activity }: { activity: any[] }) {
                       }
                     })()}
                   </span>
-                  <span className="text-muted-foreground ml-2">{new Date(activity.created_at).toLocaleDateString()}</span>
                 </div>
               </div>
             ))
           ) : (
             <div className="text-center py-4 text-muted-foreground">
-              <CheckCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p>No recent activity</p>
+              <CheckCircle className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 opacity-50" />
+              <p className="text-sm sm:text-base">No recent activity</p>
             </div>
           )}
         </div>
